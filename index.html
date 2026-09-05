@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Es Teh Djawa — Laporan Stok</title>
+<style>
+  :root{
+    --ink:#2b2118;
+    --paper:#faf6ee;
+    --card:#ffffff;
+    --teh:#8a5a2b;      /* teh/kayu manis */
+    --teh-dark:#5e3c1c;
+    --daun:#4c6b3f;     /* daun teh */
+    --daun-light:#e7efe1;
+    --jeruk:#e08b2b;    /* jeruk/nutrisari accent */
+    --merah:#b3432b;    /* alert/keluar */
+    --line:#e7ddc9;
+    --muted:#8a7c66;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:110px;
+  }
+  .topbar{
+    position:sticky; top:0; z-index:30;
+    background:var(--teh-dark);
+    color:#fff4e2;
+    padding:14px 16px 12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.12);
+  }
+  .topbar .brandrow{display:flex; align-items:center; gap:10px;}
+  .leaf{width:26px;height:26px;flex:0 0 auto;}
+  .brandrow h1{font-size:17px; margin:0; font-weight:700; letter-spacing:.2px;}
+  .brandrow .sub{font-size:11.5px; opacity:.75; margin-top:1px;}
+  .modeSwitch{
+    display:flex; gap:6px; margin-top:12px;
+    background:rgba(255,255,255,.1); padding:4px; border-radius:12px;
+  }
+  .modeSwitch button{
+    flex:1; border:none; background:transparent; color:#f4e9d6;
+    font-size:13.5px; font-weight:600; padding:9px 6px; border-radius:9px;
+    cursor:pointer; transition:.15s;
+  }
+  .modeSwitch button.active{background:#fff4e2; color:var(--teh-dark);}
+  .modeSwitch button svg{vertical-align:-3px; margin-right:5px; width:15px; height:15px;}
+
+  .searchWrap{padding:12px 16px 4px;}
+  .searchWrap input{
+    width:100%; padding:11px 14px; border-radius:11px; border:1.5px solid var(--line);
+    background:var(--card); font-size:14.5px; color:var(--ink);
+  }
+  .searchWrap input:focus{outline:none; border-color:var(--teh);}
+
+  .catTabs{
+    display:flex; gap:8px; overflow-x:auto; padding:10px 16px 4px;
+    scrollbar-width:none;
+  }
+  .catTabs::-webkit-scrollbar{display:none;}
+  .catTabs button{
+    flex:0 0 auto; padding:7px 14px; border-radius:999px; border:1.3px solid var(--line);
+    background:var(--card); font-size:13px; font-weight:600; color:var(--muted);
+    cursor:pointer; white-space:nowrap;
+  }
+  .catTabs button.active{background:var(--daun); border-color:var(--daun); color:#fff;}
+
+  .list{padding:8px 16px 20px; display:flex; flex-direction:column; gap:10px;}
+  .catLabel{font-size:12.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin:14px 2px 2px;}
+
+  .card{
+    background:var(--card); border-radius:var(--radius); border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .cardHead{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 14px; cursor:pointer; gap:10px;
+  }
+  .cardHead .name{font-size:15px; font-weight:650; color:var(--ink);}
+  .cardHead .meta{font-size:12px; color:var(--muted); margin-top:2px;}
+  .chev{width:18px;height:18px; color:var(--muted); transition:transform .18s; flex:0 0 auto;}
+  .card.open .chev{transform:rotate(180deg);}
+  .qtyBadge{
+    min-width:22px; height:22px; padding:0 6px; border-radius:999px; background:var(--daun-light); color:var(--daun);
+    font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-right:6px;
+  }
+
+  .variants{max-height:0; overflow:hidden; transition:max-height .22s ease;}
+  .card.open .variants{max-height:900px;}
+  .variantRow{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; border-top:1px solid var(--line);
+  }
+  .variantRow .vname{font-size:13.5px; color:var(--ink);}
+  .variantRow .vprice{font-size:11.5px; color:var(--muted); margin-top:1px;}
+
+  .stepper{display:flex; align-items:center; gap:0; border:1.4px solid var(--line); border-radius:9px; overflow:hidden;}
+  .stepper button{
+    width:32px; height:32px; border:none; background:var(--paper); font-size:18px; font-weight:700;
+    color:var(--teh); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    -webkit-user-select:none; user-select:none;
+  }
+  .stepper button:active{background:var(--line);}
+  .stepper .val{width:32px; text-align:center; font-size:14px; font-weight:700;}
+  .mode-keluar .stepper button.plus{color:var(--merah);}
+
+  .fab{
+    position:fixed; left:16px; right:16px; bottom:16px; z-index:40;
+    background:var(--teh-dark); color:#fff4e2; border:none; border-radius:14px;
+    padding:15px; font-size:15px; font-weight:700; box-shadow:0 6px 20px rgba(0,0,0,.25);
+    display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;
+  }
+  .fab .count{background:#fff4e2; color:var(--teh-dark); border-radius:999px; padding:1px 9px; font-size:13px;}
+  .fab[disabled]{opacity:.4;}
+
+  .sheetOverlay{
+    position:fixed; inset:0; background:rgba(30,20,10,.45); z-index:50;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .sheetOverlay.show{display:flex;}
+  .sheet{
+    background:var(--paper); width:100%; max-width:520px; border-radius:18px 18px 0 0;
+    max-height:80vh; display:flex; flex-direction:column; overflow:hidden;
+    animation:slideUp .22s ease;
+  }
+  @keyframes slideUp{from{transform:translateY(30px); opacity:0;} to{transform:translateY(0); opacity:1;}}
+  .sheetHead{padding:16px 18px 10px; display:flex; align-items:center; justify-content:space-between;}
+  .sheetHead h2{font-size:16px; margin:0;}
+  .sheetHead button{background:none; border:none; font-size:20px; color:var(--muted); cursor:pointer;}
+  .sheetBody{overflow-y:auto; padding:0 18px 10px;}
+  .sumRow{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .sumRow .sname{font-weight:600;}
+  .sumRow .svar{color:var(--muted); font-size:12.5px;}
+  .sheetFoot{padding:14px 18px 18px; border-top:1px solid var(--line);}
+  .noteInput{
+    width:100%; border:1.4px solid var(--line); border-radius:10px; padding:10px 12px;
+    font-size:13.5px; margin-bottom:10px; font-family:inherit; resize:none;
+  }
+  .submitBtn{
+    width:100%; background:var(--daun); color:#fff; border:none; border-radius:12px;
+    padding:14px; font-size:15px; font-weight:700; cursor:pointer;
+  }
+  .submitBtn[disabled]{opacity:.5;}
+  .nameInput{
+    width:100%; border:1.4px solid var(--line); border-radius:10px; padding:10px 12px;
+    font-size:13.5px; margin-bottom:10px; font-family:inherit;
+  }
+  .toast{
+    position:fixed; top:14px; left:50%; transform:translateX(-50%) translateY(-60px);
+    background:var(--ink); color:#fff; padding:11px 18px; border-radius:10px; font-size:13.5px;
+    z-index:60; transition:transform .25s ease; box-shadow:0 6px 18px rgba(0,0,0,.25);
+    max-width:88%; text-align:center;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .empty{padding:40px 20px; text-align:center; color:var(--muted); font-size:14px;}
+
+  .cfgBar{padding:6px 16px 0; display:flex; justify-content:flex-end;}
+  .cfgBar button{background:none; border:none; color:var(--muted); font-size:12px; text-decoration:underline; cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brandrow">
+    <svg class="leaf" viewBox="0 0 24 24" fill="none"><path d="M4 15C4 8 9 4 20 4C20 13 15 20 8 20C6.5 20 5 19.5 4 18.5" stroke="#f4e9d6" stroke-width="1.6" stroke-linecap="round"/><path d="M6 17C10 13 14 10 18 6" stroke="#f4e9d6" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <div>
+      <h1>Es Teh Djawa</h1>
+      <div class="sub">Laporan Stok — Pontir 1</div>
+    </div>
+  </div>
+  <div class="modeSwitch">
+    <button id="btnMasuk" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      Barang Masuk
+    </button>
+    <button id="btnKeluar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      Barang Terpakai
+    </button>
+  </div>
+</div>
+
+<div class="searchWrap">
+  <input id="searchBox" type="text" placeholder="Cari nama barang...">
+</div>
+
+<div class="catTabs" id="catTabs"></div>
+
+<div class="list" id="list"></div>
+
+<button class="fab" id="fab" disabled>
+  <span id="fabLabel">Pilih barang dulu</span>
+  <span class="count" id="fabCount" style="display:none">0</span>
+</button>
+
+<div class="sheetOverlay" id="sheetOverlay">
+  <div class="sheet">
+    <div class="sheetHead">
+      <h2 id="sheetTitle">Konfirmasi</h2>
+      <button id="sheetClose">✕</button>
+    </div>
+    <div class="sheetBody" id="sheetBody"></div>
+    <div class="sheetFoot">
+      <input class="nameInput" id="karyawanName" placeholder="Nama karyawan (wajib)">
+      <textarea class="noteInput" id="noteInput" rows="2" placeholder="Catatan (opsional)"></textarea>
+      <button class="submitBtn" id="submitBtn">Kirim Laporan</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====================== KONFIGURASI ======================
+   Ganti URL di bawah ini dengan Web App URL Google Apps Script kamu
+   setelah deploy (lihat file apps_script_code.gs & PANDUAN_SETUP.md)
+============================================================ */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHuJdltiSev6wKrT6eWvDqU5-ycWWgkzNIyEPekNxBXR2Jupr_TaKuq-GzoDYKIFymaA/exec";
+
+let MENU = [];
+let mode = "masuk"; // "masuk" | "keluar"
+let cart = {}; // key: "kategoriIdx|itemIdx|varIdx" -> {qty, nama, varian, harga, kategori}
+let activeCat = "Semua";
+
+const el = id => document.getElementById(id);
+
+async function loadMenu(){
+  try{
+    const res = await fetch('menu_data.json');
+    MENU = await res.json();
+  }catch(e){
+    el('list').innerHTML = '<div class="empty">Gagal memuat data menu (menu_data.json). Pastikan file ada di folder yang sama.</div>';
+    return;
+  }
+  renderCatTabs();
+  renderList();
+}
+
+function renderCatTabs(){
+  const tabs = el('catTabs');
+  const cats = ["Semua", ...MENU.map(c=>c.kategori)];
+  tabs.innerHTML = cats.map(c =>
+    `<button data-cat="${c}" class="${c===activeCat?'active':''}">${c}</button>`
+  ).join('');
+  tabs.querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{ activeCat = b.dataset.cat; renderCatTabs(); renderList(); };
+  });
+}
+
+function cartKey(ci,ii,vi){ return ci+"|"+ii+"|"+vi; }
+
+function renderList(){
+  const q = el('searchBox').value.trim().toLowerCase();
+  const listEl = el('list');
+  let html = '';
+  MENU.forEach((cat, ci)=>{
+    if(activeCat !== "Semua" && cat.kategori !== activeCat) return;
+    const items = cat.items.filter(it => !q || it.nama.toLowerCase().includes(q));
+    if(items.length===0) return;
+    html += `<div class="catLabel">${cat.kategori}</div>`;
+    cat.items.forEach((item, ii)=>{
+      if(!items.includes(item)) return;
+      const totalQty = item.varian.reduce((s,v,vi)=> s + (cart[cartKey(ci,ii,vi)]?.qty||0), 0);
+      html += `<div class="card ${mode==='keluar'?'mode-keluar':''}" data-ci="${ci}" data-ii="${ii}">
+        <div class="cardHead">
+          <div>
+            <div class="name">${item.nama}</div>
+            <div class="meta">${item.varian.length} pilihan${item.varian[0].harga ? ' · Rp'+item.varian[0].harga.toLocaleString('id-ID') : ''}</div>
+          </div>
+          <div style="display:flex;align-items:center;">
+            ${totalQty>0 ? `<div class="qtyBadge">${totalQty}</div>` : ''}
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div class="variants">
+          ${item.varian.map((v,vi)=>{
+            const k = cartKey(ci,ii,vi);
+            const qty = cart[k]?.qty || 0;
+            return `<div class="variantRow">
+              <div>
+                <div class="vname">${v.nama}</div>
+                ${v.harga ? `<div class="vprice">Rp${v.harga.toLocaleString('id-ID')}</div>` : ''}
+              </div>
+              <div class="stepper" data-k="${k}" data-ci="${ci}" data-ii="${ii}" data-vi="${vi}">
+                <button class="minus">−</button>
+                <div class="val">${qty}</div>
+                <button class="plus">+</button>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    });
+  });
+  listEl.innerHTML = html || '<div class="empty">Barang tidak ditemukan.</div>';
+  attachListEvents();
+  updateFab();
+}
+
+function attachListEvents(){
+  el('list').querySelectorAll('.cardHead').forEach(h=>{
+    h.onclick = ()=> h.parentElement.classList.toggle('open');
+  });
+  el('list').querySelectorAll('.stepper').forEach(s=>{
+    const ci=+s.dataset.ci, ii=+s.dataset.ii, vi=+s.dataset.vi, k=s.dataset.k;
+    s.querySelector('.plus').onclick = (e)=>{ e.stopPropagation(); changeQty(ci,ii,vi,k,1); };
+    s.querySelector('.minus').onclick = (e)=>{ e.stopPropagation(); changeQty(ci,ii,vi,k,-1); };
+  });
+}
+
+function changeQty(ci,ii,vi,k,delta){
+  const item = MENU[ci].items[ii];
+  const variant = item.varian[vi];
+  const cur = cart[k]?.qty || 0;
+  const next = Math.max(0, cur+delta);
+  if(next===0){ delete cart[k]; }
+  else {
+    cart[k] = { qty:next, nama:item.nama, varian:variant.nama, harga:variant.harga||0, kategori:MENU[ci].kategori };
+  }
+  renderList();
+}
+
+function updateFab(){
+  const keys = Object.keys(cart);
+  const totalQty = keys.reduce((s,k)=>s+cart[k].qty,0);
+  const fab = el('fab');
+  if(keys.length===0){
+    fab.disabled = true;
+    el('fabLabel').textContent = "Pilih barang dulu";
+    el('fabCount').style.display = 'none';
+  } else {
+    fab.disabled = false;
+    el('fabLabel').textContent = mode==='masuk' ? "Kirim Barang Masuk" : "Kirim Barang Terpakai";
+    el('fabCount').style.display = 'inline-flex';
+    el('fabCount').textContent = totalQty;
+  }
+}
+
+function openSheet(){
+  const keys = Object.keys(cart);
+  if(keys.length===0) return;
+  el('sheetTitle').textContent = mode==='masuk' ? "Konfirmasi Barang Masuk" : "Konfirmasi Barang Terpakai";
+  el('sheetBody').innerHTML = keys.map(k=>{
+    const c = cart[k];
+    return `<div class="sumRow">
+      <div>
+        <div class="sname">${c.nama}</div>
+        <div class="svar">${c.varian} · ${c.kategori}</div>
+      </div>
+      <div style="font-weight:700;">${c.qty}x</div>
+    </div>`;
+  }).join('');
+  el('sheetOverlay').classList.add('show');
+}
+
+el('sheetClose').onclick = ()=> el('sheetOverlay').classList.remove('show');
+el('sheetOverlay').onclick = (e)=>{ if(e.target.id==='sheetOverlay') el('sheetOverlay').classList.remove('show'); };
+el('fab').onclick = openSheet;
+
+el('btnMasuk').onclick = ()=>{ mode='masuk'; el('btnMasuk').classList.add('active'); el('btnKeluar').classList.remove('active'); cart={}; renderList(); };
+el('btnKeluar').onclick = ()=>{ mode='keluar'; el('btnKeluar').classList.add('active'); el('btnMasuk').classList.remove('active'); cart={}; renderList(); };
+
+el('searchBox').addEventListener('input', renderList);
+
+function showToast(msg){
+  const t = el('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 2600);
+}
+
+el('submitBtn').onclick = async ()=>{
+  const nama = el('karyawanName').value.trim();
+  if(!nama){ showToast("Isi nama karyawan dulu ya"); return; }
+  const keys = Object.keys(cart);
+  if(keys.length===0) return;
+
+  const btn = el('submitBtn');
+  btn.disabled = true;
+  btn.textContent = "Mengirim...";
+
+  const payload = {
+    mode: mode,
+    karyawan: nama,
+    catatan: el('noteInput').value.trim(),
+    waktu: new Date().toISOString(),
+    items: keys.map(k=>cart[k])
+  };
+
+  try{
+    if(APPS_SCRIPT_URL.includes("PASTE_URL")){
+      showToast("⚠️ URL Apps Script belum diatur. Cek panduan setup.");
+    } else {
+      await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {"Content-Type":"text/plain"},
+        body: JSON.stringify(payload)
+      });
+      showToast("✅ Laporan terkirim: " + payload.items.length + " item");
+    }
+    cart = {};
+    el('karyawanName').value = '';
+    el('noteInput').value = '';
+    el('sheetOverlay').classList.remove('show');
+    renderList();
+  }catch(err){
+    showToast("Gagal mengirim. Cek koneksi internet.");
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "Kirim Laporan";
+  }
+};
+
+loadMenu();
+</script>
+</body>
+</html>

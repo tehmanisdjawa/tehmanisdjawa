@@ -1,0 +1,938 @@
+[
+ {
+  "kategori": "Es Teh Manis",
+  "items": [
+   {
+    "nama": "Cup Medium",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 2000
+     }
+    ]
+   },
+   {
+    "nama": "Cup Jumbo",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 3000
+     }
+    ]
+   },
+   {
+    "nama": "Teh Manis Hangat",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Es Teh Tawar",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 3000
+     }
+    ]
+   },
+   {
+    "nama": "Teh Tawar Hangat",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 2000
+     }
+    ]
+   },
+   {
+    "nama": "Teh Lecy",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 6000
+     }
+    ]
+   },
+   {
+    "nama": "Teh Mangga",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 6000
+     }
+    ]
+   },
+   {
+    "nama": "Teh Strawberry",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 6000
+     }
+    ]
+   },
+   {
+    "nama": "Teh Yakult",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 6000
+     }
+    ]
+   },
+   {
+    "nama": "Teh Susu/Tarik",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 6000
+     }
+    ]
+   },
+   {
+    "nama": "Teh Lemon",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 6000
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "kategori": "Nutrisari",
+  "items": [
+   {
+    "nama": "Jeruk peras",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Jeruk nipis",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Anggur",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Jambu",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Isotonik",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Milky orange",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Sweet mango",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Anggur hijau",
+    "varian": [
+     {
+      "nama": "Reguler",
+      "harga": 4000
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "kategori": "Good Day",
+  "items": [
+   {
+    "nama": "Freeze mocafrio",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 6000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 8000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "Freeze Choco orange",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 6000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 8000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "Freeze hazelnut",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 6000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 8000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "Freeze Cookies an cream",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 6000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 8000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "Cappucino",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 6000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 7000
+     }
+    ]
+   },
+   {
+    "nama": "Moccacino",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 4000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 7000
+     }
+    ]
+   },
+   {
+    "nama": "Chococino",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 4000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 7000
+     }
+    ]
+   },
+   {
+    "nama": "Original",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 4000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 7000
+     }
+    ]
+   },
+   {
+    "nama": "OCollin",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 4000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 7000
+     }
+    ]
+   },
+   {
+    "nama": "Latte original",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 4000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 7000
+     }
+    ]
+   },
+   {
+    "nama": "Latte buttershcot",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 4000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 7000
+     }
+    ]
+   },
+   {
+    "nama": "Carabian nut",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 4000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 7000
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "kategori": "MIX",
+  "items": [
+   {
+    "nama": "Beng Beng",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "ABC Klepon",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 6000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 8000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "Bonteh Matcha",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 6000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 8000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "Bonteh Teh Tarik",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 6000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 8000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "Poci sakura matcha",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 6000
+     },
+     {
+      "nama": "Large 18oz + Susu",
+      "harga": 8000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "ABC kopi",
+    "varian": [
+     {
+      "nama": "Small 10oz",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Kapal Api mix",
+    "varian": [
+     {
+      "nama": "Small 10oz",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Kapal Api Spesial",
+    "varian": [
+     {
+      "nama": "Small 10oz",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Liong",
+    "varian": [
+     {
+      "nama": "Small 10oz",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Luwak White Coffe Original",
+    "varian": [
+     {
+      "nama": "Small 10oz",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Luwak",
+    "varian": [
+     {
+      "nama": "Small 10oz",
+      "harga": 4000
+     }
+    ]
+   },
+   {
+    "nama": "Indocafe",
+    "varian": [
+     {
+      "nama": "Small 10oz",
+      "harga": 4000
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "kategori": "Chocolatos",
+  "items": [
+   {
+    "nama": "Chocolatos coklat",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "Chocolatos matcha",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "Chocolatos Vanila",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   },
+   {
+    "nama": "Chocolatos creamy coklat",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 7000
+     },
+     {
+      "nama": "Jumbo 22oz + Susu",
+      "harga": 9000
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "kategori": "Pop Ice",
+  "items": [
+   {
+    "nama": "Coklat",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Coklat Sultan",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Pop corn",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Coco & cookie",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Capucin",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Choco cream",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Vanilla latte",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Permen karet",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Taro",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Strawberry",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Alpukat",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Blueberry",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Mangga",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Coklat susu",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Vanilla blue",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Durian",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Lechy",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Anggur",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Melon",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Mocacinno",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   },
+   {
+    "nama": "Sultan matcha",
+    "varian": [
+     {
+      "nama": "Large 18oz",
+      "harga": 5000
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "kategori": "Jeruk Buah",
+  "items": [
+   {
+    "nama": "Jeruk Peras",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 8000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 10000
+     }
+    ]
+   },
+   {
+    "nama": "Lemon Peras",
+    "varian": [
+     {
+      "nama": "Medium 16oz",
+      "harga": 5000
+     },
+     {
+      "nama": "Large 18oz",
+      "harga": 8000
+     },
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 10000
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "kategori": "DURIAN",
+  "items": [
+   {
+    "nama": "Sop Durian",
+    "varian": [
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 20000
+     }
+    ]
+   },
+   {
+    "nama": "Durian Kocok",
+    "varian": [
+     {
+      "nama": "Jumbo 22oz",
+      "harga": 20000
+     }
+    ]
+   }
+  ]
+ }
+]

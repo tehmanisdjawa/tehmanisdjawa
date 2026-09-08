@@ -78,7 +78,7 @@
   .iconBtn{
     background:rgba(243,237,224,.07); border:1px solid rgba(243,237,224,.14); color:#f3ede0;
     border-radius:10px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer;
-    transition:background .15s;
+    transition:background .15s; position:relative;
   }
   .iconBtn:active{background:rgba(243,237,224,.16);}
   .iconBtn svg{width:17px;height:17px;}
@@ -126,9 +126,12 @@
     background:var(--pine-600); opacity:0; transition:opacity .15s;
   }
   .item.has-qty::before{opacity:1;}
+  .item.is-habis{opacity:.5; cursor:not-allowed;}
+  .item.is-habis:active{transform:none;}
   .item .name{font-size:13.5px; font-weight:650; line-height:1.32; color:var(--ink);}
   .item .price{font-size:12.5px; color:var(--pine-700); margin-top:auto; font-weight:650;}
   .item .varCount{font-size:10px; color:var(--muted); font-weight:600; letter-spacing:.2px;}
+  .item .habisTag{font-size:10px; color:var(--merah); font-weight:700; letter-spacing:.2px; text-transform:uppercase;}
   .item .qtyDot{
     position:absolute; top:9px; right:9px; min-width:21px; height:21px; padding:0 6px;
     background:var(--pine-800); color:#f3ede0; border-radius:999px; font-size:11px; font-weight:700;
@@ -157,8 +160,11 @@
     background:var(--card); border-radius:13px; margin-bottom:9px; cursor:pointer; transition:.13s; box-shadow:var(--shadow-card);
   }
   .varOption:active{transform:scale(.98);}
+  .varOption.habis{opacity:.5; cursor:not-allowed;}
+  .varOption.habis:active{transform:none;}
   .varOption .vn{font-size:14px; font-weight:650; color:var(--ink);}
   .varOption .vp{font-size:12.5px; color:var(--pine-700); margin-top:2px; font-weight:600;}
+  .varOption .vhabis{font-size:11px; color:var(--merah); font-weight:700; margin-top:2px;}
   .varOption .plusBtn{
     width:34px; height:34px; border-radius:10px; background:var(--pine-900); color:#f3ede0;
     display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:700; flex:0 0 auto;
@@ -187,6 +193,11 @@
   .cartRow .cstep .cval{width:26px; text-align:center; font-size:13px; font-weight:700;}
   .cartRow .cdel{background:none; border:none; color:var(--merah); font-size:16px; cursor:pointer; padding:5px;}
 
+  .catatanWrap{padding:14px 20px 0;}
+  .catatanWrap label{font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; display:block;}
+  .catatanWrap textarea{width:100%; padding:11px 13px; border-radius:12px; border:1px solid var(--line); background:var(--card); font-size:13px; color:var(--ink); font-family:inherit; resize:none; min-height:44px;}
+  .catatanWrap textarea:focus{outline:none; border-color:var(--pine-600);}
+
   .payWrap{padding:16px 20px 4px;}
   .payLabel{font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:9px;}
   .payTabs{display:flex; gap:7px;}
@@ -202,6 +213,8 @@
   .nameWrap label{font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; display:block;}
   .nameWrap input{width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); font-size:14px; color:var(--ink); font-family:inherit;}
   .nameWrap input:focus{outline:none; border-color:var(--pine-600);}
+  .nameWrap .chipRow{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
+  .nameWrap .chipRow button{padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:var(--card); font-size:11.5px; font-weight:600; color:var(--pine-700); cursor:pointer;}
 
   .totalBar{padding:18px 20px 4px; display:flex; align-items:baseline; justify-content:space-between; border-top:1px dashed var(--line); margin-top:14px;}
   .totalBar .tl{font-size:12.5px; color:var(--muted); font-weight:650; text-transform:uppercase; letter-spacing:.4px;}
@@ -266,6 +279,11 @@
     padding:14px; font-size:13.5px; font-weight:650; cursor:pointer; margin-bottom:16px; display:flex; align-items:center; justify-content:center; gap:7px;
   }
 
+  .adminTabs{display:flex; gap:7px; margin-bottom:16px; overflow-x:auto; scrollbar-width:none;}
+  .adminTabs::-webkit-scrollbar{display:none;}
+  .adminTabs button{flex:0 0 auto; padding:9px 15px; border-radius:11px; border:1px solid var(--line); background:var(--card); font-size:12.5px; font-weight:650; color:var(--muted); cursor:pointer; white-space:nowrap;}
+  .adminTabs button.active{background:var(--pine-900); border-color:var(--pine-900); color:#f3ede0;}
+
   .adminItem{background:var(--card); border:1px solid var(--line-soft); border-radius:13px; padding:13px 15px; margin-bottom:9px; box-shadow:var(--shadow-card);}
   .adminItem .aiTop{display:flex; align-items:center; justify-content:space-between; gap:8px;}
   .adminItem .ain{font-size:13.5px; font-weight:650; color:var(--ink);}
@@ -275,6 +293,8 @@
   .adminItem .aiBtns button svg{width:14px;height:14px;}
   .adminItem .aiBtns .editB{color:var(--pine-700);}
   .adminItem .aiBtns .delB{color:var(--merah); background:var(--merah-light); border-color:#e6c3b5;}
+  .adminItem .aiBtns .habisB{color:var(--gold-dark); background:var(--gold-light); border-color:#e6d3a5;}
+  .adminItem .aiBtns .habisB.active{color:#fff; background:var(--merah); border-color:var(--merah);}
 
   .formField{margin-bottom:14px;}
   .formField label{font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:6px;}
@@ -288,6 +308,31 @@
   .backLink{background:none; border:none; color:var(--pine-700); font-size:12.5px; font-weight:650; margin-bottom:14px; cursor:pointer; display:flex; align-items:center; gap:5px; padding:0;}
 
   .catLabelAdmin{font-family:"Fraunces",serif; font-size:14px; font-weight:600; color:var(--pine-900); margin:16px 2px 8px;}
+
+  /* ============ LAPORAN ============ */
+  .lapCardRow{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
+  .lapCard{background:var(--card); border:1px solid var(--line-soft); border-radius:14px; padding:14px; box-shadow:var(--shadow-card);}
+  .lapCard .lapLbl{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-weight:700; margin-bottom:6px;}
+  .lapCard .lapVal{font-family:"Fraunces",serif; font-size:19px; font-weight:600; color:var(--pine-950);}
+  .lapCard.wide{grid-column:1 / -1;}
+  .lapSection{margin-bottom:18px;}
+  .lapSection h4{font-family:"Fraunces",serif; font-size:14px; margin:0 0 9px; color:var(--pine-900); font-weight:600;}
+  .lapRow{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line-soft); font-size:12.5px;}
+  .lapRow .lrn{font-weight:650; color:var(--ink);}
+  .lapRow .lrq{color:var(--muted); font-size:11px;}
+  .lapRow .lrv{font-weight:650; color:var(--pine-700);}
+  .trxRow{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line-soft);}
+  .trxRow .trn{font-size:13px; font-weight:650; color:var(--ink);}
+  .trxRow .trm{font-size:11px; color:var(--muted); margin-top:2px;}
+  .trxRow .trv{font-size:12.5px; font-weight:650; color:var(--pine-700); margin-right:8px;}
+  .trxRow .voidB{background:var(--merah-light); border:none; color:var(--merah); width:30px; height:30px; border-radius:9px; cursor:pointer; flex:0 0 auto; display:flex; align-items:center; justify-content:center;}
+  .trxRow .voidB svg{width:14px;height:14px;}
+  .shareBtnRow{display:flex; gap:8px; margin-top:6px;}
+  .shareBtnRow button{flex:1; padding:13px; border-radius:12px; border:none; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px;}
+  .shareBtnRow .waB{background:#25D366; color:#fff;}
+  .shareBtnRow .dlB{background:var(--pine-950); color:#f3ede0;}
+  .shareBtnRow button svg{width:16px;height:16px;}
+  .lapLoading{padding:50px 20px; text-align:center; color:var(--muted); font-size:13.5px;}
 </style>
 </head>
 <body>
@@ -308,6 +353,9 @@
         <div class="clock" id="clock">--:--</div>
         <div class="dateSmall" id="dateSmall">-</div>
       </div>
+      <button class="iconBtn" id="laporanBtn" aria-label="Laporan Harian" title="Laporan Hari Ini">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+      </button>
       <button class="iconBtn" id="adminBtn" aria-label="Kelola Menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       </button>
@@ -347,6 +395,10 @@
   <div class="cartSheet">
     <div class="cartHead"><h2>Keranjang Pesanan</h2><button id="cartClose">✕</button></div>
     <div class="cartBody" id="cartBody"></div>
+    <div class="catatanWrap">
+      <label>Catatan (opsional)</label>
+      <textarea id="catatanOrder" rows="2" placeholder="Contoh: gula sedikit, dibungkus rapi, dsb."></textarea>
+    </div>
     <div class="payWrap">
       <div class="payLabel">Metode Bayar</div>
       <div class="payTabs" id="payTabs">
@@ -364,6 +416,7 @@
     <div class="nameWrap">
       <label>Nama Karyawan</label>
       <input id="karyawanName" type="text" placeholder="Contoh: Sinta">
+      <div class="chipRow" id="karyawanChips"></div>
     </div>
     <div class="totalBar"><span class="tl">Total Belanja</span><span class="tv" id="cartTotal">Rp0</span></div>
     <div class="cartFoot"><button class="checkoutBtn" id="checkoutBtn">Selesai & Kirim Pesanan</button></div>
@@ -377,8 +430,8 @@
     <div class="pwdIconTop">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
     </div>
-    <h3>Kelola Menu</h3>
-    <p>Masukkan password untuk menambah, mengedit, atau menghapus menu.</p>
+    <h3 id="pwdTitle">Kelola Menu</h3>
+    <p id="pwdDesc">Masukkan password untuk menambah, mengedit, atau menghapus menu.</p>
     <div style="position:relative;">
       <input id="pwdInput" type="password" placeholder="Password" autocomplete="off" style="padding-right:44px;">
       <button id="pwdEye" type="button" aria-label="Tampilkan password" style="position:absolute; right:4px; top:4px; width:34px; height:34px; border:none; background:none; color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center;">
@@ -400,6 +453,13 @@
   </div>
 </div>
 
+<div class="cartOverlay" id="lapOverlay">
+  <div class="adminSheet">
+    <div class="adminHead"><h2>Laporan Hari Ini</h2><button id="lapClose">✕</button></div>
+    <div class="adminBody" id="lapBody"><div class="lapLoading"><div class="spinner"></div>Memuat laporan...</div></div>
+  </div>
+</div>
+
 <script>
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZzIc_5_ljPvtEv-JGYXyLJfaAzpABgZHL_0T087VLJhVmSilqz4wUeqsPl1jZYBsj/exec";
 
@@ -408,11 +468,31 @@ let activeCat = "Semua";
 let cart = {};
 let payMethod = "Cash";
 let adminPassword = "";
+let pwdPurpose = "admin"; // "admin" atau "laporan"
+let lapDataTerakhir = null;
 
 const el = id => document.getElementById(id);
 const rupiah = n => "Rp" + Number(n).toLocaleString('id-ID');
 const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+/* ===================== NAMA KARYAWAN TERAKHIR (disimpan di browser ini) ===================== */
+function getKaryawanTerbaru(){
+  try{ return JSON.parse(localStorage.getItem('etd_karyawan')||'[]'); }catch(e){ return []; }
+}
+function simpanKaryawan(nama){
+  let list = getKaryawanTerbaru().filter(n=>n!==nama);
+  list.unshift(nama);
+  list = list.slice(0,5);
+  try{ localStorage.setItem('etd_karyawan', JSON.stringify(list)); }catch(e){}
+}
+function renderKaryawanChips(){
+  const list = getKaryawanTerbaru();
+  el('karyawanChips').innerHTML = list.map(n=>`<button type="button" data-n="${n}">${n}</button>`).join('');
+  el('karyawanChips').querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{ el('karyawanName').value = b.dataset.n; };
+  });
+}
 
 async function loadMenu(){
   try{
@@ -455,13 +535,14 @@ function renderMenu(){
     html += `<div class="catLabelRow"><div class="catLabel">${cat.kategori}</div><div class="catRule"></div></div><div class="grid">`;
     items.forEach(({it,ii})=>{
       const qty = itemCartQty(ci,ii);
+      const semuaHabis = it.varian.every(v=>v.habis);
       const priceLabel = it.varian.length>1
         ? `Rp${Math.min(...it.varian.map(v=>v.harga||0)).toLocaleString('id-ID')}+`
         : `Rp${(it.varian[0].harga||0).toLocaleString('id-ID')}`;
-      html += `<div class="item ${qty>0?'has-qty':''}" data-ci="${ci}" data-ii="${ii}">
+      html += `<div class="item ${qty>0?'has-qty':''} ${semuaHabis?'is-habis':''}" data-ci="${ci}" data-ii="${ii}">
         ${qty>0 ? `<div class="qtyDot">${qty}</div>` : ''}
         <div class="name">${it.nama}</div>
-        ${it.varian.length>1 ? `<div class="varCount">${it.varian.length} pilihan</div>` : ''}
+        ${semuaHabis ? `<div class="habisTag">Habis</div>` : (it.varian.length>1 ? `<div class="varCount">${it.varian.length} pilihan</div>` : '')}
         <div class="price">${priceLabel}</div>
       </div>`;
     });
@@ -481,6 +562,11 @@ function openVariantSheet(ci, ii){
   el('sheetBody').innerHTML = item.varian.map((v, vi)=>{
     const k = ci+"|"+ii+"|"+vi;
     const qty = cart[k]?.qty || 0;
+    if(v.habis){
+      return `<div class="varOption habis">
+        <div><div class="vn">${v.nama}</div><div class="vhabis">Sedang habis</div></div>
+      </div>`;
+    }
     if(qty > 0){
       return `<div class="varOption" style="cursor:default;">
         <div><div class="vn">${v.nama}</div><div class="vp">Rp${(v.harga||0).toLocaleString('id-ID')}</div></div>
@@ -526,7 +612,7 @@ function updateFab(){
 }
 
 el('fab').onclick = ()=> openCart();
-function openCart(){ renderCartBody(); el('cartOverlay').classList.add('show'); }
+function openCart(){ renderCartBody(); renderKaryawanChips(); el('cartOverlay').classList.add('show'); }
 
 function renderCartBody(){
   const keys = Object.keys(cart);
@@ -572,6 +658,7 @@ el('checkoutBtn').onclick = async ()=>{
   const btn = el('checkoutBtn'); btn.disabled = true; btn.textContent = "Mengirim...";
   const payload = {
     action: "checkout", karyawan: nama, metodeBayar: payMethod, waktu: new Date().toISOString(), total: cartTotalRp(),
+    catatan: el('catatanOrder').value.trim(),
     items: keys.map(k => ({ nama: cart[k].nama, varian: cart[k].varian, harga: cart[k].harga, qty: cart[k].qty, kategori: cart[k].kategori, subtotal: cart[k].qty*cart[k].harga }))
   };
   try{
@@ -579,8 +666,9 @@ el('checkoutBtn').onclick = async ()=>{
     else {
       await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify(payload) });
       showToast("Pesanan terkirim — " + rupiah(payload.total));
+      simpanKaryawan(nama);
     }
-    cart = {}; el('karyawanName').value = ''; payMethod = 'Cash';
+    cart = {}; el('catatanOrder').value = ''; payMethod = 'Cash';
     el('payTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x.dataset.pay==='Cash'));
     el('cartOverlay').classList.remove('show'); renderMenu(); updateFab();
   }catch(err){ showToast("Gagal mengirim. Cek koneksi internet.", false); }
@@ -594,8 +682,19 @@ function tickClock(){
 }
 tickClock(); setInterval(tickClock, 15000);
 
-/* ===================== KELOLA MENU ===================== */
-el('adminBtn').onclick = ()=>{ el('pwdInput').value=''; el('pwdInput').type='password'; el('pwdEyeIcon').innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'; el('pwdErr').style.display='none'; el('pwdOverlay').classList.add('show'); el('pwdInput').focus(); };
+/* ===================== PASSWORD (dipakai untuk Kelola Menu & Laporan) ===================== */
+function openPwd(purpose){
+  pwdPurpose = purpose;
+  el('pwdTitle').textContent = purpose === 'laporan' ? 'Laporan Hari Ini' : 'Kelola Menu';
+  el('pwdDesc').textContent = purpose === 'laporan'
+    ? 'Masukkan password untuk melihat & mengunduh laporan penjualan hari ini.'
+    : 'Masukkan password untuk menambah, mengedit, atau menghapus menu.';
+  el('pwdInput').value=''; el('pwdInput').type='password';
+  el('pwdEyeIcon').innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  el('pwdErr').style.display='none'; el('pwdOverlay').classList.add('show'); el('pwdInput').focus();
+}
+el('adminBtn').onclick = ()=> openPwd('admin');
+el('laporanBtn').onclick = ()=> openPwd('laporan');
 el('pwdCancel').onclick = ()=> el('pwdOverlay').classList.remove('show');
 el('pwdOverlay').addEventListener('keydown', e=>{ if(e.key==='Enter') el('pwdOk').click(); });
 
@@ -618,7 +717,8 @@ el('pwdOk').onclick = async ()=>{
     if(data.status === 'ok' && data.valid === true){
       adminPassword = pwd;
       el('pwdOverlay').classList.remove('show');
-      openAdminList();
+      if(pwdPurpose === 'laporan') openLaporan();
+      else openAdminList();
     } else {
       el('pwdErr').textContent = "Password salah, coba lagi.";
       el('pwdErr').style.display='block';
@@ -631,6 +731,7 @@ el('pwdOk').onclick = async ()=>{
   }
 };
 
+/* ===================== KELOLA MENU ===================== */
 function openAdminList(){ renderAdminList(); el('adminOverlay2').classList.add('show'); }
 el('adminClose').onclick = ()=> el('adminOverlay2').classList.remove('show');
 
@@ -642,11 +743,15 @@ function renderAdminList(){
   MENU.forEach((cat, ci)=>{
     html += `<div class="catLabelAdmin">${cat.kategori}</div>`;
     cat.items.forEach((item, ii)=>{
-      const varStr = item.varian.map(v=>`${v.nama}: ${rupiah(v.harga)}`).join(' · ');
+      const semuaHabis = item.varian.every(v=>v.habis);
+      const varStr = item.varian.map(v=>`${v.nama}: ${rupiah(v.harga)}${v.habis?' (Habis)':''}`).join(' · ');
       html += `<div class="adminItem" data-ci="${ci}" data-ii="${ii}">
         <div class="aiTop">
           <div class="ain">${item.nama}</div>
           <div class="aiBtns">
+            <button class="habisB ${semuaHabis?'active':''}" data-act="habis" title="Tandai habis/tersedia">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.7 3.86a2 2 0 00-3.4 0z"/></svg>
+            </button>
             <button class="editB" data-act="edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></button>
             <button class="delB" data-act="delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button>
           </div>
@@ -661,7 +766,23 @@ function renderAdminList(){
     const ci = +rowEl.dataset.ci, ii = +rowEl.dataset.ii;
     rowEl.querySelector('[data-act="edit"]').onclick = ()=> openAdminForm({ci, ii});
     rowEl.querySelector('[data-act="delete"]').onclick = ()=> confirmDelete(ci, ii);
+    rowEl.querySelector('[data-act="habis"]').onclick = ()=> toggleHabisItem(ci, ii);
   });
+}
+
+async function toggleHabisItem(ci, ii){
+  const cat = MENU[ci], item = cat.items[ii];
+  const habisSekarang = item.varian.every(v=>v.habis);
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({
+      action:"toggleHabis", password: adminPassword, kategori: cat.kategori, nama: item.nama, varianNama: null, habis: !habisSekarang
+    })});
+    const data = await res.json();
+    if(data.status !== 'ok'){ showToast(data.message || "Gagal mengubah status", false); return; }
+    MENU = data.menu;
+    showToast(habisSekarang ? "Menu ditandai tersedia lagi" : "Menu ditandai habis");
+    renderMenu(); renderAdminList();
+  }catch(e){ showToast("Gagal mengubah status. Cek koneksi.", false); }
 }
 
 function openAdminForm(target){
@@ -746,6 +867,152 @@ function confirmDelete(ci, ii){
       renderCatTabs(); renderMenu(); renderAdminList();
     }catch(e){ showToast("Gagal menghapus. Cek koneksi.", false); }
   })();
+}
+
+/* ===================== LAPORAN HARI INI ===================== */
+el('lapClose').onclick = ()=> el('lapOverlay').classList.remove('show');
+
+async function openLaporan(){
+  el('lapOverlay').classList.add('show');
+  el('lapBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat laporan...</div>';
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"getLaporanHarian", password: adminPassword }) });
+    const data = await res.json();
+    if(data.status !== 'ok'){ el('lapBody').innerHTML = `<div class="empty">${data.message || 'Gagal memuat laporan'}</div>`; return; }
+    lapDataTerakhir = data;
+    renderLaporan(data);
+  }catch(e){ el('lapBody').innerHTML = '<div class="empty">Gagal memuat laporan. Cek koneksi.</div>'; }
+}
+
+function tanggalIndo(tglStr){
+  const [y,m,d] = tglStr.split('-').map(Number);
+  return `${d} ${BULAN[m-1]} ${y}`;
+}
+
+function renderLaporan(data){
+  const r = data.ringkasan;
+  let html = `
+    <div class="lapCardRow">
+      <div class="lapCard wide"><div class="lapLbl">Total Penjualan · ${tanggalIndo(data.tanggal)}</div><div class="lapVal">${rupiah(r.total)}</div></div>
+      <div class="lapCard"><div class="lapLbl">Transaksi</div><div class="lapVal">${r.jumlahTrx}</div></div>
+      <div class="lapCard"><div class="lapLbl">Item Terjual</div><div class="lapVal">${r.jumlahItem}</div></div>
+      <div class="lapCard"><div class="lapLbl">Cash</div><div class="lapVal" style="font-size:15px;">${rupiah(r.cash)}</div></div>
+      <div class="lapCard"><div class="lapLbl">QRIS</div><div class="lapVal" style="font-size:15px;">${rupiah(r.qris)}</div></div>
+      <div class="lapCard wide"><div class="lapLbl">Transfer</div><div class="lapVal" style="font-size:15px;">${rupiah(r.transfer)}</div></div>
+    </div>
+    <div class="shareBtnRow">
+      <button class="waB" id="shareWaBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20z"/></svg>Bagikan ke WhatsApp</button>
+      <button class="dlB" id="downloadTxtBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>Unduh File</button>
+    </div>
+  `;
+
+  if(data.perKaryawan && data.perKaryawan.length){
+    html += `<div class="lapSection"><h4>Penjualan per Karyawan</h4>`;
+    data.perKaryawan.forEach(k=>{
+      html += `<div class="lapRow"><div class="lrn">${k.karyawan}</div><div class="lrv">${rupiah(k.total)}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  if(data.itemTerlaris && data.itemTerlaris.length){
+    html += `<div class="lapSection"><h4>Menu Terlaris</h4>`;
+    data.itemTerlaris.slice(0,10).forEach(it=>{
+      html += `<div class="lapRow"><div><div class="lrn">${it.nama}</div><div class="lrq">${it.qty} terjual</div></div><div class="lrv">${rupiah(it.subtotal)}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `<div class="lapSection"><h4>Riwayat Transaksi (${data.transaksi.length})</h4><div id="trxList"></div></div>`;
+
+  el('lapBody').innerHTML = html;
+
+  if(data.transaksi.length === 0){
+    el('trxList').innerHTML = '<div class="empty" style="padding:24px 0;">Belum ada transaksi hari ini.</div>';
+  } else {
+    el('trxList').innerHTML = data.transaksi.map(t=>`
+      <div class="trxRow" data-id="${t.trxId}">
+        <div><div class="trn">${t.karyawan} · ${t.metode}</div><div class="trm">${t.waktu} · ${t.jumlahItem} item</div></div>
+        <div style="display:flex; align-items:center;">
+          <div class="trv">${rupiah(t.total)}</div>
+          <button class="voidB" title="Batalkan transaksi ini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button>
+        </div>
+      </div>`).join('');
+    el('trxList').querySelectorAll('.trxRow').forEach(row=>{
+      row.querySelector('.voidB').onclick = ()=> voidTransaksi(row.dataset.id);
+    });
+  }
+
+  el('shareWaBtn').onclick = ()=> bagikanLaporanWA(data);
+  el('downloadTxtBtn').onclick = ()=> unduhLaporan(data);
+}
+
+async function voidTransaksi(trxId){
+  if(!confirm("Batalkan transaksi ini? Data akan dihapus dari laporan.")) return;
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"voidTransaksi", password: adminPassword, trxId }) });
+    const data = await res.json();
+    if(data.status !== 'ok'){ showToast(data.message || "Gagal membatalkan transaksi", false); return; }
+    showToast("Transaksi dibatalkan");
+    openLaporan();
+  }catch(e){ showToast("Gagal membatalkan. Cek koneksi.", false); }
+}
+
+function susunTeksLaporan(data){
+  const r = data.ringkasan;
+  let t = `*LAPORAN PENJUALAN — ES TEH DJAWA*\n`;
+  t += `Tanggal: ${tanggalIndo(data.tanggal)}\n`;
+  t += `------------------------------\n`;
+  t += `Total Penjualan: ${rupiah(r.total)}\n`;
+  t += `Jumlah Transaksi: ${r.jumlahTrx}\n`;
+  t += `Item Terjual: ${r.jumlahItem}\n\n`;
+  t += `*Metode Bayar*\n`;
+  t += `Cash: ${rupiah(r.cash)}\n`;
+  t += `QRIS: ${rupiah(r.qris)}\n`;
+  t += `Transfer: ${rupiah(r.transfer)}\n\n`;
+  if(data.perKaryawan && data.perKaryawan.length){
+    t += `*Per Karyawan*\n`;
+    data.perKaryawan.forEach(k=>{ t += `${k.karyawan}: ${rupiah(k.total)}\n`; });
+    t += `\n`;
+  }
+  if(data.itemTerlaris && data.itemTerlaris.length){
+    t += `*Menu Terlaris*\n`;
+    data.itemTerlaris.slice(0,10).forEach((it,idx)=>{ t += `${idx+1}. ${it.nama} — ${it.qty}x (${rupiah(it.subtotal)})\n`; });
+    t += `\n`;
+  }
+  t += `------------------------------\n`;
+  t += `Dibuat otomatis dari Kasir Es Teh Djawa`;
+  return t;
+}
+
+async function bagikanLaporanWA(data){
+  const teks = susunTeksLaporan(data);
+  const fileName = `Laporan-EsTehDjawa-${data.tanggal}.txt`;
+  const blob = new Blob([teks], { type: 'text/plain' });
+  const file = new File([blob], fileName, { type: 'text/plain' });
+
+  // Coba pakai Web Share API (bisa langsung kirim FILE ke WhatsApp di HP)
+  if(navigator.canShare && navigator.canShare({ files: [file] })){
+    try{
+      await navigator.share({ files: [file], title: 'Laporan Penjualan', text: teks });
+      return;
+    }catch(e){ /* user membatalkan / gagal, lanjut ke fallback */ }
+  }
+  // Fallback: buka WhatsApp dengan teks laporan langsung (tanpa file terlampir)
+  const url = "https://wa.me/?text=" + encodeURIComponent(teks);
+  window.open(url, '_blank');
+  showToast("Perangkat ini tidak mendukung kirim file langsung — teks laporan dibuka di WhatsApp");
+}
+
+function unduhLaporan(data){
+  const teks = susunTeksLaporan(data);
+  const fileName = `Laporan-EsTehDjawa-${data.tanggal}.txt`;
+  const blob = new Blob([teks], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("Laporan diunduh: " + fileName);
 }
 
 loadMenu();

@@ -315,7 +315,29 @@
   html[data-theme="dark"] .pwdBox input,
   html[data-theme="dark"] .formField input,
   html[data-theme="dark"] .varRow input,
-  html[data-theme="dark"] .lapDateBar input[type="date"]{
+  html[data-theme="dark"] .lapDateBar input[type="date"],
+  html[data-theme="dark"] .leafBadge svg,
+  html[data-theme="dark"] .brandLeft h1,
+  html[data-theme="dark"] .brandLeft .sub,
+  html[data-theme="dark"] .clock,
+  html[data-theme="dark"] .dateSmall,
+  html[data-theme="dark"] .iconBtn,
+  html[data-theme="dark"] .iconBtn svg,
+  html[data-theme="dark"] .searchWrap input::placeholder,
+  html[data-theme="dark"] .motivToast .motivText,
+  html[data-theme="dark"] .motivToast .motivLabel,
+  html[data-theme="dark"] .motivToast .motivClose,
+  html[data-theme="dark"] .toast,
+  html[data-theme="dark"] .toast span,
+  html[data-theme="dark"] .toast svg,
+  html[data-theme="dark"] .fab,
+  html[data-theme="dark"] .fab .fabTotal,
+  html[data-theme="dark"] .fab .badge,
+  html[data-theme="dark"] .shareBtnRow button,
+  html[data-theme="dark"] .shareBtnRow .waB,
+  html[data-theme="dark"] .shareBtnRow .dlB,
+  html[data-theme="dark"] .empty,
+  html[data-theme="dark"] .loadingBox{
     color:#ffffff !important;
   }
   /* Tombol yang backgroundnya terang/emas/hijau muda tetap pakai teks gelap supaya kebaca */
@@ -509,8 +531,8 @@
   .trxRow .trn{font-size:13px; font-weight:650; color:var(--ink);}
   .trxRow .trm{font-size:11px; color:var(--muted); margin-top:2px;}
   .trxRow .trv{font-size:12.5px; font-weight:650; color:var(--pine-700); margin-right:8px;}
-  .trxRow .voidB{background:var(--merah-light); border:none; color:var(--merah); width:30px; height:30px; border-radius:9px; cursor:pointer; flex:0 0 auto; display:flex; align-items:center; justify-content:center;}
-  .trxRow .voidB svg{width:14px;height:14px;}
+  /* VOID BUTTON TIDAK DITAMPILKAN — riwayat transaksi tidak bisa dihapus dari laporan */
+  .trxRow .voidB{display:none !important;}
   .shareBtnRow{display:flex; gap:8px; margin-top:6px;}
   .shareBtnRow button{flex:1; padding:13px; border-radius:12px; border:none; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px;}
   .shareBtnRow .waB{background:#25D366; color:#fff;}
@@ -740,10 +762,10 @@ let activeCat = "Semua";
 let cart = {};
 let payMethod = "Cash";
 let adminPassword = "";
-let pwdPurpose = "admin"; // "admin" atau "laporan"
+let pwdPurpose = "admin";
 let lapDataTerakhir = null;
-let KARYAWAN_LIST = []; // daftar nama karyawan dari sheet "Nama karyawan"
-let MOTIVASI_POOL = []; // daftar semua kalimat motivasi (diambil sekali, diacak lokal)
+let KARYAWAN_LIST = [];
+let MOTIVASI_POOL = [];
 let motivIdx = 0;
 let motivTimer = null;
 let motivHideTimer = null;
@@ -776,12 +798,8 @@ el('themeBtn').onclick = ()=>{
 initTema();
 
 /* ===================== KALKULATOR (parser manual, anti-error) ===================== */
-// Dipakai token-token terpisah (bukan string mentah) supaya tiap tombol yang ditekan
-// selalu menghasilkan ekspresi yang "masuk akal" — operator ganda, titik dobel, kurung
-// tak seimbang, dsb dicegah SEBELUM masuk ke daftar token, bukan ditangkap belakangan
-// lewat eval yang gampang meledak.
-let calcTokens = []; // array token string, misal: ["12",".","5","+","(","3","*","2",")"]
-let calcLastResult = null; // hasil terakhir (untuk lanjut hitung setelah "=")
+let calcTokens = [];
+let calcLastResult = null;
 
 function calcTokenType(tok){
   if(tok === '(' || tok === ')') return 'paren';
@@ -790,7 +808,6 @@ function calcTokenType(tok){
   return 'digit';
 }
 
-// Ambil "angka" (kelompok digit+titik) paling akhir dalam token, untuk validasi titik ganda dsb.
 function calcAngkaTerakhirValid(){
   for(let i = calcTokens.length - 1; i >= 0; i--){
     const t = calcTokenType(calcTokens[i]);
@@ -804,8 +821,6 @@ function calcInput(k){
   const last = calcTokens[calcTokens.length - 1];
   const lastType = last ? calcTokenType(last) : null;
 
-  if(k === 'digit-group') return; // tidak dipakai, placeholder aman
-
   if(/^[0-9]$/.test(k)){
     calcTokens.push(k);
     return;
@@ -813,7 +828,7 @@ function calcInput(k){
 
   if(k === '.'){
     const angkaTerakhir = calcAngkaTerakhirValid();
-    if(angkaTerakhir.includes('.')) return; // sudah ada titik di angka ini, abaikan
+    if(angkaTerakhir.includes('.')) return;
     if(!angkaTerakhir || lastType === 'op' || lastType === 'paren' && last === '(' ){
       calcTokens.push('0'); calcTokens.push('.'); return;
     }
@@ -823,15 +838,15 @@ function calcInput(k){
 
   if(['+','-','*','/'].includes(k)){
     if(calcTokens.length === 0){
-      if(k === '-') calcTokens.push(k); // boleh mulai dengan minus (bilangan negatif)
+      if(k === '-') calcTokens.push(k);
       return;
     }
     if(lastType === 'op'){
-      calcTokens[calcTokens.length - 1] = k; // ganti operator terakhir, bukan menumpuk
+      calcTokens[calcTokens.length - 1] = k;
       return;
     }
     if(last === '('){
-      if(k === '-') calcTokens.push(k); // "(-" boleh
+      if(k === '-') calcTokens.push(k);
       return;
     }
     calcTokens.push(k);
@@ -839,7 +854,7 @@ function calcInput(k){
   }
 
   if(k === '('){
-    if(lastType === 'digit' || last === ')') return; // angka langsung diikuti "(" tak didukung, abaikan
+    if(lastType === 'digit' || last === ')') return;
     calcTokens.push(k);
     return;
   }
@@ -847,8 +862,8 @@ function calcInput(k){
   if(k === ')'){
     const bukaCount = calcTokens.filter(t=>t==='(').length;
     const tutupCount = calcTokens.filter(t=>t===')').length;
-    if(bukaCount <= tutupCount) return; // tak ada kurung buka yang bisa ditutup
-    if(!last || lastType === 'op' || last === '(') return; // ")" butuh angka sebelumnya
+    if(bukaCount <= tutupCount) return;
+    if(!last || lastType === 'op' || last === '(') return;
     calcTokens.push(k);
     return;
   }
@@ -858,7 +873,6 @@ function calcHapusSatu(){
   calcTokens.pop();
 }
 
-// Parser recursive-descent sederhana: expr -> term (+/- term)*, term -> factor (*// factor)*
 function calcEvaluasi(tokens){
   let pos = 0;
   function peek(){ return tokens[pos]; }
@@ -933,14 +947,10 @@ function renderCalcTampilan(){
     el('calcResult').textContent = calcLastResult !== null ? calcFormatAngka(calcLastResult) : "0";
     return;
   }
-  // Tampilkan hasil "live" hanya kalau ekspresi sejauh ini valid untuk dihitung;
-  // kalau belum lengkap (mis. baru saja ketik operator), biarkan hasil sebelumnya tetap tampil.
   try{
     const hasil = calcEvaluasi(calcTokens);
     el('calcResult').textContent = calcFormatAngka(hasil);
-  }catch(e){
-    // tidak apa-apa — ekspresi memang belum lengkap, jangan tampilkan "Error" ke pengguna
-  }
+  }catch(e){}
 }
 
 el('calcBtn').onclick = ()=>{
@@ -954,7 +964,6 @@ el('calcGrid').querySelectorAll('button').forEach(b=>{
   b.onclick = ()=>{
     const k = b.dataset.k;
     if(k === 'C'){
-      // Sekali tekan: hapus 1 karakter terakhir. Kalau sudah kosong, baru reset total.
       if(calcTokens.length > 0) calcHapusSatu();
       else calcLastResult = null;
       renderCalcTampilan();
@@ -968,9 +977,7 @@ el('calcGrid').querySelectorAll('button').forEach(b=>{
         calcTokens = [];
         el('calcExpr').textContent = '\u00a0';
         el('calcResult').textContent = calcFormatAngka(hasil);
-      }catch(e){
-        // ekspresi belum lengkap/valid — abaikan saja, jangan tampilkan Error
-      }
+      }catch(e){}
       return;
     }
     calcInput(k);
@@ -979,8 +986,6 @@ el('calcGrid').querySelectorAll('button').forEach(b=>{
 });
 
 /* ===================== NAMA KARYAWAN ===================== */
-// Sumber utama: sheet "Nama karyawan" (lewat backend). Kalau daftar itu kosong,
-// baru boleh ketik manual (pakai daftar tersimpan di browser sebagai bantuan/chip).
 function getKaryawanTerbaru(){
   try{ return JSON.parse(localStorage.getItem('etd_karyawan')||'[]'); }catch(e){ return []; }
 }
@@ -1000,8 +1005,6 @@ async function loadKaryawanList(){
   renderKaryawanField();
 }
 
-// Render field nama karyawan: dropdown wajib pilih kalau daftar sheet ada isinya,
-// atau input teks bebas (dibantu chip riwayat lokal) kalau daftar masih kosong.
 function renderKaryawanField(){
   const area = el('karyawanFieldArea');
   const currentVal = getKaryawanValue();
@@ -1578,30 +1581,23 @@ function renderLaporan(data){
         <div><div class="trn">${t.karyawan} · ${t.metode}</div><div class="trm">${t.waktu} · ${t.jumlahItem} item</div></div>
         <div style="display:flex; align-items:center;">
           <div class="trv">${rupiah(t.total)}</div>
-          <button class="voidB" title="Batalkan transaksi ini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button>
+          <!-- Tombol void sengaja tidak ditampilkan (display:none) -->
+          <button class="voidB" title="Batalkan transaksi ini" style="display:none !important;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button>
         </div>
       </div>`).join('');
-    el('trxList').querySelectorAll('.trxRow').forEach(row=>{
-      row.querySelector('.voidB').onclick = ()=> voidTransaksi(row.dataset.id);
-    });
+    // voidB sudah tidak ada yang perlu di-event karena disembunyikan
   }
 
   el('shareWaBtn').onclick = ()=> bagikanLaporanWA(data);
   el('downloadTxtBtn').onclick = ()=> unduhLaporan(data);
 }
 
+// FUNGSI VOID TETAP ADA DI BACKEND, tapi tombolnya sudah tidak muncul di UI.
+// Jika suatu saat ingin diaktifkan kembali, cukup ubah display:inline-flex di CSS .trxRow .voidB.
 async function voidTransaksi(trxId){
-  if(!confirm("Batalkan transaksi ini? Data akan dihapus dari laporan.")) return;
-  const pwd = prompt("Masukkan password untuk membatalkan transaksi:");
-  if(pwd === null) return;
-  if(!pwd){ showToast("Password wajib diisi", false); return; }
-  try{
-    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"voidTransaksi", password: pwd, trxId }) });
-    const data = await res.json();
-    if(data.status !== 'ok'){ showToast(data.message || "Gagal membatalkan transaksi", false); return; }
-    showToast("Transaksi dibatalkan");
-    muatLaporanTanggal(lapTanggalAktif);
-  }catch(e){ showToast("Gagal membatalkan. Cek koneksi.", false); }
+  // Fungsi ini tetap ada untuk kompatibilitas, tapi tidak dipanggil dari mana pun.
+  // Tidak ada tombol yang memicu ini.
+  console.warn('voidTransaksi dipanggil tetapi tombol void sudah disembunyikan.');
 }
 
 function susunTeksLaporan(data){
@@ -1636,20 +1632,11 @@ function susunTeksLaporan(data){
   return t;
 }
 
-async function bagikanLaporanWA(data){
+/* ===================== PERBAIKAN WHATSAPP SHARE ===================== */
+// Menggunakan URL WhatsApp langsung dengan teks, tanpa Web Share API yang bermasalah
+// sehingga data muncul dengan benar (tidak 0 semua).
+function bagikanLaporanWA(data){
   const teks = susunTeksLaporan(data);
-  const fileName = `Laporan-EsTehManisDjawa-${data.tanggal}.txt`;
-  const blob = new Blob([teks], { type: 'text/plain' });
-  const file = new File([blob], fileName, { type: 'text/plain' });
-
-  // Coba pakai Web Share API (bisa langsung kirim FILE ke WhatsApp di HP)
-  if(navigator.canShare && navigator.canShare({ files: [file] })){
-    try{
-      await navigator.share({ files: [file], title: 'Laporan Penjualan', text: teks });
-      return;
-    }catch(e){ /* user membatalkan / gagal, lanjut ke fallback tanpa notifikasi */ }
-  }
-  // Fallback diam-diam: buka WhatsApp dengan teks laporan langsung (tanpa file terlampir), tanpa pop-up
   const url = "https://wa.me/?text=" + encodeURIComponent(teks);
   window.open(url, '_blank');
 }
@@ -1668,7 +1655,7 @@ function unduhLaporan(data){
 
 /* ===================== AUTO-REFRESH REALTIME (tiap 5 detik) ===================== */
 setInterval(()=>{
-  loadMenu(true); // diam-diam, tanpa mengganggu tampilan kalau tak ada perubahan
+  loadMenu(true);
   if(el('lapOverlay').classList.contains('show')){
     muatLaporanTanggal(lapTanggalAktif, true);
   }

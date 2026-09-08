@@ -41,6 +41,39 @@
     --shadow-card:0 1px 2px rgba(15,29,22,.04), 0 6px 20px rgba(15,29,22,.06);
     --shadow-float:0 10px 30px rgba(12,31,22,.28);
   }
+
+  html[data-theme="dark"]{
+    --ink:#eee7d6;
+    --paper:#0e1712;
+    --card:#152019;
+
+    --pine-950:#080f0b;
+    --pine-900:#0e1a13;
+    --pine-800:#16281c;
+    --pine-700:#1e3626;
+    --pine-600:#2a4a34;
+    --pine-500:#3a6b47;
+    --pine-100:#20301f;
+    --pine-50:#182420;
+
+    --gold:#d9a94f;
+    --gold-dark:#c8973f;
+    --gold-light:#2c2415;
+
+    --merah:#c05f45;
+    --merah-light:#2c1c17;
+    --biru:#5a86a2;
+    --biru-light:#1a262d;
+
+    --line:#26332a;
+    --line-soft:#1d2822;
+    --muted:#9a927e;
+    --muted-soft:#6e6656;
+
+    --shadow-card:0 1px 2px rgba(0,0,0,.24), 0 6px 20px rgba(0,0,0,.28);
+    --shadow-float:0 10px 30px rgba(0,0,0,.5);
+  }
+
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
@@ -48,6 +81,7 @@
     font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
     -webkit-font-smoothing:antialiased;
     padding-bottom:96px; overscroll-behavior-y:none;
+    transition:background .2s, color .2s;
   }
   ::selection{background:var(--pine-100);}
 
@@ -285,7 +319,7 @@
   .pwdIconTop svg{width:22px;height:22px; color:var(--gold);}
   .pwdBox h3{font-family:"Fraunces",serif; font-size:18px; margin:0 0 4px; font-weight:600; color:var(--pine-950);}
   .pwdBox p{font-size:12.5px; color:var(--muted); margin:0 0 18px; line-height:1.5;}
-  .pwdBox input{width:100%; padding:13px 15px; border-radius:12px; border:1.5px solid var(--line); font-size:15px; margin-bottom:12px; letter-spacing:3px; font-family:inherit;}
+  .pwdBox input{width:100%; padding:13px 15px; border-radius:12px; border:1.5px solid var(--line); font-size:15px; margin-bottom:12px; letter-spacing:3px; font-family:inherit; background:var(--card); color:var(--ink);}
   .pwdBox input:focus{outline:none; border-color:var(--pine-600);}
   .pwdBox .err{color:var(--merah); font-size:12px; margin:-6px 0 12px; display:none; font-weight:600;}
   .pwdBox .btnRow{display:flex; gap:9px;}
@@ -322,7 +356,7 @@
 
   .formField{margin-bottom:14px;}
   .formField label{font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:6px;}
-  .formField input{width:100%; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit;}
+  .formField input{width:100%; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);}
   .formField input:focus{outline:none; border-color:var(--pine-600);}
   .varRow{display:flex; gap:8px; margin-bottom:8px; align-items:center;}
   .varRow input{flex:1;}
@@ -366,6 +400,33 @@
   .lapDateBar input[type="date"]{flex:1; padding:10px 12px; border-radius:11px; border:1.4px solid var(--line); background:var(--card); font-size:13px; color:var(--ink); font-family:inherit;}
   .lapDateBar input[type="date"]:focus{outline:none; border-color:var(--pine-600);}
   .lapDateBar button{flex:0 0 auto; padding:10px 14px; border-radius:11px; border:1.4px solid var(--pine-700); background:var(--pine-50); color:var(--pine-800); font-size:12.5px; font-weight:650; cursor:pointer;}
+
+  /* ============ KALKULATOR ============ */
+  .calcSheet{background:var(--paper); width:100%; max-width:360px; border-radius:22px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; animation:slideUp .22s cubic-bezier(.2,.8,.3,1); box-shadow:var(--shadow-float); margin:auto;}
+  .calcOverlay{align-items:center;}
+  .calcHead{padding:16px 20px 13px; border-bottom:1px solid var(--line-soft); display:flex; align-items:center; justify-content:space-between;}
+  .calcHead h2{font-family:"Fraunces",serif; font-size:17px; margin:0; font-weight:600; color:var(--pine-950);}
+  .calcHead button{background:var(--line-soft); border:none; width:30px; height:30px; border-radius:9px; font-size:16px; color:var(--muted); cursor:pointer;}
+  .calcBody{padding:18px 20px 22px;}
+  .calcDisplay{
+    background:var(--pine-950); border-radius:14px; padding:20px 16px; margin-bottom:14px; text-align:right;
+    min-height:78px; display:flex; flex-direction:column; justify-content:flex-end; gap:4px;
+  }
+  .calcExpr{color:rgba(243,237,224,.55); font-size:12.5px; min-height:16px; word-break:break-all;}
+  .calcResult{color:#f3ede0; font-family:"Fraunces",serif; font-size:28px; font-weight:600; word-break:break-all;}
+  .calcGrid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .calcGrid button{
+    padding:16px 0; border-radius:12px; border:1px solid var(--line-soft); background:var(--card); color:var(--ink);
+    font-size:16px; font-weight:650; cursor:pointer; font-family:inherit; box-shadow:var(--shadow-card);
+  }
+  .calcGrid button:active{transform:scale(.95);}
+  .calcGrid button.op{background:var(--pine-100); color:var(--pine-800);}
+  .calcGrid button.eq{background:var(--pine-950); color:#f3ede0; grid-row:span 1;}
+  .calcGrid button.clr{background:var(--merah-light); color:var(--merah);}
+  .calcGrid button.zero{grid-column:span 2;}
+
+  /* ============ DARK MODE TOGGLE ============ */
+  .themeToggle svg{transition:opacity .15s;}
 </style>
 </head>
 <body>
@@ -385,6 +446,12 @@
         <div class="clock" id="clock">--:--</div>
         <div class="dateSmall" id="dateSmall">-</div>
       </div>
+      <button class="iconBtn themeToggle" id="themeBtn" aria-label="Ganti tema" title="Mode Gelap/Terang">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <button class="iconBtn" id="calcBtn" aria-label="Kalkulator" title="Kalkulator">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
+      </button>
       <button class="iconBtn" id="laporanBtn" aria-label="Laporan Harian" title="Laporan Hari Ini">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
       </button>
@@ -511,6 +578,39 @@
   </div>
 </div>
 
+<div class="cartOverlay calcOverlay" id="calcOverlay">
+  <div class="calcSheet">
+    <div class="calcHead"><h2>Kalkulator</h2><button id="calcClose">✕</button></div>
+    <div class="calcBody">
+      <div class="calcDisplay">
+        <div class="calcExpr" id="calcExpr">&nbsp;</div>
+        <div class="calcResult" id="calcResult">0</div>
+      </div>
+      <div class="calcGrid" id="calcGrid">
+        <button class="clr" data-k="C" title="Hapus satu — tekan lagi saat kosong untuk reset">⌫</button>
+        <button class="op" data-k="(">(</button>
+        <button class="op" data-k=")">)</button>
+        <button class="op" data-k="/">÷</button>
+        <button data-k="7">7</button>
+        <button data-k="8">8</button>
+        <button data-k="9">9</button>
+        <button class="op" data-k="*">×</button>
+        <button data-k="4">4</button>
+        <button data-k="5">5</button>
+        <button data-k="6">6</button>
+        <button class="op" data-k="-">−</button>
+        <button data-k="1">1</button>
+        <button data-k="2">2</button>
+        <button data-k="3">3</button>
+        <button class="op" data-k="+">+</button>
+        <button class="zero" data-k="0">0</button>
+        <button data-k=".">,</button>
+        <button class="eq" data-k="=">=</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZzIc_5_ljPvtEv-JGYXyLJfaAzpABgZHL_0T087VLJhVmSilqz4wUeqsPl1jZYBsj/exec";
 
@@ -531,6 +631,231 @@ const el = id => document.getElementById(id);
 const rupiah = n => "Rp" + Number(n).toLocaleString('id-ID');
 const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+/* ===================== DARK MODE ===================== */
+function terapkanTema(tema){
+  document.documentElement.setAttribute('data-theme', tema);
+  const icon = el('themeIcon');
+  if(tema === 'dark'){
+    icon.innerHTML = '<path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/>';
+  } else {
+    icon.innerHTML = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+  }
+  try{ localStorage.setItem('etd_tema', tema); }catch(e){}
+}
+function initTema(){
+  let tema = 'light';
+  try{ tema = localStorage.getItem('etd_tema') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }catch(e){}
+  terapkanTema(tema);
+}
+el('themeBtn').onclick = ()=>{
+  const skrg = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  terapkanTema(skrg === 'dark' ? 'light' : 'dark');
+};
+initTema();
+
+/* ===================== KALKULATOR (parser manual, anti-error) ===================== */
+// Dipakai token-token terpisah (bukan string mentah) supaya tiap tombol yang ditekan
+// selalu menghasilkan ekspresi yang "masuk akal" — operator ganda, titik dobel, kurung
+// tak seimbang, dsb dicegah SEBELUM masuk ke daftar token, bukan ditangkap belakangan
+// lewat eval yang gampang meledak.
+let calcTokens = []; // array token string, misal: ["12",".","5","+","(","3","*","2",")"]
+let calcLastResult = null; // hasil terakhir (untuk lanjut hitung setelah "=")
+
+function calcTokenType(tok){
+  if(tok === '(' || tok === ')') return 'paren';
+  if(['+','-','*','/'].includes(tok)) return 'op';
+  if(tok === '.') return 'dot';
+  return 'digit';
+}
+
+// Ambil "angka" (kelompok digit+titik) paling akhir dalam token, untuk validasi titik ganda dsb.
+function calcAngkaTerakhirValid(){
+  for(let i = calcTokens.length - 1; i >= 0; i--){
+    const t = calcTokenType(calcTokens[i]);
+    if(t === 'digit' || t === 'dot') continue;
+    return calcTokens.slice(i+1).join('');
+  }
+  return calcTokens.join('');
+}
+
+function calcInput(k){
+  const last = calcTokens[calcTokens.length - 1];
+  const lastType = last ? calcTokenType(last) : null;
+
+  if(k === 'digit-group') return; // tidak dipakai, placeholder aman
+
+  if(/^[0-9]$/.test(k)){
+    calcTokens.push(k);
+    return;
+  }
+
+  if(k === '.'){
+    const angkaTerakhir = calcAngkaTerakhirValid();
+    if(angkaTerakhir.includes('.')) return; // sudah ada titik di angka ini, abaikan
+    if(!angkaTerakhir || lastType === 'op' || lastType === 'paren' && last === '(' ){
+      calcTokens.push('0'); calcTokens.push('.'); return;
+    }
+    calcTokens.push('.');
+    return;
+  }
+
+  if(['+','-','*','/'].includes(k)){
+    if(calcTokens.length === 0){
+      if(k === '-') calcTokens.push(k); // boleh mulai dengan minus (bilangan negatif)
+      return;
+    }
+    if(lastType === 'op'){
+      calcTokens[calcTokens.length - 1] = k; // ganti operator terakhir, bukan menumpuk
+      return;
+    }
+    if(last === '('){
+      if(k === '-') calcTokens.push(k); // "(-" boleh
+      return;
+    }
+    calcTokens.push(k);
+    return;
+  }
+
+  if(k === '('){
+    if(lastType === 'digit' || last === ')') return; // angka langsung diikuti "(" tak didukung, abaikan
+    calcTokens.push(k);
+    return;
+  }
+
+  if(k === ')'){
+    const bukaCount = calcTokens.filter(t=>t==='(').length;
+    const tutupCount = calcTokens.filter(t=>t===')').length;
+    if(bukaCount <= tutupCount) return; // tak ada kurung buka yang bisa ditutup
+    if(!last || lastType === 'op' || last === '(') return; // ")" butuh angka sebelumnya
+    calcTokens.push(k);
+    return;
+  }
+}
+
+function calcHapusSatu(){
+  calcTokens.pop();
+}
+
+// Parser recursive-descent sederhana: expr -> term (+/- term)*, term -> factor (*// factor)*
+function calcEvaluasi(tokens){
+  let pos = 0;
+  function peek(){ return tokens[pos]; }
+  function next(){ return tokens[pos++]; }
+
+  function parseNumber(){
+    let str = '';
+    if(peek() === '-'){ str += next(); }
+    while(pos < tokens.length && calcTokenType(peek()) !== 'op' && peek() !== '(' && peek() !== ')'){
+      str += next();
+    }
+    if(str === '' || str === '-') throw new Error('angka tidak lengkap');
+    const n = parseFloat(str);
+    if(isNaN(n)) throw new Error('angka tidak valid');
+    return n;
+  }
+
+  function parseFactor(){
+    if(peek() === '('){
+      next();
+      const val = parseExpr();
+      if(peek() !== ')') throw new Error('kurung tidak seimbang');
+      next();
+      return val;
+    }
+    if(peek() === '-'){
+      next();
+      return -parseFactor();
+    }
+    return parseNumber();
+  }
+
+  function parseTerm(){
+    let val = parseFactor();
+    while(peek() === '*' || peek() === '/'){
+      const op = next();
+      const rhs = parseFactor();
+      if(op === '*') val *= rhs;
+      else {
+        if(rhs === 0) throw new Error('bagi nol');
+        val /= rhs;
+      }
+    }
+    return val;
+  }
+
+  function parseExpr(){
+    let val = parseTerm();
+    while(peek() === '+' || peek() === '-'){
+      const op = next();
+      const rhs = parseTerm();
+      val = (op === '+') ? val + rhs : val - rhs;
+    }
+    return val;
+  }
+
+  const hasil = parseExpr();
+  if(pos !== tokens.length) throw new Error('ekspresi tidak lengkap');
+  if(!isFinite(hasil)) throw new Error('hasil tidak valid');
+  return hasil;
+}
+
+function calcFormatAngka(n){
+  return Number(n.toFixed(8)).toLocaleString('id-ID', {maximumFractionDigits:8});
+}
+
+function calcFormatToken(tok){ return tok === '.' ? ',' : tok; }
+
+function renderCalcTampilan(){
+  el('calcExpr').textContent = calcTokens.length ? calcTokens.map(calcFormatToken).join('') : '\u00a0';
+  if(calcTokens.length === 0){
+    el('calcResult').textContent = calcLastResult !== null ? calcFormatAngka(calcLastResult) : "0";
+    return;
+  }
+  // Tampilkan hasil "live" hanya kalau ekspresi sejauh ini valid untuk dihitung;
+  // kalau belum lengkap (mis. baru saja ketik operator), biarkan hasil sebelumnya tetap tampil.
+  try{
+    const hasil = calcEvaluasi(calcTokens);
+    el('calcResult').textContent = calcFormatAngka(hasil);
+  }catch(e){
+    // tidak apa-apa — ekspresi memang belum lengkap, jangan tampilkan "Error" ke pengguna
+  }
+}
+
+el('calcBtn').onclick = ()=>{
+  calcTokens = []; calcLastResult = null; renderCalcTampilan();
+  el('calcOverlay').classList.add('show');
+};
+el('calcClose').onclick = ()=> el('calcOverlay').classList.remove('show');
+el('calcOverlay').onclick = (e)=>{ if(e.target.id==='calcOverlay') el('calcOverlay').classList.remove('show'); };
+
+el('calcGrid').querySelectorAll('button').forEach(b=>{
+  b.onclick = ()=>{
+    const k = b.dataset.k;
+    if(k === 'C'){
+      // Sekali tekan: hapus 1 karakter terakhir. Kalau sudah kosong, baru reset total.
+      if(calcTokens.length > 0) calcHapusSatu();
+      else calcLastResult = null;
+      renderCalcTampilan();
+      return;
+    }
+    if(k === '='){
+      if(calcTokens.length === 0) return;
+      try{
+        const hasil = calcEvaluasi(calcTokens);
+        calcLastResult = hasil;
+        calcTokens = [];
+        el('calcExpr').textContent = '\u00a0';
+        el('calcResult').textContent = calcFormatAngka(hasil);
+      }catch(e){
+        // ekspresi belum lengkap/valid — abaikan saja, jangan tampilkan Error
+      }
+      return;
+    }
+    calcInput(k);
+    renderCalcTampilan();
+  };
+});
 
 /* ===================== NAMA KARYAWAN ===================== */
 // Sumber utama: sheet "Nama karyawan" (lewat backend). Kalau daftar itu kosong,
@@ -558,17 +883,18 @@ async function loadKaryawanList(){
 // atau input teks bebas (dibantu chip riwayat lokal) kalau daftar masih kosong.
 function renderKaryawanField(){
   const area = el('karyawanFieldArea');
+  const currentVal = getKaryawanValue();
   if(KARYAWAN_LIST.length > 0){
     area.innerHTML = `
       <select id="karyawanName">
-        <option value="" disabled selected>Pilih nama karyawan...</option>
-        ${KARYAWAN_LIST.map(n=>`<option value="${n}">${n}</option>`).join('')}
+        <option value="" disabled ${currentVal?'':'selected'}>Pilih nama karyawan...</option>
+        ${KARYAWAN_LIST.map(n=>`<option value="${n}" ${n===currentVal?'selected':''}>${n}</option>`).join('')}
       </select>
       <div class="modeHint">Nama diambil dari daftar karyawan di spreadsheet.</div>
     `;
   } else {
     area.innerHTML = `
-      <input id="karyawanName" type="text" placeholder="Contoh: Sinta">
+      <input id="karyawanName" type="text" placeholder="Contoh: Sinta" value="${currentVal||''}">
       <div class="chipRow" id="karyawanChips"></div>
       <div class="modeHint">Belum ada daftar nama karyawan di spreadsheet — boleh ketik manual dulu.</div>
     `;
@@ -591,8 +917,6 @@ function getKaryawanValue(){
 
 /* ===================== MOTIVASI NOTIFIKASI ===================== */
 async function loadMotivasiPool(){
-  // Backend hanya mengirim 1 kalimat random per panggilan, jadi kita panggil beberapa kali
-  // di awal untuk mengisi pool lokal, lalu bergilir setiap 10 menit tanpa spam ke server.
   try{
     const calls = [];
     for(let i=0;i<6;i++){ calls.push(fetch(APPS_SCRIPT_URL + "?action=getMotivasi").then(r=>r.json())); }
@@ -618,9 +942,8 @@ function tampilkanMotivasiBerikutnya(){
     tampilkanNotifikasiMotivasi("Terima kasih atas kerja kerasmu hari ini. Selamat beristirahat! 🙏");
     return;
   }
-  if(MOTIVASI_POOL.length === 0) return; // belum ada data motivasi di sheet, jangan munculkan notifikasi
+  if(MOTIVASI_POOL.length === 0) return;
   if(motivIdx >= MOTIVASI_POOL.length){
-    // sudah semua tampil, acak ulang urutan dan mulai dari awal lagi
     MOTIVASI_POOL.sort(()=> Math.random()-0.5);
     motivIdx = 0;
   }
@@ -629,12 +952,11 @@ function tampilkanMotivasiBerikutnya(){
 }
 
 function mulaiSiklusMotivasi(){
-  // acak urutan awal
   MOTIVASI_POOL.sort(()=> Math.random()-0.5);
   motivIdx = 0;
   tampilkanMotivasiBerikutnya();
   if(motivTimer) clearInterval(motivTimer);
-  motivTimer = setInterval(tampilkanMotivasiBerikutnya, 10*60*1000); // setiap 10 menit
+  motivTimer = setInterval(tampilkanMotivasiBerikutnya, 10*60*1000);
 }
 
 el('motivClose').onclick = ()=>{
@@ -643,18 +965,25 @@ el('motivClose').onclick = ()=>{
 };
 
 /* ===================== MENU ===================== */
-async function loadMenu(){
+let sedangMuatMenu = false;
+async function loadMenu(diam){
+  if(sedangMuatMenu) return;
+  sedangMuatMenu = true;
   try{
     const res = await fetch(APPS_SCRIPT_URL + "?action=getMenu");
     const data = await res.json();
     if(data.status !== 'ok') throw new Error(data.message);
-    MENU = data.menu;
+    const menuBaru = JSON.stringify(data.menu);
+    if(menuBaru !== JSON.stringify(MENU)){
+      MENU = data.menu;
+      renderCatTabs();
+      renderMenu();
+    }
   }catch(e){
-    el('menuArea').innerHTML = '<div class="empty">Gagal memuat menu. Pastikan APPS_SCRIPT_URL sudah diisi dan backend aktif.</div>';
-    return;
+    if(!diam) el('menuArea').innerHTML = '<div class="empty">Gagal memuat menu. Pastikan APPS_SCRIPT_URL sudah diisi dan backend aktif.</div>';
+  }finally{
+    sedangMuatMenu = false;
   }
-  renderCatTabs();
-  renderMenu();
 }
 
 function renderCatTabs(){
@@ -815,7 +1144,7 @@ el('checkoutBtn').onclick = async ()=>{
     else {
       await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify(payload) });
       showToast("Pesanan terkirim — " + rupiah(payload.total));
-      if(KARYAWAN_LIST.length === 0) simpanKaryawan(nama); // hanya perlu chip riwayat kalau masih mode ketik manual
+      if(KARYAWAN_LIST.length === 0) simpanKaryawan(nama);
     }
     cart = {}; el('catatanOrder').value = ''; payMethod = 'Cash';
     el('payTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x.dataset.pay==='Cash'));
@@ -1033,16 +1362,19 @@ function openLaporan(){
   muatLaporanTanggal(lapTanggalAktif);
 }
 
-async function muatLaporanTanggal(tanggal){
+async function muatLaporanTanggal(tanggal, diam){
   lapTanggalAktif = tanggal;
-  el('lapBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat laporan...</div>';
+  if(!diam) el('lapBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat laporan...</div>';
   try{
     const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"getLaporanHarian", tanggal: tanggal }) });
     const data = await res.json();
-    if(data.status !== 'ok'){ el('lapBody').innerHTML = `<div class="empty">${data.message || 'Gagal memuat laporan'}</div>`; return; }
-    lapDataTerakhir = data;
-    renderLaporan(data);
-  }catch(e){ el('lapBody').innerHTML = '<div class="empty">Gagal memuat laporan. Cek koneksi.</div>'; }
+    if(data.status !== 'ok'){ if(!diam) el('lapBody').innerHTML = `<div class="empty">${data.message || 'Gagal memuat laporan'}</div>`; return; }
+    const dataBaru = JSON.stringify(data);
+    if(!diam || dataBaru !== JSON.stringify(lapDataTerakhir)){
+      lapDataTerakhir = data;
+      renderLaporan(data);
+    }
+  }catch(e){ if(!diam) el('lapBody').innerHTML = '<div class="empty">Gagal memuat laporan. Cek koneksi.</div>'; }
 }
 
 el('lapTanggalInput').addEventListener('change', ()=>{
@@ -1140,7 +1472,7 @@ function renderLaporan(data){
 async function voidTransaksi(trxId){
   if(!confirm("Batalkan transaksi ini? Data akan dihapus dari laporan.")) return;
   const pwd = prompt("Masukkan password untuk membatalkan transaksi:");
-  if(pwd === null) return; // dibatalkan
+  if(pwd === null) return;
   if(!pwd){ showToast("Password wajib diisi", false); return; }
   try{
     const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"voidTransaksi", password: pwd, trxId }) });
@@ -1194,12 +1526,11 @@ async function bagikanLaporanWA(data){
     try{
       await navigator.share({ files: [file], title: 'Laporan Penjualan', text: teks });
       return;
-    }catch(e){ /* user membatalkan / gagal, lanjut ke fallback */ }
+    }catch(e){ /* user membatalkan / gagal, lanjut ke fallback tanpa notifikasi */ }
   }
-  // Fallback: buka WhatsApp dengan teks laporan langsung (tanpa file terlampir)
+  // Fallback diam-diam: buka WhatsApp dengan teks laporan langsung (tanpa file terlampir), tanpa pop-up
   const url = "https://wa.me/?text=" + encodeURIComponent(teks);
   window.open(url, '_blank');
-  showToast("Perangkat ini tidak mendukung kirim file langsung — teks laporan dibuka di WhatsApp");
 }
 
 function unduhLaporan(data){
@@ -1213,6 +1544,14 @@ function unduhLaporan(data){
   URL.revokeObjectURL(url);
   showToast("Laporan diunduh: " + fileName);
 }
+
+/* ===================== AUTO-REFRESH REALTIME (tiap 5 detik) ===================== */
+setInterval(()=>{
+  loadMenu(true); // diam-diam, tanpa mengganggu tampilan kalau tak ada perubahan
+  if(el('lapOverlay').classList.contains('show')){
+    muatLaporanTanggal(lapTanggalAktif, true);
+  }
+}, 5000);
 
 loadMenu();
 loadKaryawanList();

@@ -257,6 +257,76 @@
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a927e' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
   }
   .nameWrap select option{background:var(--card); color:var(--ink);}
+
+  /* ============ DARK MODE: PAKSA SEMUA TEKS PUTIH TERANG ============ */
+  /* Aturan tegas: apa pun elemennya (judul shift Pagi/Siang/Sore/Malam, label,
+     harga, nilai, dsb) — kalau dark mode aktif, teksnya putih terang, KECUALI
+     elemen yang backgroundnya sengaja terang/emas (supaya tidak putih-di-atas-putih). */
+  html[data-theme="dark"] body,
+  html[data-theme="dark"] .item .name,
+  html[data-theme="dark"] .item .price,
+  html[data-theme="dark"] .item .varCount,
+  html[data-theme="dark"] .catLabel,
+  html[data-theme="dark"] .catLabelAdmin,
+  html[data-theme="dark"] .sheetHead .ttl,
+  html[data-theme="dark"] .sheetHead .cat,
+  html[data-theme="dark"] .varOption .vn,
+  html[data-theme="dark"] .varOption .vp,
+  html[data-theme="dark"] .cartHead h2,
+  html[data-theme="dark"] .cartRow .cn,
+  html[data-theme="dark"] .cartRow .cv,
+  html[data-theme="dark"] .cartRow .cp,
+  html[data-theme="dark"] .cartRow .cstep .cval,
+  html[data-theme="dark"] .catatanWrap label,
+  html[data-theme="dark"] .payLabel,
+  html[data-theme="dark"] .payTabs button,
+  html[data-theme="dark"] .nameWrap label,
+  html[data-theme="dark"] .nameWrap .modeHint,
+  html[data-theme="dark"] .totalBar .tl,
+  html[data-theme="dark"] .totalBar .tv,
+  html[data-theme="dark"] .pwdBox h3,
+  html[data-theme="dark"] .pwdBox p,
+  html[data-theme="dark"] .adminHead h2,
+  html[data-theme="dark"] .adminTabs button,
+  html[data-theme="dark"] .adminItem .ain,
+  html[data-theme="dark"] .adminItem .aiv,
+  html[data-theme="dark"] .formField label,
+  html[data-theme="dark"] .backLink,
+  html[data-theme="dark"] .lapCard .lapLbl,
+  html[data-theme="dark"] .lapCard .lapVal,
+  html[data-theme="dark"] .lapSection h4,
+  html[data-theme="dark"] .lapRow .lrn,
+  html[data-theme="dark"] .lapRow .lrq,
+  html[data-theme="dark"] .lapRow .lrv,
+  html[data-theme="dark"] .shiftCard,
+  html[data-theme="dark"] .shiftCard .scLbl,
+  html[data-theme="dark"] .shiftCard .scVal,
+  html[data-theme="dark"] .shiftCard .scSub,
+  html[data-theme="dark"] .trxRow .trn,
+  html[data-theme="dark"] .trxRow .trm,
+  html[data-theme="dark"] .trxRow .trv,
+  html[data-theme="dark"] .calcExpr,
+  html[data-theme="dark"] .calcResult,
+  html[data-theme="dark"] .calcGrid button,
+  html[data-theme="dark"] .searchWrap input,
+  html[data-theme="dark"] .catatanWrap textarea,
+  html[data-theme="dark"] .nameWrap input,
+  html[data-theme="dark"] .nameWrap select,
+  html[data-theme="dark"] .pwdBox input,
+  html[data-theme="dark"] .formField input,
+  html[data-theme="dark"] .varRow input,
+  html[data-theme="dark"] .lapDateBar input[type="date"]{
+    color:#ffffff !important;
+  }
+  /* Tombol yang backgroundnya terang/emas/hijau muda tetap pakai teks gelap supaya kebaca */
+  html[data-theme="dark"] .catTabs button.active,
+  html[data-theme="dark"] .adminItem .aiBtns .editB,
+  html[data-theme="dark"] .adminItem .aiBtns .habisB,
+  html[data-theme="dark"] .habisTag,
+  html[data-theme="dark"] .nameWrap .chipRow button,
+  html[data-theme="dark"] .fab .badge{
+    color:var(--pine-950) !important;
+  }
   .nameWrap .chipRow{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
   .nameWrap .chipRow button{padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:var(--card); font-size:11.5px; font-weight:600; color:var(--pine-700); cursor:pointer;}
   .nameWrap .modeHint{font-size:10.5px; color:var(--muted-soft); margin-top:6px;}

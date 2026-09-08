@@ -213,8 +213,13 @@
   .nameWrap label{font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; display:block;}
   .nameWrap input{width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); font-size:14px; color:var(--ink); font-family:inherit;}
   .nameWrap input:focus{outline:none; border-color:var(--pine-600);}
+  .nameWrap select{width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); font-size:14px; color:var(--ink); font-family:inherit; appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23786f5c' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 13px center; background-size:16px;}
+  .nameWrap select:focus{outline:none; border-color:var(--pine-600);}
   .nameWrap .chipRow{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
   .nameWrap .chipRow button{padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:var(--card); font-size:11.5px; font-weight:600; color:var(--pine-700); cursor:pointer;}
+  .nameWrap .modeHint{font-size:10.5px; color:var(--muted-soft); margin-top:6px;}
 
   .totalBar{padding:18px 20px 4px; display:flex; align-items:baseline; justify-content:space-between; border-top:1px dashed var(--line); margin-top:14px;}
   .totalBar .tl{font-size:12.5px; color:var(--muted); font-weight:650; text-transform:uppercase; letter-spacing:.4px;}
@@ -252,6 +257,23 @@
   .toast.show{transform:translateX(-50%) translateY(0);}
   .toast svg{width:16px;height:16px;flex:0 0 auto; color:var(--gold);}
   .toast.err svg{color:#e2897a;}
+
+  /* ============ MOTIVASI POP-UP ============ */
+  .motivOverlay{position:fixed; inset:0; background:rgba(12,20,15,.45); backdrop-filter:blur(2px); z-index:70; display:none; align-items:center; justify-content:center; padding:22px;}
+  .motivOverlay.show{display:flex;}
+  .motivBox{
+    background:linear-gradient(165deg, var(--pine-900), var(--pine-950)); color:#f3ede0; border-radius:20px; padding:26px 22px 22px;
+    width:100%; max-width:340px; text-align:center; box-shadow:var(--shadow-float); border:1px solid rgba(243,237,224,.12);
+    animation:popIn .25s cubic-bezier(.2,.8,.3,1); position:relative;
+  }
+  @keyframes popIn{from{transform:scale(.92); opacity:0;} to{transform:scale(1); opacity:1;}}
+  .motivBox .motivIcon{width:44px; height:44px; border-radius:13px; background:rgba(200,151,63,.16); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;}
+  .motivBox .motivIcon svg{width:22px;height:22px; color:var(--gold);}
+  .motivBox .motivText{font-family:"Fraunces",serif; font-size:16px; line-height:1.5; font-weight:500;}
+  .motivBox .motivClose{
+    margin-top:18px; background:rgba(243,237,224,.1); border:1px solid rgba(243,237,224,.18); color:#f3ede0;
+    padding:9px 22px; border-radius:11px; font-size:12.5px; font-weight:650; cursor:pointer;
+  }
 
   /* ============ ADMIN / PASSWORD ============ */
   .adminOverlay{position:fixed; inset:0; background:rgba(12,20,15,.55); backdrop-filter:blur(3px); z-index:60; display:none; align-items:center; justify-content:center; padding:20px;}
@@ -321,6 +343,11 @@
   .lapRow .lrn{font-weight:650; color:var(--ink);}
   .lapRow .lrq{color:var(--muted); font-size:11px;}
   .lapRow .lrv{font-weight:650; color:var(--pine-700);}
+  .shiftGrid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .shiftCard{background:var(--card); border:1px solid var(--line-soft); border-radius:13px; padding:12px 13px; box-shadow:var(--shadow-card);}
+  .shiftCard .scLbl{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-weight:700; margin-bottom:5px; display:flex; align-items:center; gap:5px;}
+  .shiftCard .scVal{font-family:"Fraunces",serif; font-size:16px; font-weight:600; color:var(--pine-950);}
+  .shiftCard .scSub{font-size:10.5px; color:var(--muted-soft); margin-top:3px;}
   .trxRow{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line-soft);}
   .trxRow .trn{font-size:13px; font-weight:650; color:var(--ink);}
   .trxRow .trm{font-size:11px; color:var(--muted); margin-top:2px;}
@@ -415,8 +442,10 @@
     </div>
     <div class="nameWrap">
       <label>Nama Karyawan</label>
-      <input id="karyawanName" type="text" placeholder="Contoh: Sinta">
-      <div class="chipRow" id="karyawanChips"></div>
+      <div id="karyawanFieldArea">
+        <input id="karyawanName" type="text" placeholder="Contoh: Sinta">
+        <div class="chipRow" id="karyawanChips"></div>
+      </div>
     </div>
     <div class="totalBar"><span class="tl">Total Belanja</span><span class="tv" id="cartTotal">Rp0</span></div>
     <div class="cartFoot"><button class="checkoutBtn" id="checkoutBtn">Selesai & Kirim Pesanan</button></div>
@@ -424,6 +453,16 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="motivOverlay" id="motivOverlay">
+  <div class="motivBox">
+    <div class="motivIcon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.3L21 9.3l-4.5 4.4L17.6 20 12 16.9 6.4 20l1.1-6.3L3 9.3l6.1-1z"/></svg>
+    </div>
+    <div class="motivText" id="motivText">Semangat!</div>
+    <button class="motivClose" id="motivClose">Tutup</button>
+  </div>
+</div>
 
 <div class="adminOverlay" id="pwdOverlay">
   <div class="pwdBox">
@@ -470,13 +509,19 @@ let payMethod = "Cash";
 let adminPassword = "";
 let pwdPurpose = "admin"; // "admin" atau "laporan"
 let lapDataTerakhir = null;
+let KARYAWAN_LIST = []; // daftar nama karyawan dari sheet "Nama karyawan"
+let MOTIVASI_POOL = []; // daftar semua kalimat motivasi (diambil sekali, diacak lokal)
+let motivIdx = 0;
+let motivTimer = null;
 
 const el = id => document.getElementById(id);
 const rupiah = n => "Rp" + Number(n).toLocaleString('id-ID');
 const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
-/* ===================== NAMA KARYAWAN TERAKHIR (disimpan di browser ini) ===================== */
+/* ===================== NAMA KARYAWAN ===================== */
+// Sumber utama: sheet "Nama karyawan" (lewat backend). Kalau daftar itu kosong,
+// baru boleh ketik manual (pakai daftar tersimpan di browser sebagai bantuan/chip).
 function getKaryawanTerbaru(){
   try{ return JSON.parse(localStorage.getItem('etd_karyawan')||'[]'); }catch(e){ return []; }
 }
@@ -486,14 +531,97 @@ function simpanKaryawan(nama){
   list = list.slice(0,5);
   try{ localStorage.setItem('etd_karyawan', JSON.stringify(list)); }catch(e){}
 }
+
+async function loadKaryawanList(){
+  try{
+    const res = await fetch(APPS_SCRIPT_URL + "?action=getKaryawanList");
+    const data = await res.json();
+    if(data.status === 'ok' && Array.isArray(data.karyawan)) KARYAWAN_LIST = data.karyawan;
+  }catch(e){ KARYAWAN_LIST = []; }
+  renderKaryawanField();
+}
+
+// Render field nama karyawan: dropdown wajib pilih kalau daftar sheet ada isinya,
+// atau input teks bebas (dibantu chip riwayat lokal) kalau daftar masih kosong.
+function renderKaryawanField(){
+  const area = el('karyawanFieldArea');
+  if(KARYAWAN_LIST.length > 0){
+    area.innerHTML = `
+      <select id="karyawanName">
+        <option value="" disabled selected>Pilih nama karyawan...</option>
+        ${KARYAWAN_LIST.map(n=>`<option value="${n}">${n}</option>`).join('')}
+      </select>
+      <div class="modeHint">Nama diambil dari daftar karyawan di spreadsheet.</div>
+    `;
+  } else {
+    area.innerHTML = `
+      <input id="karyawanName" type="text" placeholder="Contoh: Sinta">
+      <div class="chipRow" id="karyawanChips"></div>
+      <div class="modeHint">Belum ada daftar nama karyawan di spreadsheet — boleh ketik manual dulu.</div>
+    `;
+    renderKaryawanChips();
+  }
+}
 function renderKaryawanChips(){
+  const chipEl = el('karyawanChips');
+  if(!chipEl) return;
   const list = getKaryawanTerbaru();
-  el('karyawanChips').innerHTML = list.map(n=>`<button type="button" data-n="${n}">${n}</button>`).join('');
-  el('karyawanChips').querySelectorAll('button').forEach(b=>{
+  chipEl.innerHTML = list.map(n=>`<button type="button" data-n="${n}">${n}</button>`).join('');
+  chipEl.querySelectorAll('button').forEach(b=>{
     b.onclick = ()=>{ el('karyawanName').value = b.dataset.n; };
   });
 }
+function getKaryawanValue(){
+  const f = el('karyawanName');
+  return f ? f.value.trim() : '';
+}
 
+/* ===================== MOTIVASI POP-UP ===================== */
+async function loadMotivasiPool(){
+  // Backend hanya mengirim 1 kalimat random per panggilan, jadi kita panggil beberapa kali
+  // di awal untuk mengisi pool lokal, lalu bergilir setiap 3 menit tanpa spam ke server.
+  try{
+    const calls = [];
+    for(let i=0;i<6;i++){ calls.push(fetch(APPS_SCRIPT_URL + "?action=getMotivasi").then(r=>r.json())); }
+    const results = await Promise.all(calls);
+    const set = new Set();
+    results.forEach(r=>{ if(r.status==='ok' && r.motivasi) set.add(r.motivasi); });
+    MOTIVASI_POOL = Array.from(set);
+  }catch(e){ MOTIVASI_POOL = []; }
+}
+
+function jamSekarang(){ return new Date().getHours(); }
+
+function tampilkanMotivasiBerikutnya(){
+  if(jamSekarang() >= 21){
+    el('motivText').textContent = "Terima kasih atas kerja kerasmu hari ini. Selamat beristirahat! 🙏";
+    el('motivOverlay').classList.add('show');
+    return;
+  }
+  if(MOTIVASI_POOL.length === 0) return; // belum ada data motivasi di sheet, jangan munculkan popup
+  if(motivIdx >= MOTIVASI_POOL.length){
+    // sudah semua tampil, acak ulang urutan dan mulai dari awal lagi
+    MOTIVASI_POOL.sort(()=> Math.random()-0.5);
+    motivIdx = 0;
+  }
+  el('motivText').textContent = MOTIVASI_POOL[motivIdx];
+  motivIdx++;
+  el('motivOverlay').classList.add('show');
+}
+
+function mulaiSiklusMotivasi(){
+  // acak urutan awal
+  MOTIVASI_POOL.sort(()=> Math.random()-0.5);
+  motivIdx = 0;
+  tampilkanMotivasiBerikutnya();
+  if(motivTimer) clearInterval(motivTimer);
+  motivTimer = setInterval(tampilkanMotivasiBerikutnya, 3*60*1000); // setiap 3 menit
+}
+
+el('motivClose').onclick = ()=> el('motivOverlay').classList.remove('show');
+el('motivOverlay').onclick = (e)=>{ if(e.target.id==='motivOverlay') el('motivOverlay').classList.remove('show'); };
+
+/* ===================== MENU ===================== */
 async function loadMenu(){
   try{
     const res = await fetch(APPS_SCRIPT_URL + "?action=getMenu");
@@ -612,7 +740,7 @@ function updateFab(){
 }
 
 el('fab').onclick = ()=> openCart();
-function openCart(){ renderCartBody(); renderKaryawanChips(); el('cartOverlay').classList.add('show'); }
+function openCart(){ renderCartBody(); renderKaryawanField(); el('cartOverlay').classList.add('show'); }
 
 function renderCartBody(){
   const keys = Object.keys(cart);
@@ -651,8 +779,8 @@ function showToast(msg, ok=true){
 }
 
 el('checkoutBtn').onclick = async ()=>{
-  const nama = el('karyawanName').value.trim();
-  if(!nama){ showToast("Isi nama karyawan dulu ya", false); return; }
+  const nama = getKaryawanValue();
+  if(!nama){ showToast("Pilih/isi nama karyawan dulu ya", false); return; }
   const keys = Object.keys(cart);
   if(keys.length===0) return;
   const btn = el('checkoutBtn'); btn.disabled = true; btn.textContent = "Mengirim...";
@@ -666,7 +794,7 @@ el('checkoutBtn').onclick = async ()=>{
     else {
       await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify(payload) });
       showToast("Pesanan terkirim — " + rupiah(payload.total));
-      simpanKaryawan(nama);
+      if(KARYAWAN_LIST.length === 0) simpanKaryawan(nama); // hanya perlu chip riwayat kalau masih mode ketik manual
     }
     cart = {}; el('catatanOrder').value = ''; payMethod = 'Cash';
     el('payTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x.dataset.pay==='Cash'));
@@ -889,6 +1017,14 @@ function tanggalIndo(tglStr){
   return `${d} ${BULAN[m-1]} ${y}`;
 }
 
+const SHIFT_ICON = {
+  "Pagi": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  "Siang": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>',
+  "Sore": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 18a5 5 0 00-10 0"/><path d="M12 2v7M4.2 10.2l1.4 1.4M19.8 10.2l-1.4 1.4M1 18h22M3 22h18"/></svg>',
+  "Malam": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>',
+  "Luar Jam Operasional": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'
+};
+
 function renderLaporan(data){
   const r = data.ringkasan;
   let html = `
@@ -905,6 +1041,18 @@ function renderLaporan(data){
       <button class="dlB" id="downloadTxtBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>Unduh File</button>
     </div>
   `;
+
+  if(data.perShift && data.perShift.length){
+    html += `<div class="lapSection"><h4>Penjualan per Shift (09.00–21.00)</h4><div class="shiftGrid">`;
+    data.perShift.forEach(s=>{
+      html += `<div class="shiftCard">
+        <div class="scLbl">${SHIFT_ICON[s.shift]||''} ${s.shift}</div>
+        <div class="scVal">${rupiah(s.total)}</div>
+        <div class="scSub">${s.jumlahTrx} transaksi · ${s.jumlahItem} item</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
 
   if(data.perKaryawan && data.perKaryawan.length){
     html += `<div class="lapSection"><h4>Penjualan per Karyawan</h4>`;
@@ -969,6 +1117,11 @@ function susunTeksLaporan(data){
   t += `Cash: ${rupiah(r.cash)}\n`;
   t += `QRIS: ${rupiah(r.qris)}\n`;
   t += `Transfer: ${rupiah(r.transfer)}\n\n`;
+  if(data.perShift && data.perShift.length){
+    t += `*Per Shift*\n`;
+    data.perShift.forEach(s=>{ t += `${s.shift}: ${rupiah(s.total)} (${s.jumlahTrx} trx)\n`; });
+    t += `\n`;
+  }
   if(data.perKaryawan && data.perKaryawan.length){
     t += `*Per Karyawan*\n`;
     data.perKaryawan.forEach(k=>{ t += `${k.karyawan}: ${rupiah(k.total)}\n`; });
@@ -1016,6 +1169,8 @@ function unduhLaporan(data){
 }
 
 loadMenu();
+loadKaryawanList();
+loadMotivasiPool().then(mulaiSiklusMotivasi);
 </script>
 </body>
 </html>

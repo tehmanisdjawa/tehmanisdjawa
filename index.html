@@ -830,7 +830,7 @@ function openPwd(purpose){
   el('pwdErr').style.display='none'; el('pwdOverlay').classList.add('show'); el('pwdInput').focus();
 }
 el('adminBtn').onclick = ()=> openPwd('admin');
-el('laporanBtn').onclick = ()=> openLaporan(); // LANGSUNG BUKA LAPORAN TANPA PASSWORD
+el('laporanBtn').onclick = ()=> openPwd('laporan');
 el('pwdCancel').onclick = ()=> el('pwdOverlay').classList.remove('show');
 el('pwdOverlay').addEventListener('keydown', e=>{ if(e.key==='Enter') el('pwdOk').click(); });
 
@@ -1027,7 +1027,7 @@ async function muatLaporanTanggal(tanggal){
   lapTanggalAktif = tanggal;
   el('lapBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat laporan...</div>';
   try{
-    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"getLaporanHarian", password: "", tanggal: tanggal }) });
+    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"getLaporanHarian", password: adminPassword, tanggal: tanggal }) });
     const data = await res.json();
     if(data.status !== 'ok'){ el('lapBody').innerHTML = `<div class="empty">${data.message || 'Gagal memuat laporan'}</div>`; return; }
     lapDataTerakhir = data;
@@ -1130,7 +1130,7 @@ function renderLaporan(data){
 async function voidTransaksi(trxId){
   if(!confirm("Batalkan transaksi ini? Data akan dihapus dari laporan.")) return;
   try{
-    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"voidTransaksi", password: "", trxId }) });
+    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"voidTransaksi", password: adminPassword, trxId }) });
     const data = await res.json();
     if(data.status !== 'ok'){ showToast(data.message || "Gagal membatalkan transaksi", false); return; }
     showToast("Transaksi dibatalkan");

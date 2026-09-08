@@ -259,9 +259,6 @@
   .nameWrap select option{background:var(--card); color:var(--ink);}
 
   /* ============ DARK MODE: PAKSA SEMUA TEKS PUTIH TERANG ============ */
-  /* Aturan tegas: apa pun elemennya (judul shift Pagi/Siang/Sore/Malam, label,
-     harga, nilai, dsb) — kalau dark mode aktif, teksnya putih terang, KECUALI
-     elemen yang backgroundnya sengaja terang/emas (supaya tidak putih-di-atas-putih). */
   html[data-theme="dark"] body,
   html[data-theme="dark"] .item .name,
   html[data-theme="dark"] .item .price,
@@ -337,7 +334,9 @@
   html[data-theme="dark"] .shareBtnRow .waB,
   html[data-theme="dark"] .shareBtnRow .dlB,
   html[data-theme="dark"] .empty,
-  html[data-theme="dark"] .loadingBox{
+  html[data-theme="dark"] .loadingBox,
+  html[data-theme="dark"] .lapDateBar button,
+  html[data-theme="dark"] #lapTanggalHariIniBtn {
     color:#ffffff !important;
   }
   /* Tombol yang backgroundnya terang/emas/hijau muda tetap pakai teks gelap supaya kebaca */
@@ -348,8 +347,6 @@
   html[data-theme="dark"] .fab .badge{
     color:var(--pine-950) !important;
   }
-  /* Tombol/kotak yang di light mode pakai teks hijau-tua di atas background hijau-muda:
-     di dark mode background itu ikut jadi gelap, jadi teksnya perlu dipaksa terang, BUKAN gelap. */
   html[data-theme="dark"] .addBtn,
   html[data-theme="dark"] .adminItem .aiBtns .editB{
     color:#ffffff !important;
@@ -369,9 +366,6 @@
     background:var(--gold-light);
     border-color:var(--gold);
   }
-  /* KELOLA MENU (#adminOverlay2): paksa SEMUA teks di dalam sheet ini jadi putih,
-     termasuk yang mungkin belum kena selector di atas (judul form, placeholder,
-     value input, dsb) — lalu baru dikecualikan elemen yang backgroundnya terang. */
   html[data-theme="dark"] #adminOverlay2,
   html[data-theme="dark"] #adminOverlay2 *{
     color:#ffffff !important;
@@ -389,7 +383,6 @@
   html[data-theme="dark"] #adminOverlay2 .rmVar{
     background:var(--merah-light) !important;
   }
-  /* Elemen dengan background terang tetap butuh teks gelap supaya kebaca */
   html[data-theme="dark"] #adminOverlay2 .habisTag,
   html[data-theme="dark"] #adminOverlay2 .aiBtns .habisB.active{
     color:#ffffff !important;
@@ -531,7 +524,6 @@
   .trxRow .trn{font-size:13px; font-weight:650; color:var(--ink);}
   .trxRow .trm{font-size:11px; color:var(--muted); margin-top:2px;}
   .trxRow .trv{font-size:12.5px; font-weight:650; color:var(--pine-700); margin-right:8px;}
-  /* VOID BUTTON TIDAK DITAMPILKAN — riwayat transaksi tidak bisa dihapus dari laporan */
   .trxRow .voidB{display:none !important;}
   .shareBtnRow{display:flex; gap:8px; margin-top:6px;}
   .shareBtnRow button{flex:1; padding:13px; border-radius:12px; border:none; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px;}
@@ -797,7 +789,7 @@ el('themeBtn').onclick = ()=>{
 };
 initTema();
 
-/* ===================== KALKULATOR (parser manual, anti-error) ===================== */
+/* ===================== KALKULATOR ===================== */
 let calcTokens = [];
 let calcLastResult = null;
 
@@ -1284,7 +1276,7 @@ function tickClock(){
 }
 tickClock(); setInterval(tickClock, 15000);
 
-/* ===================== PASSWORD (khusus Kelola Menu saja) ===================== */
+/* ===================== PASSWORD ===================== */
 function openPwd(){
   pwdPurpose = 'admin';
   el('pwdTitle').textContent = 'Kelola Menu';
@@ -1468,7 +1460,7 @@ function confirmDelete(ci, ii){
   })();
 }
 
-/* ===================== LAPORAN (tanpa password, bisa pilih tanggal) ===================== */
+/* ===================== LAPORAN ===================== */
 el('lapClose').onclick = ()=> el('lapOverlay').classList.remove('show');
 
 function tanggalHariIniStr(){
@@ -1581,22 +1573,17 @@ function renderLaporan(data){
         <div><div class="trn">${t.karyawan} · ${t.metode}</div><div class="trm">${t.waktu} · ${t.jumlahItem} item</div></div>
         <div style="display:flex; align-items:center;">
           <div class="trv">${rupiah(t.total)}</div>
-          <!-- Tombol void sengaja tidak ditampilkan (display:none) -->
           <button class="voidB" title="Batalkan transaksi ini" style="display:none !important;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button>
         </div>
       </div>`).join('');
-    // voidB sudah tidak ada yang perlu di-event karena disembunyikan
   }
 
   el('shareWaBtn').onclick = ()=> bagikanLaporanWA(data);
   el('downloadTxtBtn').onclick = ()=> unduhLaporan(data);
 }
 
-// FUNGSI VOID TETAP ADA DI BACKEND, tapi tombolnya sudah tidak muncul di UI.
-// Jika suatu saat ingin diaktifkan kembali, cukup ubah display:inline-flex di CSS .trxRow .voidB.
+// VOID TETAP ADA TAPI TOMBOLNYA DISEMBUNYIKAN
 async function voidTransaksi(trxId){
-  // Fungsi ini tetap ada untuk kompatibilitas, tapi tidak dipanggil dari mana pun.
-  // Tidak ada tombol yang memicu ini.
   console.warn('voidTransaksi dipanggil tetapi tombol void sudah disembunyikan.');
 }
 
@@ -1632,9 +1619,7 @@ function susunTeksLaporan(data){
   return t;
 }
 
-/* ===================== PERBAIKAN WHATSAPP SHARE ===================== */
-// Menggunakan URL WhatsApp langsung dengan teks, tanpa Web Share API yang bermasalah
-// sehingga data muncul dengan benar (tidak 0 semua).
+/* ===================== WHATSAPP SHARE ===================== */
 function bagikanLaporanWA(data){
   const teks = susunTeksLaporan(data);
   const url = "https://wa.me/?text=" + encodeURIComponent(teks);
@@ -1653,7 +1638,7 @@ function unduhLaporan(data){
   showToast("Laporan diunduh: " + fileName);
 }
 
-/* ===================== AUTO-REFRESH REALTIME (tiap 5 detik) ===================== */
+/* ===================== AUTO-REFRESH REALTIME ===================== */
 setInterval(()=>{
   loadMenu(true);
   if(el('lapOverlay').classList.contains('show')){

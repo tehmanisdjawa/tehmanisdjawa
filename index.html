@@ -320,12 +320,32 @@
   }
   /* Tombol yang backgroundnya terang/emas/hijau muda tetap pakai teks gelap supaya kebaca */
   html[data-theme="dark"] .catTabs button.active,
-  html[data-theme="dark"] .adminItem .aiBtns .editB,
   html[data-theme="dark"] .adminItem .aiBtns .habisB,
   html[data-theme="dark"] .habisTag,
   html[data-theme="dark"] .nameWrap .chipRow button,
   html[data-theme="dark"] .fab .badge{
     color:var(--pine-950) !important;
+  }
+  /* Tombol/kotak yang di light mode pakai teks hijau-tua di atas background hijau-muda:
+     di dark mode background itu ikut jadi gelap, jadi teksnya perlu dipaksa terang, BUKAN gelap. */
+  html[data-theme="dark"] .addBtn,
+  html[data-theme="dark"] .adminItem .aiBtns .editB{
+    color:#ffffff !important;
+  }
+  html[data-theme="dark"] .addBtn{
+    border-color:var(--gold);
+  }
+  html[data-theme="dark"] .adminItem .aiBtns button{
+    background:var(--pine-800);
+    border-color:var(--line);
+  }
+  html[data-theme="dark"] .adminItem .aiBtns .delB{
+    background:var(--merah-light);
+    border-color:var(--merah);
+  }
+  html[data-theme="dark"] .adminItem .aiBtns .habisB{
+    background:var(--gold-light);
+    border-color:var(--gold);
   }
   .nameWrap .chipRow{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
   .nameWrap .chipRow button{padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:var(--card); font-size:11.5px; font-weight:600; color:var(--pine-700); cursor:pointer;}

@@ -347,6 +347,31 @@
     background:var(--gold-light);
     border-color:var(--gold);
   }
+  /* KELOLA MENU (#adminOverlay2): paksa SEMUA teks di dalam sheet ini jadi putih,
+     termasuk yang mungkin belum kena selector di atas (judul form, placeholder,
+     value input, dsb) — lalu baru dikecualikan elemen yang backgroundnya terang. */
+  html[data-theme="dark"] #adminOverlay2,
+  html[data-theme="dark"] #adminOverlay2 *{
+    color:#ffffff !important;
+  }
+  html[data-theme="dark"] #adminOverlay2 input::placeholder{
+    color:#a8a190 !important;
+    opacity:1;
+  }
+  html[data-theme="dark"] #adminOverlay2 input,
+  html[data-theme="dark"] #adminOverlay2 .adminItem,
+  html[data-theme="dark"] #adminOverlay2 .adminBody{
+    background:var(--card);
+  }
+  html[data-theme="dark"] #adminOverlay2 .adminHead button,
+  html[data-theme="dark"] #adminOverlay2 .rmVar{
+    background:var(--merah-light) !important;
+  }
+  /* Elemen dengan background terang tetap butuh teks gelap supaya kebaca */
+  html[data-theme="dark"] #adminOverlay2 .habisTag,
+  html[data-theme="dark"] #adminOverlay2 .aiBtns .habisB.active{
+    color:#ffffff !important;
+  }
   .nameWrap .chipRow{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
   .nameWrap .chipRow button{padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:var(--card); font-size:11.5px; font-weight:600; color:var(--pine-700); cursor:pointer;}
   .nameWrap .modeHint{font-size:10.5px; color:var(--muted-soft); margin-top:6px;}

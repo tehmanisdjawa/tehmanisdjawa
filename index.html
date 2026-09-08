@@ -360,6 +360,10 @@
   .shareBtnRow .dlB{background:var(--pine-950); color:#f3ede0;}
   .shareBtnRow button svg{width:16px;height:16px;}
   .lapLoading{padding:50px 20px; text-align:center; color:var(--muted); font-size:13.5px;}
+  .lapDateBar{display:flex; gap:8px; padding:12px 20px; border-bottom:1px solid var(--line-soft); background:var(--paper);}
+  .lapDateBar input[type="date"]{flex:1; padding:10px 12px; border-radius:11px; border:1.4px solid var(--line); background:var(--card); font-size:13px; color:var(--ink); font-family:inherit;}
+  .lapDateBar input[type="date"]:focus{outline:none; border-color:var(--pine-600);}
+  .lapDateBar button{flex:0 0 auto; padding:10px 14px; border-radius:11px; border:1.4px solid var(--pine-700); background:var(--pine-50); color:var(--pine-800); font-size:12.5px; font-weight:650; cursor:pointer;}
 </style>
 </head>
 <body>
@@ -494,7 +498,11 @@
 
 <div class="cartOverlay" id="lapOverlay">
   <div class="adminSheet">
-    <div class="adminHead"><h2>Laporan Hari Ini</h2><button id="lapClose">✕</button></div>
+    <div class="adminHead"><h2>Laporan Penjualan</h2><button id="lapClose">✕</button></div>
+    <div class="lapDateBar">
+      <input type="date" id="lapTanggalInput">
+      <button id="lapTanggalHariIniBtn">Hari Ini</button>
+    </div>
     <div class="adminBody" id="lapBody"><div class="lapLoading"><div class="spinner"></div>Memuat laporan...</div></div>
   </div>
 </div>
@@ -997,20 +1005,45 @@ function confirmDelete(ci, ii){
   })();
 }
 
-/* ===================== LAPORAN HARI INI ===================== */
+/* ===================== LAPORAN (bisa pilih tanggal) ===================== */
 el('lapClose').onclick = ()=> el('lapOverlay').classList.remove('show');
 
-async function openLaporan(){
+function tanggalHariIniStr(){
+  const d = new Date();
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+
+let lapTanggalAktif = tanggalHariIniStr();
+
+function openLaporan(){
+  lapTanggalAktif = tanggalHariIniStr();
+  el('lapTanggalInput').value = lapTanggalAktif;
   el('lapOverlay').classList.add('show');
+  muatLaporanTanggal(lapTanggalAktif);
+}
+
+async function muatLaporanTanggal(tanggal){
+  lapTanggalAktif = tanggal;
   el('lapBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat laporan...</div>';
   try{
-    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"getLaporanHarian", password: adminPassword }) });
+    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"getLaporanHarian", password: adminPassword, tanggal: tanggal }) });
     const data = await res.json();
     if(data.status !== 'ok'){ el('lapBody').innerHTML = `<div class="empty">${data.message || 'Gagal memuat laporan'}</div>`; return; }
     lapDataTerakhir = data;
     renderLaporan(data);
   }catch(e){ el('lapBody').innerHTML = '<div class="empty">Gagal memuat laporan. Cek koneksi.</div>'; }
 }
+
+el('lapTanggalInput').addEventListener('change', ()=>{
+  const v = el('lapTanggalInput').value;
+  if(v) muatLaporanTanggal(v);
+});
+el('lapTanggalHariIniBtn').onclick = ()=>{
+  const hariIni = tanggalHariIniStr();
+  el('lapTanggalInput').value = hariIni;
+  muatLaporanTanggal(hariIni);
+};
 
 function tanggalIndo(tglStr){
   const [y,m,d] = tglStr.split('-').map(Number);
@@ -1101,7 +1134,7 @@ async function voidTransaksi(trxId){
     const data = await res.json();
     if(data.status !== 'ok'){ showToast(data.message || "Gagal membatalkan transaksi", false); return; }
     showToast("Transaksi dibatalkan");
-    openLaporan();
+    muatLaporanTanggal(lapTanggalAktif);
   }catch(e){ showToast("Gagal membatalkan. Cek koneksi.", false); }
 }
 

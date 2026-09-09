@@ -392,6 +392,9 @@
   .formField input:focus{outline:none; border-color:var(--pine-600);}
   .varRow{display:flex; gap:8px; margin-bottom:8px; align-items:center;}
   .varRow input{flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);}
+  .varRow select{flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink); appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23786f5c' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 11px center; background-size:14px; padding-right:32px;}
   .varRow .rmVar{background:var(--merah-light); border:none; color:var(--merah); font-size:16px; cursor:pointer; flex:0 0 auto; width:34px; height:34px; border-radius:9px;}
   .addVarBtn{background:var(--pine-50); border:1.3px dashed var(--line); border-radius:11px; padding:10px; width:100%; font-size:12.5px; color:var(--pine-700); font-weight:600; cursor:pointer; margin-bottom:16px;}
   .saveFormBtn{width:100%; background:linear-gradient(160deg, var(--pine-800), var(--pine-950)); color:#f3ede0; border:none; border-radius:13px; padding:14px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 8px 22px rgba(12,31,22,.25);}
@@ -633,6 +636,9 @@
       <button class="iconBtn" id="adminBtn" aria-label="Kelola Menu" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       </button>
+      <button class="iconBtn" id="stokBtn" aria-label="Kelola Stok" title="Kelola Stok" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8V21H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+      </button>
       <button class="iconBtn" id="akunBtn" aria-label="Kelola Akun" title="Kelola Akun" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
       </button>
@@ -731,6 +737,11 @@
       <input type="date" id="lapTanggalInput">
       <button id="lapTanggalHariIniBtn">Hari Ini</button>
     </div>
+    <div class="lapDateBar" style="border-top:1px solid var(--line-soft); padding-top:10px;">
+      <select id="lapOutletFilter" style="flex:1; padding:10px 12px; border-radius:11px; border:1.4px solid var(--line); background:var(--card); font-size:13px; color:var(--ink); font-family:inherit;">
+        <option value="">Semua Outlet (terpisah per outlet)</option>
+      </select>
+    </div>
     <div class="adminBody" id="lapBody"><div class="lapLoading"><div class="spinner"></div>Memuat laporan...</div></div>
   </div>
 </div>
@@ -739,6 +750,20 @@
   <div class="adminSheet">
     <div class="adminHead"><h2>Kelola Akun</h2><button id="akunClose">✕</button></div>
     <div class="adminBody" id="akunBody"></div>
+  </div>
+</div>
+
+<div class="cartOverlay" id="stokOverlay">
+  <div class="adminSheet">
+    <div class="adminHead"><h2>Kelola Stok</h2><button id="stokClose">✕</button></div>
+    <div class="adminBody" id="stokBody"></div>
+  </div>
+</div>
+
+<div class="cartOverlay" id="restockOverlay">
+  <div class="adminSheet">
+    <div class="adminHead"><h2>Restock</h2><button id="restockClose">✕</button></div>
+    <div class="adminBody" id="restockBody"></div>
   </div>
 </div>
 
@@ -790,7 +815,18 @@ let motivTimer = null;
 let motivHideTimer = null;
 
 // ===== SESI LOGIN (hanya di memori — hilang begitu tab ditutup/refresh) =====
-let SESI = null; // { token, jabatan, namaTampilan, username }
+let SESI = null; // { token, jabatan, namaTampilan, username, outlet }
+
+// Daftar ukuran/varian standar yang boleh dipilih (harus sinkron dengan UKURAN_CUP_STANDAR di backend).
+const UKURAN_CUP_STANDAR = [
+  "Reguler",
+  "Small 10oz",
+  "Cup Medium",
+  "Medium 16oz",
+  "Cup Jumbo",
+  "Large 18oz",
+  "Jumbo 22oz"
+];
 let cekSesiTimer = null;
 let logoutWarnTimer = null;
 let logoutCountdownTimer = null;
@@ -840,8 +876,9 @@ function terapkanTampilanJabatan(){
   const isOwner = SESI && SESI.jabatan === 'Owner';
   el('laporanBtn').style.display = isOwner ? 'flex' : 'none';
   el('adminBtn').style.display = isOwner ? 'flex' : 'none';
+  el('stokBtn').style.display = isOwner ? 'flex' : 'none';
   el('akunBtn').style.display = isOwner ? 'flex' : 'none';
-  el('userChip').textContent = SESI ? (SESI.namaTampilan + ' · ' + SESI.jabatan) : '';
+  el('userChip').textContent = SESI ? (SESI.namaTampilan + ' · ' + SESI.jabatan + (SESI.outlet ? ' · ' + SESI.outlet : '')) : '';
   el('karyawanTampil').textContent = SESI ? SESI.namaTampilan : '-';
 }
 
@@ -863,7 +900,7 @@ async function prosesLogin(){
       el('loginErr').style.display = 'block';
       return;
     }
-    SESI = { token: data.token, jabatan: data.jabatan, namaTampilan: data.namaTampilan, username: data.username };
+    SESI = { token: data.token, jabatan: data.jabatan, namaTampilan: data.namaTampilan, username: data.username, outlet: data.outlet || '' };
     terapkanTampilanJabatan();
     tutupLoginScreen();
     mulaiSemuaSetelahLogin();
@@ -1180,7 +1217,7 @@ function mulaiSiklusMotivasi(){
   motivIdx = 0;
   tampilkanMotivasiBerikutnya();
   if(motivTimer) clearInterval(motivTimer);
-  motivTimer = setInterval(tampilkanMotivasiBerikutnya, 10*60*1000);
+  motivTimer = setInterval(tampilkanMotivasiBerikutnya, 30*60*1000);
 }
 
 el('motivClose').onclick = ()=>{
@@ -1194,7 +1231,8 @@ async function loadMenu(diam){
   if(sedangMuatMenu) return;
   sedangMuatMenu = true;
   try{
-    const res = await fetch(APPS_SCRIPT_URL + "?action=getMenu");
+    const outletQuery = SESI && SESI.outlet ? ("&outlet=" + encodeURIComponent(SESI.outlet)) : "";
+    const res = await fetch(APPS_SCRIPT_URL + "?action=getMenu" + outletQuery);
     const data = await res.json();
     if(data.status !== 'ok') throw new Error(data.message);
     const menuBaru = JSON.stringify(data.menu);
@@ -1460,13 +1498,16 @@ function openAdminForm(target){
   function renderVarList(){
     el('varList').innerHTML = varianList.map((v,i)=>`
       <div class="varRow" data-i="${i}">
-        <input class="vNama" type="text" value="${v.nama}" placeholder="Nama varian">
+        <select class="vNama">
+          <option value="" disabled ${!v.nama?'selected':''}>Pilih ukuran...</option>
+          ${UKURAN_CUP_STANDAR.map(u=>`<option value="${u}" ${u===v.nama?'selected':''}>${u}</option>`).join('')}
+        </select>
         <input class="vHarga" type="number" value="${v.harga}" placeholder="Harga" style="max-width:110px;">
         ${varianList.length>1 ? `<button class="rmVar">✕</button>` : ''}
       </div>`).join('');
     el('varList').querySelectorAll('.varRow').forEach(row=>{
       const i = +row.dataset.i;
-      row.querySelector('.vNama').oninput = e=> varianList[i].nama = e.target.value;
+      row.querySelector('.vNama').onchange = e=> varianList[i].nama = e.target.value;
       row.querySelector('.vHarga').oninput = e=> varianList[i].harga = Number(e.target.value)||0;
       const rm = row.querySelector('.rmVar');
       if(rm) rm.onclick = ()=>{ varianList.splice(i,1); renderVarList(); };
@@ -1479,8 +1520,8 @@ function openAdminForm(target){
     const kategori = el('fKategori').value.trim();
     const nama = el('fNama').value.trim();
     if(!kategori || !nama){ showToast("Isi kategori dan nama menu dulu", false); return; }
-    const validVarian = varianList.filter(v=>v.nama.trim());
-    if(validVarian.length===0){ showToast("Isi minimal 1 varian", false); return; }
+    const validVarian = varianList.filter(v=>v.nama && v.nama.trim());
+    if(validVarian.length===0){ showToast("Pilih minimal 1 ukuran", false); return; }
 
     const btn = el('saveFormBtn'); btn.disabled = true; btn.textContent = "Menyimpan...";
     try{
@@ -1531,18 +1572,37 @@ function tanggalHariIniStr(){
 
 let lapTanggalAktif = tanggalHariIniStr();
 
-function openLaporan(){
+let lapOutletAktif = '';
+
+async function openLaporan(){
   lapTanggalAktif = tanggalHariIniStr();
   el('lapTanggalInput').value = lapTanggalAktif;
+  lapOutletAktif = '';
   el('lapOverlay').classList.add('show');
+  muatDaftarOutletLaporan();
   muatLaporanTanggal(lapTanggalAktif);
 }
+
+async function muatDaftarOutletLaporan(){
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"getDaftarOutlet", token: SESI.token }) });
+    const data = await res.json();
+    if(data.status !== 'ok') return;
+    const daftar = data.outlet || [];
+    const sel = el('lapOutletFilter');
+    sel.innerHTML = '<option value="">Semua Outlet (terpisah per outlet)</option>' + daftar.map(o=>`<option value="${o}">${o}</option>`).join('');
+  }catch(e){ /* biarkan, dropdown cuma opsi "Semua Outlet" */ }
+}
+el('lapOutletFilter').addEventListener('change', ()=>{
+  lapOutletAktif = el('lapOutletFilter').value;
+  muatLaporanTanggal(lapTanggalAktif);
+});
 
 async function muatLaporanTanggal(tanggal, diam){
   lapTanggalAktif = tanggal;
   if(!diam) el('lapBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat laporan...</div>';
   try{
-    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"getLaporanHarian", token: SESI ? SESI.token : '', tanggal: tanggal }) });
+    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"getLaporanHarian", token: SESI ? SESI.token : '', tanggal: tanggal, outlet: lapOutletAktif }) });
     const data = await res.json();
     if(data.status !== 'ok'){ if(!diam) el('lapBody').innerHTML = `<div class="empty">${data.message || 'Gagal memuat laporan'}</div>`; return; }
     const dataBaru = JSON.stringify(data);
@@ -1577,10 +1637,74 @@ const SHIFT_ICON = {
 };
 
 function renderLaporan(data){
+  if(data.modeSemuaOutlet){
+    renderLaporanSemuaOutlet(data);
+    return;
+  }
+  renderLaporanSatuOutlet(data);
+}
+
+// Mode ringkas: tampilkan total gabungan sekilas, lalu SETIAP outlet sebagai section
+// terpisah sendiri-sendiri (tidak dijumlahkan jadi satu angka per kategori).
+function renderLaporanSemuaOutlet(data){
+  const rg = data.ringkasanGabunganSemuaOutlet;
+  let html = `
+    <div class="lapCardRow">
+      <div class="lapCard wide"><div class="lapLbl">Total Semua Outlet (gabungan sekilas) · ${tanggalIndo(data.tanggal)}</div><div class="lapVal">${rupiah(rg.total)}</div></div>
+      <div class="lapCard"><div class="lapLbl">Transaksi</div><div class="lapVal">${rg.jumlahTrx}</div></div>
+      <div class="lapCard"><div class="lapLbl">Item Terjual</div><div class="lapVal">${rg.jumlahItem}</div></div>
+    </div>
+    <div class="empty" style="padding:0 4px 14px; text-align:left; font-size:12px;">
+      Rincian tiap outlet TIDAK digabung — geser ke bawah untuk lihat masing-masing outlet terpisah.
+    </div>
+  `;
+
+  if(data.perOutlet.length === 0){
+    html += '<div class="empty">Belum ada transaksi tanggal ini di outlet manapun.</div>';
+    el('lapBody').innerHTML = html;
+    return;
+  }
+
+  data.perOutlet.forEach((lap, idx)=>{
+    const r = lap.ringkasan;
+    html += `
+      <div class="lapSection" style="border:1px solid var(--line-soft); border-radius:14px; padding:14px; margin-bottom:16px; background:var(--card);">
+        <h4 style="display:flex; align-items:center; gap:7px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          ${lap.outlet}
+        </h4>
+        <div class="lapCardRow">
+          <div class="lapCard wide"><div class="lapLbl">Total Penjualan</div><div class="lapVal">${rupiah(r.total)}</div></div>
+          <div class="lapCard"><div class="lapLbl">Transaksi</div><div class="lapVal">${r.jumlahTrx}</div></div>
+          <div class="lapCard"><div class="lapLbl">Item Terjual</div><div class="lapVal">${r.jumlahItem}</div></div>
+        </div>
+        ${renderPerUkuranCupHtml(lap.perUkuranCup)}
+        ${renderPerKaryawanHtml(lap.perKaryawan)}
+      </div>
+    `;
+  });
+
+  el('lapBody').innerHTML = html;
+}
+
+function renderPerUkuranCupHtml(perUkuranCup){
+  if(!perUkuranCup || perUkuranCup.length === 0) return '';
+  return `<div style="margin-top:12px;"><div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px;">Terjual per Ukuran Cup</div>
+    ${perUkuranCup.map(u=>`<div class="lapRow"><div class="lrn">${u.ukuran}</div><div class="lrv">${u.qty} cup</div></div>`).join('')}
+  </div>`;
+}
+function renderPerKaryawanHtml(perKaryawan){
+  if(!perKaryawan || perKaryawan.length === 0) return '';
+  return `<div style="margin-top:12px;"><div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px;">Per Karyawan</div>
+    ${perKaryawan.map(k=>`<div class="lapRow"><div class="lrn">${k.karyawan}</div><div class="lrv">${rupiah(k.total)}</div></div>`).join('')}
+  </div>`;
+}
+
+function renderLaporanSatuOutlet(data){
   const r = data.ringkasan;
   let html = `
     <div class="lapCardRow">
-      <div class="lapCard wide"><div class="lapLbl">Total Penjualan · ${tanggalIndo(data.tanggal)}</div><div class="lapVal">${rupiah(r.total)}</div></div>
+      <div class="lapCard wide"><div class="lapLbl">Total Penjualan${data.outlet ? ' · '+data.outlet : ''} · ${tanggalIndo(data.tanggal)}</div><div class="lapVal">${rupiah(r.total)}</div></div>
       <div class="lapCard"><div class="lapLbl">Transaksi</div><div class="lapVal">${r.jumlahTrx}</div></div>
       <div class="lapCard"><div class="lapLbl">Item Terjual</div><div class="lapVal">${r.jumlahItem}</div></div>
       <div class="lapCard"><div class="lapLbl">Cash</div><div class="lapVal" style="font-size:15px;">${rupiah(r.cash)}</div></div>
@@ -1605,6 +1729,14 @@ function renderLaporan(data){
     html += `</div></div>`;
   }
 
+  if(data.perUkuranCup && data.perUkuranCup.length){
+    html += `<div class="lapSection"><h4>Terjual per Ukuran Cup</h4>`;
+    data.perUkuranCup.forEach(u=>{
+      html += `<div class="lapRow"><div class="lrn">${u.ukuran}</div><div class="lrv">${u.qty} cup</div></div>`;
+    });
+    html += `</div>`;
+  }
+
   if(data.perKaryawan && data.perKaryawan.length){
     html += `<div class="lapSection"><h4>Penjualan per Karyawan</h4>`;
     data.perKaryawan.forEach(k=>{
@@ -1625,6 +1757,8 @@ function renderLaporan(data){
 
   el('lapBody').innerHTML = html;
 
+  const bolehHapus = SESI && SESI.jabatan === 'Owner';
+
   if(data.transaksi.length === 0){
     el('trxList').innerHTML = '<div class="empty" style="padding:24px 0;">Belum ada transaksi hari ini.</div>';
   } else {
@@ -1633,12 +1767,14 @@ function renderLaporan(data){
         <div><div class="trn">${t.karyawan} · ${t.metode}</div><div class="trm">${t.waktu} · ${t.jumlahItem} item</div></div>
         <div style="display:flex; align-items:center;">
           <div class="trv">${rupiah(t.total)}</div>
-          <button class="voidB" title="Batalkan transaksi ini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button>
+          ${bolehHapus ? `<button class="voidB" title="Batalkan transaksi ini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button>` : ''}
         </div>
       </div>`).join('');
-    el('trxList').querySelectorAll('.trxRow').forEach(row=>{
-      row.querySelector('.voidB').onclick = ()=> voidTransaksi(row.dataset.id);
-    });
+    if(bolehHapus){
+      el('trxList').querySelectorAll('.trxRow').forEach(row=>{
+        row.querySelector('.voidB').onclick = ()=> voidTransaksi(row.dataset.id);
+      });
+    }
   }
 
   el('shareWaBtn').onclick = ()=> bagikanLaporanWA(data);
@@ -1671,6 +1807,11 @@ function susunTeksLaporan(data){
   if(data.perShift && data.perShift.length){
     t += `*Per Shift*\n`;
     data.perShift.forEach(s=>{ t += `${s.shift}: ${rupiah(s.total)} (${s.jumlahTrx} trx)\n`; });
+    t += `\n`;
+  }
+  if(data.perUkuranCup && data.perUkuranCup.length){
+    t += `*Terjual per Ukuran Cup*\n`;
+    data.perUkuranCup.forEach(u=>{ t += `${u.ukuran}: ${u.qty} cup\n`; });
     t += `\n`;
   }
   if(data.perKaryawan && data.perKaryawan.length){
@@ -1721,16 +1862,180 @@ el('akunBtn').onclick = ()=>{
   if(!SESI || SESI.jabatan !== 'Owner') return;
   el('akunBody').innerHTML = `
     <div class="empty" style="padding:20px 4px; text-align:left;">
-      Untuk menambah, mengubah jabatan, atau memecat karyawan: buka Google Spreadsheet
-      yang terhubung ke sistem ini, lalu edit langsung sheet <b>"Akun"</b>.<br><br>
+      Untuk menambah, mengubah jabatan, memecat, atau memindah outlet karyawan: buka Google
+      Spreadsheet yang terhubung ke sistem ini, lalu edit langsung sheet <b>"Akun"</b>.<br><br>
       Kolom yang perlu diisi: <b>Username</b>, <b>Password</b>, <b>Jabatan</b>
-      (isi salah satu: <i>Owner</i>, <i>Karyawan</i>, atau <i>Pecat</i>), dan <b>Nama Tampilan</b>.<br><br>
+      (isi salah satu: <i>Owner</i>, <i>Karyawan</i>, atau <i>Pecat</i>), <b>Nama Tampilan</b>,
+      dan <b>Kerja di</b> (nama outlet tempat orang itu bertugas).<br><br>
       Mengubah kolom Jabatan seseorang menjadi <i>Pecat</i> akan langsung menolak akses
-      orang itu di percobaan login berikutnya.
+      orang itu di percobaan login berikutnya. Karyawan dengan outlet yang sama di kolom
+      "Kerja di" akan otomatis terhubung ke data stok & laporan outlet yang sama.
     </div>`;
   el('akunOverlay').classList.add('show');
 };
 el('akunClose').onclick = ()=> el('akunOverlay').classList.remove('show');
+
+/* ===================== KELOLA STOK (khusus Owner) ===================== */
+let STOK_LIST = [];
+let STOK_MENU_CACHE = [];
+
+el('stokBtn').onclick = ()=>{
+  if(!SESI || SESI.jabatan !== 'Owner') return;
+  if(!SESI.outlet){
+    showToast("Akun Owner kamu belum diisi kolom \"Kerja di\" di sheet Akun \u2014 stok tidak bisa dikelola tanpa outlet.", false);
+    return;
+  }
+  muatKelolaStok();
+  el('stokOverlay').classList.add('show');
+};
+el('stokClose').onclick = ()=> el('stokOverlay').classList.remove('show');
+
+async function muatKelolaStok(){
+  el('stokBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat data stok...</div>';
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"getStokList", token: SESI.token, outlet: SESI.outlet }) });
+    const data = await res.json();
+    if(data.status !== 'ok'){ el('stokBody').innerHTML = `<div class="empty">${data.message || 'Gagal memuat stok'}</div>`; return; }
+    STOK_LIST = data.stok || [];
+    STOK_MENU_CACHE = data.menu || [];
+    renderKelolaStok();
+  }catch(e){ el('stokBody').innerHTML = '<div class="empty">Gagal memuat stok. Cek koneksi.</div>'; }
+}
+
+// Cari stok untuk 1 kombinasi kategori/nama/ukuran, atau null kalau belum pernah di-set.
+function cariStok(kategori, nama, ukuran){
+  return STOK_LIST.find(s => s.kategori===kategori && s.nama===nama && s.ukuran===ukuran) || null;
+}
+
+function renderKelolaStok(){
+  let html = `
+    <div class="empty" style="padding:6px 4px 16px; text-align:left; font-size:12px;">
+      Stok di bawah khusus untuk outlet <b>${SESI.outlet}</b>. Ketik ulang angka stok untuk
+      menimpa langsung, atau gunakan tombol Restock untuk menambah stok dengan tercatat di histori.
+    </div>
+    <button class="addBtn" id="riwayatRestockBtn" style="border-style:solid; background:var(--pine-50);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+      Lihat Riwayat Restock
+    </button>
+  `;
+  STOK_MENU_CACHE.forEach(cat=>{
+    html += `<div class="catLabelAdmin">${cat.kategori}</div>`;
+    cat.items.forEach(item=>{
+      item.varian.forEach(v=>{
+        const info = cariStok(cat.kategori, item.nama, v.nama);
+        const stokSekarang = info ? info.stok : 0;
+        const idKey = (cat.kategori+'|'+item.nama+'|'+v.nama).replace(/[^a-zA-Z0-9]/g,'_');
+        html += `<div class="adminItem" data-kategori="${cat.kategori}" data-nama="${item.nama}" data-ukuran="${v.nama}">
+          <div class="aiTop">
+            <div>
+              <div class="ain">${item.nama}</div>
+              <div class="aiv" style="margin-top:3px;">${v.nama}</div>
+            </div>
+            <div class="aiBtns">
+              <button class="restockOpenB" title="Restock (tambah stok)" style="background:var(--pine-50); color:var(--pine-700);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+            <input type="number" class="stokInput" value="${stokSekarang}" min="0" style="flex:1; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
+            <button class="stokSaveB" style="flex:0 0 auto; padding:10px 14px; border-radius:10px; border:none; background:var(--pine-900); color:#f3ede0; font-size:12.5px; font-weight:650; cursor:pointer;">Simpan</button>
+          </div>
+        </div>`;
+      });
+    });
+  });
+  el('stokBody').innerHTML = html;
+
+  el('riwayatRestockBtn').onclick = ()=> bukaRiwayatRestock();
+
+  el('stokBody').querySelectorAll('.adminItem').forEach(rowEl=>{
+    const kategori = rowEl.dataset.kategori, nama = rowEl.dataset.nama, ukuran = rowEl.dataset.ukuran;
+    rowEl.querySelector('.stokSaveB').onclick = async ()=>{
+      const val = Number(rowEl.querySelector('.stokInput').value) || 0;
+      await simpanStokManual(kategori, nama, ukuran, val);
+    };
+    rowEl.querySelector('.restockOpenB').onclick = ()=> bukaFormRestock(kategori, nama, ukuran);
+  });
+}
+
+async function simpanStokManual(kategori, nama, ukuran, stokBaru){
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"setStok", token: SESI.token, outlet: SESI.outlet, kategori, nama, ukuran, stok: stokBaru }) });
+    const data = await res.json();
+    if(data.status !== 'ok'){ showToast(data.message || "Gagal menyimpan stok", false); return; }
+    STOK_LIST = data.stok || [];
+    showToast("Stok diperbarui");
+    renderKelolaStok();
+  }catch(e){ showToast("Gagal menyimpan stok. Cek koneksi.", false); }
+}
+
+/* ===================== RESTOCK (form tambah stok + histori) ===================== */
+function bukaFormRestock(kategori, nama, ukuran){
+  const info = cariStok(kategori, nama, ukuran);
+  const stokSekarang = info ? info.stok : 0;
+  el('restockBody').innerHTML = `
+    <div class="formField">
+      <label>Menu</label>
+      <div class="karyawanTampil">${nama} · ${ukuran}</div>
+    </div>
+    <div class="formField">
+      <label>Stok Sekarang</label>
+      <div class="karyawanTampil">${stokSekarang}</div>
+    </div>
+    <div class="formField">
+      <label>Jumlah Ditambah</label>
+      <input id="restockJumlah" type="number" min="1" placeholder="Contoh: 20">
+    </div>
+    <button class="saveFormBtn" id="restockSaveBtn">Simpan Restock</button>
+  `;
+  el('restockSaveBtn').onclick = async ()=>{
+    const jumlah = Number(el('restockJumlah').value) || 0;
+    if(jumlah <= 0){ showToast("Isi jumlah restock yang valid", false); return; }
+    const btn = el('restockSaveBtn'); btn.disabled = true; btn.textContent = "Menyimpan...";
+    try{
+      const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"restock", token: SESI.token, outlet: SESI.outlet, kategori, nama, ukuran, jumlah }) });
+      const data = await res.json();
+      if(data.status !== 'ok'){ showToast(data.message || "Gagal restock", false); btn.disabled=false; btn.textContent="Simpan Restock"; return; }
+      STOK_LIST = data.stok || [];
+      showToast("Restock berhasil — stok sekarang " + (cariStok(kategori,nama,ukuran)||{}).stok);
+      el('restockOverlay').classList.remove('show');
+      renderKelolaStok();
+    }catch(e){ showToast("Gagal restock. Cek koneksi.", false); btn.disabled=false; btn.textContent="Simpan Restock"; }
+  };
+  el('restockOverlay').classList.add('show');
+}
+el('restockClose').onclick = ()=> el('restockOverlay').classList.remove('show');
+
+async function bukaRiwayatRestock(){
+  el('restockBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat riwayat...</div>';
+  el('restockOverlay').classList.add('show');
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify({ action:"getRiwayatRestock", token: SESI.token, outlet: SESI.outlet, batas: 100 }) });
+    const data = await res.json();
+    if(data.status !== 'ok'){ el('restockBody').innerHTML = `<div class="empty">${data.message || 'Gagal memuat riwayat'}</div>`; return; }
+    const riwayat = data.riwayat || [];
+    if(riwayat.length === 0){
+      el('restockBody').innerHTML = '<div class="empty">Belum ada riwayat restock untuk outlet ini.</div>';
+      return;
+    }
+    el('restockBody').innerHTML = `
+      <div class="empty" style="padding:0 4px 14px; text-align:left; font-size:12px;">Riwayat restock outlet <b>${SESI.outlet}</b>, terbaru di atas.</div>
+      ${riwayat.map(r=>`
+        <div class="lapRow">
+          <div>
+            <div class="lrn">${r.nama} · ${r.ukuran}</div>
+            <div class="lrq">${r.waktu} · oleh ${r.oleh}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="lrv">+${r.jumlahDitambah}</div>
+            <div class="lrq">jadi ${r.stokSesudah}</div>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  }catch(e){ el('restockBody').innerHTML = '<div class="empty">Gagal memuat riwayat. Cek koneksi.</div>'; }
+}
 
 /* ===================== AUTO-REFRESH REALTIME (tiap 5 detik) ===================== */
 setInterval(()=>{

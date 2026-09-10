@@ -638,7 +638,7 @@
       <input type="date" id="lapTanggalInput">
       <button id="lapTanggalHariIniBtn">Hari Ini</button>
     </div>
-    <div class="lapDateBar" style="border-top:1px solid var(--line-soft); padding-top:10px;">
+    <div class="lapDateBar" id="lapOutletBar" style="border-top:1px solid var(--line-soft); padding-top:10px;">
       <select id="lapOutletFilter" style="flex:1; padding:10px 12px; border-radius:11px; border:1.4px solid var(--line); background:var(--card); font-size:13px; color:var(--ink); font-family:inherit;">
         <option value="">Semua Outlet (terpisah per outlet)</option>
       </select>
@@ -769,7 +769,9 @@ function tutupLoginScreen(){
 
 function terapkanTampilanJabatan(){
   const isOwner = SESI && SESI.jabatan === 'Owner';
-  el('laporanBtn').style.display = isOwner ? 'flex' : 'none';
+  // PERUBAHAN v5.2: Laporan sekarang tampil untuk SEMUA jabatan (Owner & Karyawan).
+  // Karyawan hanya bisa melihat laporan outlet tempat dia bekerja (dikunci di openLaporan).
+  el('laporanBtn').style.display = SESI ? 'flex' : 'none';
   el('adminBtn').style.display = isOwner ? 'flex' : 'none';
   el('stokBtn').style.display = isOwner ? 'flex' : 'none';
   el('akunBtn').style.display = isOwner ? 'flex' : 'none';
@@ -1455,8 +1457,10 @@ function confirmDelete(ci, ii){
   })();
 }
 
-/* ===================== LAPORAN (khusus Owner) ===================== */
-el('laporanBtn').onclick = ()=>{ if(!SESI || SESI.jabatan !== 'Owner') return; openLaporan(); };
+/* ===================== LAPORAN (Owner: semua outlet / pilih outlet — Karyawan: HANYA outlet sendiri) ===================== */
+// PERUBAHAN v5.2: tombol laporan sekarang bisa dipakai oleh semua jabatan.
+// Untuk Karyawan, openLaporan() akan mengunci filter outlet ke SESI.outlet.
+el('laporanBtn').onclick = ()=>{ if(!SESI) return; openLaporan(); };
 el('lapClose').onclick = ()=> el('lapOverlay').classList.remove('show');
 
 function tanggalHariIniStr(){
@@ -1470,11 +1474,24 @@ let lapTanggalAktif = tanggalHariIniStr();
 let lapOutletAktif = '';
 
 async function openLaporan(){
+  const isOwner = SESI && SESI.jabatan === 'Owner';
   lapTanggalAktif = tanggalHariIniStr();
   el('lapTanggalInput').value = lapTanggalAktif;
-  lapOutletAktif = '';
   el('lapOverlay').classList.add('show');
-  muatDaftarOutletLaporan();
+
+  if(isOwner){
+    // Owner: tampilkan dropdown filter outlet, default "Semua Outlet".
+    lapOutletAktif = '';
+    el('lapOutletBar').style.display = 'flex';
+    el('lapOutletFilter').style.display = '';
+    muatDaftarOutletLaporan();
+  } else {
+    // Karyawan: sembunyikan dropdown filter, kunci outlet ke outlet tempat dia bekerja.
+    lapOutletAktif = SESI ? (SESI.outlet || '') : '';
+    el('lapOutletBar').style.display = 'none';
+    el('lapOutletFilter').style.display = 'none';
+  }
+
   muatLaporanTanggal(lapTanggalAktif);
 }
 
@@ -1652,6 +1669,8 @@ function renderLaporanSatuOutlet(data){
 
   el('lapBody').innerHTML = html;
 
+  // HANYA Owner yang boleh melihat tombol hapus transaksi.
+  // Karyawan: boleh lihat laporan, TAPI TIDAK BISA menghapus transaksi sama sekali.
   const bolehHapus = SESI && SESI.jabatan === 'Owner';
 
   if(data.transaksi.length === 0){

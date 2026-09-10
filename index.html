@@ -494,75 +494,45 @@
   .akunJabatan.karyawan{background:var(--pine-100); color:var(--pine-700);}
   .akunJabatan.pecat{background:var(--merah-light); color:var(--merah);}
 
+  /* ============ DARK MODE: SEMUA TEKS PUTIH, TANPA TERKECUALI ============ */
+  /* Aturan global: begitu dark mode aktif, SEMUA elemen teks (termasuk ikon SVG lewat
+     `color`/`stroke`/`fill: currentColor`, label, tombol, judul, dsb) dipaksa putih terang.
+     Ini sengaja dibuat sangat luas (bukan daftar per-elemen) supaya tidak ada yang kelewat
+     lagi -- lalu di bagian bawah baru dikecualikan elemen yang BACKGROUND-nya sengaja terang
+     (misalnya badge emas atau tag hijau muda), supaya teksnya tidak putih-di-atas-putih. */
   html[data-theme="dark"] body,
-  html[data-theme="dark"] .item .name,
-  html[data-theme="dark"] .item .price,
-  html[data-theme="dark"] .item .varCount,
-  html[data-theme="dark"] .catLabel,
-  html[data-theme="dark"] .catLabelAdmin,
-  html[data-theme="dark"] .sheetHead .ttl,
-  html[data-theme="dark"] .sheetHead .cat,
-  html[data-theme="dark"] .varOption .vn,
-  html[data-theme="dark"] .varOption .vp,
-  html[data-theme="dark"] .cartHead h2,
-  html[data-theme="dark"] .cartRow .cn,
-  html[data-theme="dark"] .cartRow .cv,
-  html[data-theme="dark"] .cartRow .cp,
-  html[data-theme="dark"] .cartRow .cstep .cval,
-  html[data-theme="dark"] .catatanWrap label,
-  html[data-theme="dark"] .payLabel,
-  html[data-theme="dark"] .payTabs button,
-  html[data-theme="dark"] .nameWrap label,
-  html[data-theme="dark"] .nameWrap .karyawanTampil,
-  html[data-theme="dark"] .totalBar .tl,
-  html[data-theme="dark"] .totalBar .tv,
-  html[data-theme="dark"] .adminHead h2,
-  html[data-theme="dark"] .adminItem .ain,
-  html[data-theme="dark"] .adminItem .aiv,
-  html[data-theme="dark"] .formField label,
-  html[data-theme="dark"] .backLink,
-  html[data-theme="dark"] .lapCard .lapLbl,
-  html[data-theme="dark"] .lapCard .lapVal,
-  html[data-theme="dark"] .lapSection h4,
-  html[data-theme="dark"] .lapRow .lrn,
-  html[data-theme="dark"] .lapRow .lrq,
-  html[data-theme="dark"] .lapRow .lrv,
-  html[data-theme="dark"] .shiftCard,
-  html[data-theme="dark"] .shiftCard .scLbl,
-  html[data-theme="dark"] .shiftCard .scVal,
-  html[data-theme="dark"] .shiftCard .scSub,
-  html[data-theme="dark"] .trxRow .trn,
-  html[data-theme="dark"] .trxRow .trm,
-  html[data-theme="dark"] .trxRow .trv,
-  html[data-theme="dark"] .calcExpr,
-  html[data-theme="dark"] .calcResult,
-  html[data-theme="dark"] .calcGrid button,
-  html[data-theme="dark"] .searchWrap input,
-  html[data-theme="dark"] .catatanWrap textarea,
-  html[data-theme="dark"] .formField input,
-  html[data-theme="dark"] .varRow input,
-  html[data-theme="dark"] .lapDateBar input[type="date"],
-  html[data-theme="dark"] .loginBox h1,
-  html[data-theme="dark"] .menuDropItem,
-  html[data-theme="dark"] .loginField label,
-  html[data-theme="dark"] .loginField input,
-  html[data-theme="dark"] .akunItem .aun,
-  html[data-theme="dark"] .logoutWarnBox h3{
+  html[data-theme="dark"] h1, html[data-theme="dark"] h2, html[data-theme="dark"] h3,
+  html[data-theme="dark"] h4, html[data-theme="dark"] h5, html[data-theme="dark"] h6,
+  html[data-theme="dark"] p, html[data-theme="dark"] span, html[data-theme="dark"] div,
+  html[data-theme="dark"] label, html[data-theme="dark"] button, html[data-theme="dark"] a,
+  html[data-theme="dark"] input, html[data-theme="dark"] select, html[data-theme="dark"] textarea,
+  html[data-theme="dark"] svg{
     color:#ffffff !important;
+    stroke:currentColor;
   }
+  html[data-theme="dark"] .leafBadge svg,
+  html[data-theme="dark"] .leafBadgeBig svg{
+    stroke:initial;
+  }
+  html[data-theme="dark"] input::placeholder,
+  html[data-theme="dark"] textarea::placeholder{
+    color:#a8a190 !important;
+    opacity:1;
+  }
+  html[data-theme="dark"] select option{
+    background:var(--card); color:#ffffff;
+  }
+
+  /* ---- Pengecualian: elemen dengan BACKGROUND sengaja terang/emas/hijau muda
+     tetap butuh teks GELAP supaya kontrasnya kebaca, bukan putih-di-atas-putih. ---- */
   html[data-theme="dark"] .catTabs button.active,
   html[data-theme="dark"] .adminItem .aiBtns .habisB,
   html[data-theme="dark"] .habisTag,
+  html[data-theme="dark"] #adminOverlay2 .habisTag,
   html[data-theme="dark"] .fab .badge{
     color:var(--pine-950) !important;
   }
-  html[data-theme="dark"] .addBtn,
-  html[data-theme="dark"] .adminItem .aiBtns .editB{
-    color:#ffffff !important;
-  }
-  html[data-theme="dark"] .addBtn{
-    border-color:var(--gold);
-  }
+
   html[data-theme="dark"] .adminItem .aiBtns button{
     background:var(--pine-800);
     border-color:var(--line);
@@ -575,13 +545,8 @@
     background:var(--gold-light);
     border-color:var(--gold);
   }
-  html[data-theme="dark"] #adminOverlay2,
-  html[data-theme="dark"] #adminOverlay2 *{
-    color:#ffffff !important;
-  }
-  html[data-theme="dark"] #adminOverlay2 input::placeholder{
-    color:#a8a190 !important;
-    opacity:1;
+  html[data-theme="dark"] .addBtn{
+    border-color:var(--gold);
   }
   html[data-theme="dark"] #adminOverlay2 input,
   html[data-theme="dark"] #adminOverlay2 .adminItem,
@@ -591,10 +556,6 @@
   html[data-theme="dark"] #adminOverlay2 .adminHead button,
   html[data-theme="dark"] #adminOverlay2 .rmVar{
     background:var(--merah-light) !important;
-  }
-  html[data-theme="dark"] #adminOverlay2 .habisTag,
-  html[data-theme="dark"] #adminOverlay2 .aiBtns .habisB.active{
-    color:#ffffff !important;
   }
 
   /* ============ DARK MODE TOGGLE ============ */

@@ -222,6 +222,7 @@
   /* ============ VARIANT SHEET ============ */
   .sheetOverlay{position:fixed; inset:0; background:rgba(12,20,15,.5); backdrop-filter:blur(2px); z-index:50; display:none; align-items:flex-end; justify-content:center;}
   .sheetOverlay.show{display:flex;}
+  #trxDetailOverlay{z-index:58;} /* harus di atas lapOverlay (cartOverlay, z-index:55) krn dibuka dari dalam laporan */
   .sheet{background:var(--paper); width:100%; max-width:520px; border-radius:22px 22px 0 0; max-height:86vh; display:flex; flex-direction:column; overflow:hidden; animation:slideUp .22s cubic-bezier(.2,.8,.3,1); box-shadow:var(--shadow-float);}
   @keyframes slideUp{from{transform:translateY(40px); opacity:0;} to{transform:translateY(0); opacity:1;}}
   .sheetHandle{width:36px; height:4px; background:var(--line); border-radius:99px; margin:10px auto 2px;}
@@ -1562,6 +1563,13 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
     perKaryawan[k] = (perKaryawan[k]||0) + (t.total||0);
     const shift = labelShiftDariJam(t.jam||0);
     perShift[shift].total += t.total||0; perShift[shift].jumlahTrx += 1; perShift[shift].jumlahItem += t.jumlahItem||0;
+    if(!perShift[shift].items) perShift[shift].items = {};
+    (t.items||[]).forEach(it=>{
+      const key = it.nama + (it.varian ? ' ('+it.varian+')' : '');
+      if(!perShift[shift].items[key]) perShift[shift].items[key] = { nama:key, qty:0, subtotal:0 };
+      perShift[shift].items[key].qty += it.qty||0;
+      perShift[shift].items[key].subtotal += it.subtotal||0;
+    });
 
     (t.items||[]).forEach(it=>{
       const key = it.nama + (it.varian ? ' ('+it.varian+')' : '');
@@ -1582,7 +1590,10 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
     outlet: outlet || '', tanggal,
     ringkasan,
     perKaryawan: Object.keys(perKaryawan).map(k=>({karyawan:k,total:perKaryawan[k]})).sort((a,b)=>b.total-a.total),
-    perShift: SHIFT_URUTAN.map(s=>perShift[s]).filter(s=>s.jumlahTrx>0 || s.shift!=='Luar Jam Operasional'),
+    perShift: SHIFT_URUTAN.map(s=>({
+      ...perShift[s],
+      items: Object.values(perShift[s].items||{}).sort((a,b)=>b.qty-a.qty)
+    })).filter(s=>s.jumlahTrx>0 || s.shift!=='Luar Jam Operasional'),
     itemTerlaris: Object.values(perItem).sort((a,b)=>b.qty-a.qty),
     perUkuranCup: Object.values(perUkuran).sort((a,b)=>b.qty-a.qty),
     transaksi: daftarTrx
@@ -1686,7 +1697,7 @@ function renderLaporanSatuOutlet(data){
     </div>`;
   if(data.perShift && data.perShift.length){
     html += `<div class="lapSection"><h4>Penjualan per Shift</h4><div class="shiftGrid">`;
-    data.perShift.forEach(s=>{ html += `<div class="shiftCard"><div class="scLbl">${SHIFT_ICON[s.shift]||''} ${s.shift}</div><div class="scVal">${rupiah(s.total)}</div><div class="scSub">${s.jumlahTrx} transaksi \u00b7 ${s.jumlahItem} item</div></div>`; });
+    data.perShift.forEach((s, idx)=>{ html += `<div class="shiftCard" data-shiftidx="${idx}"><div class="scLbl">${SHIFT_ICON[s.shift]||''} ${s.shift}</div><div class="scVal">${rupiah(s.total)}</div><div class="scSub">${s.jumlahTrx} transaksi \u00b7 ${s.jumlahItem} item</div></div>`; });
     html += `</div></div>`;
   }
   if(data.perUkuranCup && data.perUkuranCup.length){
@@ -1732,8 +1743,32 @@ function renderLaporanSatuOutlet(data){
       }
     });
   }
+  if(data.perShift && data.perShift.length){
+    document.querySelectorAll('.shiftCard[data-shiftidx]').forEach(card=>{
+      card.style.cursor = 'pointer';
+      card.onclick = ()=> bukaDetailShift(data.perShift[Number(card.dataset.shiftidx)]);
+    });
+  }
   el('shareWaBtn').onclick = ()=> bagikanLaporanWA(lapDataTerakhir || data);
   el('downloadTxtBtn').onclick = ()=> unduhLaporan(lapDataTerakhir || data);
+}
+
+function bukaDetailShift(s){
+  if(!s) return;
+  el('trxDetailTitle').textContent = (SHIFT_ICON[s.shift]||'') + ' ' + s.shift;
+  el('trxDetailSub').textContent = s.jumlahTrx + ' transaksi \u00b7 ' + s.jumlahItem + ' item terjual';
+
+  const itemsHtml = (s.items && s.items.length) ? s.items.map(it=>`
+    <div class="trxItemRow">
+      <div><div class="tin">${it.nama}</div><div class="tiv">${it.qty} terjual</div></div>
+      <div class="tiq">${rupiah(it.subtotal||0)}</div>
+    </div>`).join('') : '<div class="empty" style="padding:16px 0;">Belum ada barang terjual di shift ini.</div>';
+
+  el('trxDetailBody').innerHTML = `
+    ${itemsHtml}
+    <div class="trxDetailFoot"><div class="ttlLbl">Total Omset Shift</div><div class="ttlVal">${rupiah(s.total||0)}</div></div>
+  `;
+  el('trxDetailOverlay').classList.add('show');
 }
 
 function bukaDetailTransaksi(trxId){

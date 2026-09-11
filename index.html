@@ -3,6 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<script>
+/* =====================================================================
+   PROTEKSI DOMAIN
+   App ini HANYA boleh jalan dari domain resmi GitHub Pages-nya. Kalau file
+   ini di-copy dan di-upload/host ulang di domain lain, seluruh halaman
+   langsung diblokir sebelum sempat dirender -- ini lapisan pertama.
+   Lapisan kedua (yang sebenarnya menentukan) ada di Firestore Security
+   Rules, karena pengecekan di sisi HTML/JS ini bisa dilihat & dihapus
+   siapa saja yang buka "View Source" -- jangan andalkan ini sendirian.
+   ===================================================================== */
+(function(){
+  var DOMAIN_RESMI = ["tehmanisdjawa.github.io"];
+  var hostSekarang = location.hostname;
+  var diizinkan = DOMAIN_RESMI.indexOf(hostSekarang) !== -1 || hostSekarang === "localhost" || hostSekarang === "127.0.0.1";
+  if(!diizinkan){
+    document.write(
+      '<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; ' +
+      'background:#0c1f16; color:#f3ede0; font-family:sans-serif; text-align:center; padding:32px;">' +
+      '<div><div style="font-size:40px; margin-bottom:16px;">\u26d4</div>' +
+      '<div style="font-size:18px; font-weight:700; margin-bottom:10px;">Aplikasi Tidak Didukung di Domain Ini</div>' +
+      '<div style="font-size:14px; opacity:.75; max-width:360px; margin:0 auto;">' +
+      'Website ini adalah salinan tidak resmi. Aplikasi kasir Es Teh Manis Djawa yang sah hanya berjalan di ' +
+      '<b>tehmanisdjawa.github.io</b>.</div></div></div>'
+    );
+    document.close();
+    throw new Error("Domain tidak diizinkan.");
+  }
+})();
+</script>
 <title>Kasir — Es Teh Manis Djawa</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
@@ -434,6 +463,8 @@
   .trxDetailFoot{padding:12px 0 4px; border-top:1px solid var(--line-soft); margin-top:4px; display:flex; align-items:center; justify-content:space-between;}
   .trxDetailFoot .ttlLbl{font-size:13px; font-weight:700; color:var(--ink);}
   .trxDetailFoot .ttlVal{font-family:"Fraunces",serif; font-size:17px; font-weight:600; color:var(--pine-700);}
+  .trxDetailSubHead{font-size:10.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin:14px 0 6px;}
+  .trxDetailSubHead:first-child{margin-top:0;}
   .trxDetailVoidBtn{width:100%; margin-top:14px; padding:12px; border-radius:13px; border:none; background:var(--merah-light); color:var(--merah); font-weight:700; font-size:13.5px; cursor:pointer;}
   .trxDetailNote{font-size:12px; color:var(--muted); margin-top:10px; padding:10px 12px; background:var(--card); border-radius:11px;}
   .trxRow .trn{font-size:13px; font-weight:650; color:var(--ink);}
@@ -1606,11 +1637,16 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
     const shift = labelShiftDariJam(t.jam||0);
     perShift[shift].total += t.total||0; perShift[shift].jumlahTrx += 1; perShift[shift].jumlahItem += t.jumlahItem||0;
     if(!perShift[shift].items) perShift[shift].items = {};
+    if(!perShift[shift].ukuran) perShift[shift].ukuran = {};
     (t.items||[]).forEach(it=>{
       const key = it.nama + (it.varian ? ' ('+it.varian+')' : '');
       if(!perShift[shift].items[key]) perShift[shift].items[key] = { nama:key, qty:0, subtotal:0 };
       perShift[shift].items[key].qty += it.qty||0;
       perShift[shift].items[key].subtotal += it.subtotal||0;
+      const ukr = it.varian || 'Reguler';
+      if(!perShift[shift].ukuran[ukr]) perShift[shift].ukuran[ukr] = { ukuran:ukr, qty:0, subtotal:0 };
+      perShift[shift].ukuran[ukr].qty += it.qty||0;
+      perShift[shift].ukuran[ukr].subtotal += it.subtotal||0;
     });
 
     (t.items||[]).forEach(it=>{
@@ -1634,7 +1670,8 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
     perKaryawan: Object.keys(perKaryawan).map(k=>({karyawan:k,total:perKaryawan[k]})).sort((a,b)=>b.total-a.total),
     perShift: SHIFT_URUTAN.map(s=>({
       ...perShift[s],
-      items: Object.values(perShift[s].items||{}).sort((a,b)=>b.qty-a.qty)
+      items: Object.values(perShift[s].items||{}).sort((a,b)=>b.qty-a.qty),
+      ukuran: Object.values(perShift[s].ukuran||{}).sort((a,b)=>b.qty-a.qty)
     })).filter(s=>s.jumlahTrx>0 || s.shift!=='Luar Jam Operasional'),
     itemTerlaris: Object.values(perItem).sort((a,b)=>b.qty-a.qty),
     perUkuranCup: Object.values(perUkuran).sort((a,b)=>b.qty-a.qty),
@@ -1724,7 +1761,7 @@ function renderLaporanSemuaOutlet(data){
   });
   el('lapBody').innerHTML = html;
 }
-function renderPerUkuranCupHtml(u){ if(!u||!u.length) return ''; return `<div style="margin-top:12px;"><div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px;">Terjual per Ukuran</div>${u.map(x=>`<div class="lapRow"><div class="lrn">${x.ukuran}</div><div class="lrv">${x.qty} cup</div></div>`).join('')}</div>`; }
+function renderPerUkuranCupHtml(u){ if(!u) return ''; return `<div style="margin-top:12px;"><div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px;">Terjual per Ukuran</div>${u.length ? u.map(x=>`<div class="lapRow"><div class="lrn">${x.ukuran}</div><div class="lrv">${x.qty} cup</div></div>`).join('') : '<div class="empty" style="padding:6px 0; text-align:left;">Belum ada data.</div>'}</div>`; }
 function renderPerKaryawanHtml(k){ if(!k||!k.length) return ''; return `<div style="margin-top:12px;"><div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px;">Per Karyawan</div>${k.map(x=>`<div class="lapRow"><div class="lrn">${x.karyawan}</div><div class="lrv">${rupiah(x.total)}</div></div>`).join('')}</div>`; }
 
 function renderLaporanSatuOutlet(data){
@@ -1746,9 +1783,13 @@ function renderLaporanSatuOutlet(data){
     data.perShift.forEach((s, idx)=>{ html += `<div class="shiftCard" data-shiftidx="${idx}"><div class="scLbl">${SHIFT_ICON[s.shift]||''} ${s.shift}</div>${SHIFT_JAM[s.shift] ? `<div class="scJam">${SHIFT_JAM[s.shift]}</div>` : ''}<div class="scVal">${rupiah(s.total)}</div><div class="scSub">${s.jumlahTrx} transaksi \u00b7 ${s.jumlahItem} item</div></div>`; });
     html += `</div></div>`;
   }
-  if(data.perUkuranCup && data.perUkuranCup.length){
+  if(data.perUkuranCup){
     html += `<div class="lapSection"><h4>Terjual per Ukuran</h4>`;
-    data.perUkuranCup.forEach(u=>{ html += `<div class="lapRow"><div class="lrn">${u.ukuran}</div><div class="lrv">${u.qty} cup</div></div>`; });
+    if(data.perUkuranCup.length){
+      data.perUkuranCup.forEach(u=>{ html += `<div class="lapRow"><div class="lrn">${u.ukuran}</div><div class="lrv">${u.qty} cup</div></div>`; });
+    }else{
+      html += `<div class="empty" style="padding:10px 0; text-align:left;">Belum ada data.</div>`;
+    }
     html += `</div>`;
   }
   if(data.perKaryawan && data.perKaryawan.length){
@@ -1804,13 +1845,26 @@ function bukaDetailShift(s){
   el('trxDetailTitle').innerHTML = (SHIFT_ICON[s.shift]||'') + ' ' + s.shift;
   el('trxDetailSub').textContent = (SHIFT_JAM[s.shift] ? SHIFT_JAM[s.shift]+' \u00b7 ' : '') + s.jumlahTrx + ' transaksi \u00b7 ' + s.jumlahItem + ' item terjual';
 
-  const itemsHtml = (s.items && s.items.length) ? s.items.map(it=>`
+  const ukuranHtml = (s.ukuran && s.ukuran.length) ? `
+    <div class="trxDetailSubHead">Terjual per Ukuran</div>
+    ${s.ukuran.map(u=>`
+      <div class="trxItemRow">
+        <div><div class="tin">${u.ukuran}</div></div>
+        <div class="tiq">${u.qty} cup</div>
+      </div>`).join('')}
+  ` : '';
+
+  const itemsHtml = (s.items && s.items.length) ? `
+    <div class="trxDetailSubHead">Rincian Menu</div>
+    ${s.items.map(it=>`
     <div class="trxItemRow">
       <div><div class="tin">${it.nama}</div><div class="tiv">${it.qty} terjual</div></div>
       <div class="tiq">${rupiah(it.subtotal||0)}</div>
-    </div>`).join('') : '<div class="empty" style="padding:16px 0;">Belum ada barang terjual di shift ini.</div>';
+    </div>`).join('')}
+  ` : '<div class="empty" style="padding:16px 0;">Belum ada barang terjual di shift ini.</div>';
 
   el('trxDetailBody').innerHTML = `
+    ${ukuranHtml}
     ${itemsHtml}
     <div class="trxDetailFoot"><div class="ttlLbl">Total Omset Shift</div><div class="ttlVal">${rupiah(s.total||0)}</div></div>
   `;

@@ -410,7 +410,17 @@
   .shiftCard .scLbl{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-weight:700; margin-bottom:5px; display:flex; align-items:center; gap:5px;}
   .shiftCard .scVal{font-family:"Fraunces",serif; font-size:16px; font-weight:600; color:var(--pine-950);}
   .shiftCard .scSub{font-size:10.5px; color:var(--muted-soft); margin-top:3px;}
-  .trxRow{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line-soft);}
+  .trxRow{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line-soft); cursor:pointer;}
+  .trxRow:active{background:var(--line-soft);}
+  .trxItemRow{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line-soft); gap:10px;}
+  .trxItemRow .tin{font-size:13px; font-weight:650; color:var(--ink);}
+  .trxItemRow .tiv{font-size:11.5px; color:var(--muted); margin-top:2px;}
+  .trxItemRow .tiq{font-size:12px; font-weight:650; color:var(--pine-700); flex:0 0 auto;}
+  .trxDetailFoot{padding:12px 0 4px; border-top:1px solid var(--line-soft); margin-top:4px; display:flex; align-items:center; justify-content:space-between;}
+  .trxDetailFoot .ttlLbl{font-size:13px; font-weight:700; color:var(--ink);}
+  .trxDetailFoot .ttlVal{font-family:"Fraunces",serif; font-size:17px; font-weight:600; color:var(--pine-700);}
+  .trxDetailVoidBtn{width:100%; margin-top:14px; padding:12px; border-radius:13px; border:none; background:var(--merah-light); color:var(--merah); font-weight:700; font-size:13.5px; cursor:pointer;}
+  .trxDetailNote{font-size:12px; color:var(--muted); margin-top:10px; padding:10px 12px; background:var(--card); border-radius:11px;}
   .trxRow .trn{font-size:13px; font-weight:650; color:var(--ink);}
   .trxRow .trm{font-size:11px; color:var(--muted); margin-top:2px;}
   .trxRow .trv{font-size:12.5px; font-weight:650; color:var(--pine-700); margin-right:8px;}
@@ -569,6 +579,17 @@
       <button id="sheetClose">✕</button>
     </div>
     <div class="sheetBody" id="sheetBody"></div>
+  </div>
+</div>
+
+<div class="sheetOverlay" id="trxDetailOverlay">
+  <div class="sheet">
+    <div class="sheetHandle"></div>
+    <div class="sheetHead">
+      <div><div class="ttl" id="trxDetailTitle">Detail Transaksi</div><div class="cat" id="trxDetailSub">-</div></div>
+      <button id="trxDetailClose">✕</button>
+    </div>
+    <div class="sheetBody" id="trxDetailBody"></div>
   </div>
 </div>
 
@@ -1474,6 +1495,7 @@ el('lapClose').onclick = ()=> el('lapOverlay').classList.remove('show');
 let lapTanggalAktif = tanggalHariIniStr();
 let lapOutletAktif = '';
 let lapDataTerakhir = null;
+let trxDetailMap = {}; // trxId -> data transaksi (dipakai buka detail item yang dibeli)
 
 async function openLaporan(){
   const isOwner = SESI && SESI.jabatan === 'Owner';
@@ -1553,7 +1575,7 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
 
   const daftarTrx = transaksiArr.map(t=>{
     const waktuDate = t.waktu && t.waktu.toDate ? t.waktu.toDate() : new Date();
-    return { trxId: t.id, tanggal, waktu: String(waktuDate.getHours()).padStart(2,'0')+':'+String(waktuDate.getMinutes()).padStart(2,'0'), jam:t.jam||0, karyawan:t.karyawan, metode:t.metode, jumlahItem:t.jumlahItem||0, total:t.total||0 };
+    return { trxId: t.id, tanggal, waktu: String(waktuDate.getHours()).padStart(2,'0')+':'+String(waktuDate.getMinutes()).padStart(2,'0'), jam:t.jam||0, karyawan:t.karyawan, metode:t.metode, jumlahItem:t.jumlahItem||0, total:t.total||0, items:t.items||[], outlet:t.outlet||'', catatan:t.catatan||'' };
   }).sort((a,b)=> a.waktu < b.waktu ? 1 : -1);
 
   return {
@@ -1699,20 +1721,74 @@ function renderLaporanSatuOutlet(data){
           ${bolehHapus ? `<button class="voidB" title="Batalkan transaksi ini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button>` : ''}
         </div>
       </div>`).join('');
-    if(bolehHapus){
-      el('trxList').querySelectorAll('.trxRow').forEach(row=>{ row.querySelector('.voidB').onclick = ()=> voidTransaksi(row.dataset.id); });
-    }
+    // Simpan data transaksi hari ini biar bisa dibuka detailnya tanpa fetch ulang.
+    trxDetailMap = {};
+    data.transaksi.forEach(t=> trxDetailMap[t.trxId] = t);
+
+    el('trxList').querySelectorAll('.trxRow').forEach(row=>{
+      row.onclick = ()=> bukaDetailTransaksi(row.dataset.id);
+      if(bolehHapus){
+        row.querySelector('.voidB').onclick = (e)=>{ e.stopPropagation(); voidTransaksi(row.dataset.id); };
+      }
+    });
   }
   el('shareWaBtn').onclick = ()=> bagikanLaporanWA(lapDataTerakhir || data);
   el('downloadTxtBtn').onclick = ()=> unduhLaporan(lapDataTerakhir || data);
 }
 
-async function voidTransaksi(trxId){
+function bukaDetailTransaksi(trxId){
+  const t = trxDetailMap[trxId];
+  if(!t) return;
+  const bolehHapus = SESI && SESI.jabatan === 'Owner';
+
+  el('trxDetailTitle').textContent = t.karyawan + ' \u00b7 ' + t.metode;
+  el('trxDetailSub').textContent = t.waktu + (t.outlet ? ' \u00b7 ' + t.outlet : '');
+
+  const itemsHtml = (t.items && t.items.length) ? t.items.map(it=>`
+    <div class="trxItemRow">
+      <div><div class="tin">${it.nama}${it.varian ? ' \u2014 ' + it.varian : ''}</div><div class="tiv">${it.qty} \u00d7 ${rupiah(it.harga||0)}${it.tambahan ? ' \u00b7 ' + it.tambahan : ''}</div></div>
+      <div class="tiq">${rupiah(it.subtotal||0)}</div>
+    </div>`).join('') : '<div class="empty" style="padding:16px 0;">Detail item tidak tersedia untuk transaksi ini.</div>';
+
+  el('trxDetailBody').innerHTML = `
+    ${itemsHtml}
+    <div class="trxDetailFoot"><div class="ttlLbl">Total</div><div class="ttlVal">${rupiah(t.total||0)}</div></div>
+    ${t.catatan ? `<div class="trxDetailNote">Catatan: ${t.catatan}</div>` : ''}
+    ${bolehHapus ? `<button class="trxDetailVoidBtn" id="trxDetailVoidBtn">Batalkan Transaksi Ini</button>` : ''}
+  `;
+  if(bolehHapus){
+    el('trxDetailVoidBtn').onclick = ()=> voidTransaksi(trxId, true);
+  }
+  el('trxDetailOverlay').classList.add('show');
+}
+el('trxDetailClose').onclick = ()=> el('trxDetailOverlay').classList.remove('show');
+el('trxDetailOverlay').onclick = (e)=>{ if(e.target.id==='trxDetailOverlay') el('trxDetailOverlay').classList.remove('show'); };
+
+async function voidTransaksi(trxId, dariDetail){
   if(!SESI || SESI.jabatan !== 'Owner') return; // pengaman tambahan sisi client
-  if(!confirm("Batalkan transaksi ini? Data akan dihapus dari laporan.")) return;
+  const t = trxDetailMap[trxId];
+  if(!confirm("Batalkan transaksi ini? Data akan dihapus dari laporan dan stok barang yang terjual akan dikembalikan.")) return;
   try{
+    // Kembalikan stok tiap item (kalau outlet-nya kelola stok utk varian itu) SEBELUM
+    // dokumen transaksinya dihapus, supaya kalau gagal di tengah jalan datanya masih ada
+    // untuk dicoba ulang -- lebih aman daripada hapus dulu baru kembalikan stok.
+    if(t && t.outlet && t.items && t.items.length){
+      for(const it of t.items){
+        const stokDocId = (t.outlet+'_'+it.kategori+'_'+it.nama+'_'+it.varian).replace(/[^a-zA-Z0-9]/g,'_');
+        const stokRef = doc(db, "stok", stokDocId);
+        try{
+          await runTransaction(db, async (tx)=>{
+            const snap = await tx.get(stokRef);
+            if(!snap.exists()) return; // outlet ini belum kelola stok utk varian ini, lewati
+            const skrg = Number(snap.data().jumlah)||0;
+            tx.update(stokRef, { jumlah: skrg + (it.qty||0) });
+          });
+        }catch(e){ /* gagal kembalikan stok utk 1 item, tetap lanjut hapus transaksi */ }
+      }
+    }
     await deleteDoc(doc(db, "transaksi", trxId));
-    showToast("Transaksi dibatalkan");
+    showToast("Transaksi dibatalkan, stok dikembalikan");
+    if(dariDetail) el('trxDetailOverlay').classList.remove('show');
     muatLaporanTanggal(lapTanggalAktif);
   }catch(e){ showToast("Gagal membatalkan. Cek koneksi.", false); }
 }
@@ -2114,13 +2190,13 @@ async function bukaRiwayatRestock(){
 const OVERLAY_IDS_BACK = [
   'restockOverlay', 'stokOverlay', 'akunFormOverlay', 'akunOverlay',
   'lapOverlay', 'adminOverlay2', 'calcOverlay', 'cartOverlay',
-  'sheetOverlay', 'menuDropdownOverlay', 'logoutWarnOverlay'
+  'sheetOverlay', 'trxDetailOverlay', 'menuDropdownOverlay', 'logoutWarnOverlay'
 ];
 let sedangProsesBack = false;
 
 function overlayTerbukaSaatIni(){
   // urutan terakhir di array = prioritas ditutup duluan (overlay yang biasanya "di atas")
-  const urutanPrioritas = ['restockOverlay','stokOverlay','akunFormOverlay','akunOverlay','lapOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
+  const urutanPrioritas = ['restockOverlay','stokOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
   for(const id of urutanPrioritas){
     const elm = document.getElementById(id);
     if(elm && elm.classList.contains('show')) return id;

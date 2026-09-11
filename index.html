@@ -382,6 +382,11 @@
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23786f5c' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
     background-repeat:no-repeat; background-position:right 11px center; background-size:14px; padding-right:32px;}
   .varRow .rmVar{background:var(--merah-light); border:none; color:var(--merah); font-size:16px; cursor:pointer; flex:0 0 auto; width:34px; height:34px; border-radius:9px;}
+  .varRowFull{display:block; border:1.3px solid var(--line-soft); border-radius:13px; padding:10px; margin-bottom:10px; background:var(--pine-50);}
+  .varRowLine{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
+  .varRowLine:last-child{margin-bottom:0;}
+  .varRowFull .vNamaCustom{width:100%; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);}
+  .vTambahanTag{color:var(--muted); font-weight:500;}
   .addVarBtn{background:var(--pine-50); border:1.3px dashed var(--line); border-radius:11px; padding:10px; width:100%; font-size:12.5px; color:var(--pine-700); font-weight:600; cursor:pointer; margin-bottom:16px;}
   .saveFormBtn{width:100%; background:linear-gradient(160deg, var(--pine-800), var(--pine-950)); color:#f3ede0; border:none; border-radius:13px; padding:14px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 8px 22px rgba(12,31,22,.25);}
   .backLink{background:none; border:none; color:var(--pine-700); font-size:12.5px; font-weight:650; margin-bottom:14px; cursor:pointer; display:flex; align-items:center; gap:5px; padding:0;}
@@ -1144,7 +1149,7 @@ async function terapkanStokKeMenu(rows){
         const key = kategori+'|'+nama+'|'+v.ukuran;
         if(key in stokMap){ stokSisa = stokMap[key]; if(stokSisa <= 0) habis = true; }
       }
-      catMap[kategori][nama].varian.push({ nama: v.ukuran, harga: v.harga||0, habis, stok: stokSisa });
+      catMap[kategori][nama].varian.push({ nama: v.ukuran, harga: v.harga||0, tambahan: v.tambahan||'', habis, stok: stokSisa });
     });
   });
   MENU = catOrder.map(kat => ({ kategori: kat, items: Object.values(catMap[kat]) }));
@@ -1194,9 +1199,10 @@ function openVariantSheet(ci, ii){
   el('sheetTitle').textContent = item.nama; el('sheetCat').textContent = cat.kategori;
   el('sheetBody').innerHTML = item.varian.map((v, vi)=>{
     const k = ci+"|"+ii+"|"+vi; const qty = cart[k]?.qty || 0;
-    if(v.habis) return `<div class="varOption habis"><div><div class="vn">${v.nama}</div><div class="vhabis">Sedang habis</div></div></div>`;
-    if(qty > 0) return `<div class="varOption" style="cursor:default;"><div><div class="vn">${v.nama}</div><div class="vp">Rp${(v.harga||0).toLocaleString('id-ID')}</div></div><div class="qtyStepBar" data-k="${k}"><button class="minus">\u2212</button><div class="val">${qty}</div><button class="plus">+</button></div></div>`;
-    return `<div class="varOption" data-k="${k}" data-add="1"><div><div class="vn">${v.nama}</div><div class="vp">Rp${(v.harga||0).toLocaleString('id-ID')}</div></div><div class="plusBtn">+</div></div>`;
+    const namaTampil = v.nama + (v.tambahan ? ` <span class="vTambahanTag">(${v.tambahan})</span>` : '');
+    if(v.habis) return `<div class="varOption habis"><div><div class="vn">${namaTampil}</div><div class="vhabis">Sedang habis</div></div></div>`;
+    if(qty > 0) return `<div class="varOption" style="cursor:default;"><div><div class="vn">${namaTampil}</div><div class="vp">Rp${(v.harga||0).toLocaleString('id-ID')}</div></div><div class="qtyStepBar" data-k="${k}"><button class="minus">\u2212</button><div class="val">${qty}</div><button class="plus">+</button></div></div>`;
+    return `<div class="varOption" data-k="${k}" data-add="1"><div><div class="vn">${namaTampil}</div><div class="vp">Rp${(v.harga||0).toLocaleString('id-ID')}</div></div><div class="plusBtn">+</div></div>`;
   }).join('');
   attachSheetEvents(cat, item, ci, ii);
   el('sheetOverlay').classList.add('show');
@@ -1205,7 +1211,7 @@ function attachSheetEvents(cat, item, ci, ii){
   el('sheetBody').querySelectorAll('.varOption[data-add]').forEach(row=>{
     row.onclick = ()=>{
       const k = row.dataset.k; const vi = +k.split('|')[2]; const v = item.varian[vi];
-      cart[k] = { nama:item.nama, varian:v.nama, harga:v.harga||0, kategori:cat.kategori, qty:1 };
+      cart[k] = { nama:item.nama, varian:v.nama, tambahan:v.tambahan||'', harga:v.harga||0, kategori:cat.kategori, qty:1 };
       openVariantSheet(ci, ii); renderMenu(); updateFab();
     };
   });
@@ -1232,7 +1238,7 @@ function renderCartBody(){
   else {
     el('cartBody').innerHTML = keys.map(k=>{
       const c = cart[k];
-      return `<div class="cartRow" data-k="${k}"><div class="ci"><div class="cn">${c.nama}</div><div class="cv">${c.varian}</div><div class="cp">${rupiah(c.harga)}</div></div><div class="cstep"><button class="cminus">\u2212</button><div class="cval">${c.qty}</div><button class="cplus">+</button></div><button class="cdel"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button></div>`;
+      return `<div class="cartRow" data-k="${k}"><div class="ci"><div class="cn">${c.nama}</div><div class="cv">${c.varian}${c.tambahan?' ('+c.tambahan+')':''}</div><div class="cp">${rupiah(c.harga)}</div></div><div class="cstep"><button class="cminus">\u2212</button><div class="cval">${c.qty}</div><button class="cplus">+</button></div><button class="cdel"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button></div>`;
     }).join('');
     el('cartBody').querySelectorAll('.cartRow').forEach(row=>{
       const k = row.dataset.k;
@@ -1259,7 +1265,7 @@ el('checkoutBtn').onclick = async ()=>{
   const btn = el('checkoutBtn'); btn.disabled = true; btn.textContent = "Mengirim...";
   try{
     const waktu = new Date();
-    const items = keys.map(k => ({ nama: cart[k].nama, varian: cart[k].varian, harga: cart[k].harga, qty: cart[k].qty, kategori: cart[k].kategori, subtotal: cart[k].qty*cart[k].harga }));
+    const items = keys.map(k => ({ nama: cart[k].nama, varian: cart[k].varian, tambahan: cart[k].tambahan||'', harga: cart[k].harga, qty: cart[k].qty, kategori: cart[k].kategori, subtotal: cart[k].qty*cart[k].harga }));
     const total = cartTotalRp();
     const totalItem = items.reduce((s,it)=>s+it.qty,0);
 
@@ -1321,7 +1327,7 @@ function renderAdminList(){
     html += `<div class="catLabelAdmin">${cat.kategori}</div>`;
     cat.items.forEach((item, ii)=>{
       const semuaHabis = item.varian.every(v=>v.habis);
-      const varStr = item.varian.map(v=>`${v.nama}: ${rupiah(v.harga)}${v.habis?' (Habis)':''}`).join(' \u00b7 ');
+      const varStr = item.varian.map(v=>`${v.nama}${v.tambahan?' ('+v.tambahan+')':''}: ${rupiah(v.harga)}${v.habis?' (Habis)':''}`).join(' \u00b7 ');
       html += `<div class="adminItem" data-ci="${ci}" data-ii="${ii}">
         <div class="aiTop">
           <div class="ain">${item.nama}</div>
@@ -1364,48 +1370,76 @@ function openAdminForm(target){
   const item = target ? cat.items[target.ii] : null;
   const kategoriVal = item ? cat.kategori : '';
   const namaVal = item ? item.nama : '';
-  const varianList = item ? item.varian.map(v=>({nama:v.nama, harga:v.harga})) : [{nama:'', harga:0}];
+  // varianList sekarang: { nama, harga, tambahan }. nama bisa dari UKURAN_OZ ATAU hasil ketik bebas.
+  const varianList = item ? item.varian.map(v=>({nama:v.nama, harga:v.harga, tambahan:v.tambahan||''})) : [{nama:'', harga:0, tambahan:''}];
 
   let html = `<button class="backLink" id="backToList"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>Kembali</button>
     <div class="formField"><label>Kategori</label><input id="fKategori" type="text" value="${kategoriVal}" placeholder="Ketik kategori sendiri, contoh: Es Teh Manis"><div class="hint">Ketik bebas \u2014 boleh kategori baru atau yang sudah ada.</div></div>
     <div class="formField"><label>Nama Menu</label><input id="fNama" type="text" value="${namaVal}" placeholder="Ketik nama menu sendiri, contoh: Es Teh Lemon"><div class="hint">Ketik bebas sesuai nama menu yang kamu mau.</div></div>
-    <div class="formField"><label>Ukuran & Harga</label><div id="varList"></div><button class="addVarBtn" id="addVarBtn">+ Tambah ukuran</button></div>
+    <div class="formField"><label>Ukuran, Harga & Tambahan</label><div id="varList"></div><button class="addVarBtn" id="addVarBtn">+ Tambah ukuran</button></div>
     <button class="saveFormBtn" id="saveFormBtn">${target ? 'Simpan Perubahan' : 'Tambah Menu'}</button>`;
 
   el('adminBody').innerHTML = html;
   el('backToList').onclick = ()=> renderAdminList();
 
+  const NILAI_KETIK_SENDIRI = "__custom__";
+
   function renderVarList(){
-    el('varList').innerHTML = varianList.map((v,i)=>`
-      <div class="varRow" data-i="${i}">
-        <select class="vNama">
-          <option value="" disabled ${!v.nama?'selected':''}>Pilih ukuran...</option>
-          ${UKURAN_OZ.map(u=>`<option value="${u.value}" ${u.value===v.nama?'selected':''}>${u.label}</option>`).join('')}
-        </select>
-        <input class="vHarga" type="number" value="${v.harga}" placeholder="Harga" style="max-width:110px;">
-        ${varianList.length>1 ? `<button class="rmVar">\u2715</button>` : ''}
-      </div>`).join('');
+    el('varList').innerHTML = varianList.map((v,i)=>{
+      const namaAdaDiDaftar = UKURAN_OZ.some(u=>u.value===v.nama);
+      const isCustom = v.nama && !namaAdaDiDaftar;
+      return `
+      <div class="varRow varRowFull" data-i="${i}">
+        <div class="varRowLine">
+          <select class="vNama">
+            <option value="" disabled ${!v.nama?'selected':''}>Pilih ukuran...</option>
+            ${UKURAN_OZ.map(u=>`<option value="${u.value}" ${u.value===v.nama?'selected':''}>${u.label}</option>`).join('')}
+            <option value="${NILAI_KETIK_SENDIRI}" ${isCustom?'selected':''}>\u270f\ufe0f Ketik nama ukuran sendiri...</option>
+          </select>
+          ${varianList.length>1 ? `<button class="rmVar">\u2715</button>` : ''}
+        </div>
+        <input class="vNamaCustom" type="text" value="${isCustom?v.nama:''}" placeholder="Contoh: Cup Sedang / Family Size" style="${isCustom?'':'display:none;'} margin-bottom:8px;">
+        <div class="varRowLine">
+          <input class="vHarga" type="number" value="${v.harga}" placeholder="Harga">
+          <input class="vTambahan" type="text" value="${v.tambahan||''}" placeholder="Tambahan (opsional, cth: +Susu)">
+        </div>
+      </div>`;
+    }).join('');
     el('varList').querySelectorAll('.varRow').forEach(row=>{
       const i = +row.dataset.i;
-      row.querySelector('.vNama').onchange = e=> varianList[i].nama = e.target.value;
+      const selectEl = row.querySelector('.vNama');
+      const customEl = row.querySelector('.vNamaCustom');
+      selectEl.onchange = e=>{
+        if(e.target.value === NILAI_KETIK_SENDIRI){
+          customEl.style.display = '';
+          customEl.value = '';
+          varianList[i].nama = '';
+          customEl.focus();
+        } else {
+          customEl.style.display = 'none';
+          varianList[i].nama = e.target.value;
+        }
+      };
+      customEl.oninput = e=> varianList[i].nama = e.target.value.trim();
       row.querySelector('.vHarga').oninput = e=> varianList[i].harga = Number(e.target.value)||0;
+      row.querySelector('.vTambahan').oninput = e=> varianList[i].tambahan = e.target.value;
       const rm = row.querySelector('.rmVar');
       if(rm) rm.onclick = ()=>{ varianList.splice(i,1); renderVarList(); };
     });
   }
   renderVarList();
-  el('addVarBtn').onclick = ()=>{ varianList.push({nama:'', harga:0}); renderVarList(); };
+  el('addVarBtn').onclick = ()=>{ varianList.push({nama:'', harga:0, tambahan:''}); renderVarList(); };
 
   el('saveFormBtn').onclick = async ()=>{
     const kategori = el('fKategori').value.trim();
     const nama = el('fNama').value.trim();
     if(!kategori || !nama){ showToast("Isi kategori dan nama menu dulu", false); return; }
     const validVarian = varianList.filter(v=>v.nama && v.nama.trim());
-    if(validVarian.length===0){ showToast("Pilih minimal 1 ukuran", false); return; }
+    if(validVarian.length===0){ showToast("Pilih atau ketik minimal 1 ukuran", false); return; }
 
     const btn = el('saveFormBtn'); btn.disabled = true; btn.textContent = "Menyimpan...";
     try{
-      const payload = { kategori, nama, varian: validVarian.map(v=>({ ukuran: v.nama, harga: v.harga||0, habis: false })) };
+      const payload = { kategori, nama, varian: validVarian.map(v=>({ ukuran: v.nama, harga: v.harga||0, tambahan: (v.tambahan||'').trim(), habis: false })) };
       if(target){
         await updateDoc(doc(db, "menu", item.id), payload);
         showToast("Menu diperbarui");
@@ -2067,6 +2101,70 @@ async function bukaRiwayatRestock(){
     `;
   }catch(e){ el('restockBody').innerHTML = '<div class="empty">Gagal memuat riwayat. Cek koneksi.</div>'; }
 }
+
+/* =====================================================================
+   TOMBOL BACK HP — menutup overlay yang lagi terbuka dulu, baru kalau
+   tidak ada overlay terbuka, tombol back baru boleh keluar dari aplikasi.
+   Caranya: setiap overlay dibuka, kita "push" state baru ke history.
+   Saat tombol back HP ditekan, browser trigger 'popstate' -> kita cek
+   overlay mana yang lagi terbuka lalu kita tutup overlay itu saja
+   (bukan keluar app), lalu push lagi state jaga-jaga supaya back
+   berikutnya juga masih ke-handle.
+   ===================================================================== */
+const OVERLAY_IDS_BACK = [
+  'restockOverlay', 'stokOverlay', 'akunFormOverlay', 'akunOverlay',
+  'lapOverlay', 'adminOverlay2', 'calcOverlay', 'cartOverlay',
+  'sheetOverlay', 'menuDropdownOverlay', 'logoutWarnOverlay'
+];
+let sedangProsesBack = false;
+
+function overlayTerbukaSaatIni(){
+  // urutan terakhir di array = prioritas ditutup duluan (overlay yang biasanya "di atas")
+  const urutanPrioritas = ['restockOverlay','stokOverlay','akunFormOverlay','akunOverlay','lapOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
+  for(const id of urutanPrioritas){
+    const elm = document.getElementById(id);
+    if(elm && elm.classList.contains('show')) return id;
+  }
+  return null;
+}
+
+function tutupOverlay(id){
+  const elm = document.getElementById(id);
+  if(!elm) return;
+  elm.classList.remove('show');
+}
+
+function dorongStateOverlay(){
+  history.pushState({ kasirOverlay: true }, '');
+}
+
+function pasangPelacakOverlay(id){
+  const elm = document.getElementById(id);
+  if(!elm) return;
+  // pantau setiap kali class "show" ditambahkan ke overlay ini
+  const observer = new MutationObserver(()=>{
+    if(elm.classList.contains('show')){
+      dorongStateOverlay();
+    }
+  });
+  observer.observe(elm, { attributes:true, attributeFilter:['class'] });
+}
+OVERLAY_IDS_BACK.forEach(pasangPelacakOverlay);
+
+window.addEventListener('popstate', ()=>{
+  if(sedangProsesBack) return;
+  const overlayAktif = overlayTerbukaSaatIni();
+  if(overlayAktif){
+    sedangProsesBack = true;
+    tutupOverlay(overlayAktif);
+    sedangProsesBack = false;
+  }
+  // kalau tidak ada overlay yang terbuka, biarkan browser lanjut
+  // proses back seperti biasa (misalnya keluar dari aplikasi/tab).
+});
+
+// Sediakan 1 state dasar di awal supaya popstate pertama selalu ke-handle.
+history.pushState({ kasirBase: true }, '');
 
 /* =====================================================================
    BOOT

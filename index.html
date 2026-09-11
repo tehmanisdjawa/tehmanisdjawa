@@ -770,11 +770,18 @@ function dalamJadwalShift(akun){
    setiap refresh -- hanya logout kalau lewat jadwal shift atau logout manual.
    ===================================================================== */
 async function cariAkunByUsername(username){
-  const qy = query(collection(db, "akun"), where("username", "==", username));
-  const snap = await getDocs(qy);
-  if(snap.empty) return null;
-  const d = snap.docs[0];
-  return { id: d.id, ...d.data() };
+  // Dibuat TIDAK case-sensitive (mirip perilaku sistem lama) -- "Owner", "owner", "OWNER"
+  // semua dianggap sama. Firestore where("==") itu sendiri case-sensitive, jadi
+  // perbandingannya dilakukan di JS setelah data diambil, bukan di query.
+  const target = String(username || '').trim().toLowerCase();
+  if(!target) return null;
+  const snap = await getDocs(collection(db, "akun"));
+  for(const d of snap.docs){
+    const data = d.data();
+    const rowUsername = String(data.username || '').trim().toLowerCase();
+    if(rowUsername === target) return { id: d.id, ...data };
+  }
+  return null;
 }
 
 function simpanSesiLokal(sesi){
@@ -799,8 +806,13 @@ async function prosesLogin(){
   btn.disabled = true; btn.textContent = 'Memeriksa...';
   try{
     const akun = await cariAkunByUsername(username);
-    if(!akun || akun.password !== password){
-      el('loginErr').textContent = 'Username atau password salah.';
+    if(!akun){
+      el('loginErr').textContent = 'Username tidak ditemukan. Pastikan sudah dibuat di koleksi "akun" Firestore.';
+      el('loginErr').style.display = 'block';
+      return;
+    }
+    if(akun.password !== password){
+      el('loginErr').textContent = 'Password salah.';
       el('loginErr').style.display = 'block';
       return;
     }

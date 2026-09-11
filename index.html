@@ -376,11 +376,11 @@
   .formField input, .formField select{width:100%; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);}
   .formField input:focus, .formField select:focus{outline:none; border-color:var(--pine-600);}
   .formField .hint{font-size:10.5px; color:var(--muted-soft); margin-top:5px;}
-  .varRow{display:flex; gap:8px; margin-bottom:8px; align-items:center; flex-wrap:wrap;}
+  .varRow{display:flex; gap:8px; margin-bottom:8px; align-items:center;}
   .varRow input{flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);}
-  .varRow .vNama{min-width:120px;}
-  .varRow .vTambahan{min-width:100px;}
-  .varRow .vHarga{max-width:100px; flex:0 0 auto;}
+  .varRow select{flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink); appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23786f5c' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 11px center; background-size:14px; padding-right:32px;}
   .varRow .rmVar{background:var(--merah-light); border:none; color:var(--merah); font-size:16px; cursor:pointer; flex:0 0 auto; width:34px; height:34px; border-radius:9px;}
   .addVarBtn{background:var(--pine-50); border:1.3px dashed var(--line); border-radius:11px; padding:10px; width:100%; font-size:12.5px; color:var(--pine-700); font-weight:600; cursor:pointer; margin-bottom:16px;}
   .saveFormBtn{width:100%; background:linear-gradient(160deg, var(--pine-800), var(--pine-950)); color:#f3ede0; border:none; border-radius:13px; padding:14px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 8px 22px rgba(12,31,22,.25);}
@@ -457,17 +457,6 @@
   <div class="spinner"></div>
   <div class="bootTxt">Menghubungkan ke server...</div>
 </div>
-
-<!-- Datalist saran ukuran cup untuk form menu -->
-<datalist id="ukuranDatalist">
-  <option value="Reguler">
-  <option value="Small (10oz)">
-  <option value="Medium (16oz)">
-  <option value="Large (18oz)">
-  <option value="Jumbo (22oz)">
-  <option value="Cup Medium">
-  <option value="Cup Jumbo">
-</datalist>
 
 <!-- ============ LOGIN SCREEN ============ -->
 <div class="loginOverlay" id="loginOverlay" style="display:none;">
@@ -715,25 +704,26 @@ const db = getFirestore(fbApp);
 /* =====================================================================
    STATE GLOBAL
    ===================================================================== */
-let MENU = [];
+let MENU = [];              // [{id, kategori, nama, varian:[{ukuran, harga}]}]
 let activeCat = "Semua";
 let cart = {};
 let payMethod = "Cash";
-let SESI = null;
+let SESI = null;             // { token, jabatan, namaTampilan, username, outlet }
 let KARYAWAN_LIST = [];
 let MOTIVASI_POOL = [];
 let motivIdx = 0, motivTimer = null, motivHideTimer = null;
 let cekSesiTimer = null, logoutCountdownTimer = null;
-let OUTLET_LIST = [];
-let unsubMenu = null;
+let OUTLET_LIST = [];        // daftar semua outlet (dari sheet akun / koleksi outlet)
+let unsubMenu = null;        // listener realtime menu
 
+// Ukuran oz baku — SATU daftar global dipakai semua menu.
 const UKURAN_OZ = [
   { label: "Small (10oz)", value: "Small (10oz)" },
   { label: "Medium (16oz)", value: "Medium (16oz)" },
   { label: "Large (18oz)", value: "Large (18oz)" },
   { label: "Jumbo (22oz)", value: "Jumbo (22oz)" }
 ];
-const DEFAULT_ISI_ROLL = 50;
+const DEFAULT_ISI_ROLL = 50; // default 1 roll = 50 cup, bisa diubah manual saat restock
 
 const el = id => document.getElementById(id);
 const rupiah = n => "Rp" + Number(n).toLocaleString('id-ID');
@@ -747,46 +737,6 @@ function showToast(msg, ok=true){
   t.classList.add('show');
   setTimeout(()=> t.classList.remove('show'), 2800);
 }
-
-/* =====================================================================
-   BACK BUTTON HANDLING (HP)
-   Setiap kali tombol back ditekan:
-   - Kalau ada modal/sheet terbuka -> tutup modal itu.
-   - Kalau tidak ada -> baru boleh keluar dari aplikasi.
-   Caranya: taruh 1 "guard" entry di history stack saat halaman dibuka,
-   lalu push ulang guard setiap kali user menekan back supaya tetap di app.
-   ===================================================================== */
-const OVERLAY_IDS_BACK = [
-  'akunFormOverlay','restockOverlay','stokOverlay','akunOverlay',
-  'lapOverlay','adminOverlay2','cartOverlay','sheetOverlay','calcOverlay'
-];
-
-function tutupModalTeratas(){
-  for(const id of OVERLAY_IDS_BACK){
-    const ov = el(id);
-    if(ov && ov.classList.contains('show')){
-      ov.classList.remove('show');
-      return true;
-    }
-  }
-  return false;
-}
-
-function pasangGuardHistory(){
-  try{ history.pushState({ etd_guard: Date.now() }, ''); }catch(e){}
-}
-
-window.addEventListener('popstate', ()=>{
-  const tertutup = tutupModalTeratas();
-  if(tertutup){
-    // Masih ada kemungkinan modal lain terbuka / user belum mau keluar -> pasang guard lagi
-    pasangGuardHistory();
-  } else {
-    // Tidak ada modal terbuka -> pasang guard lagi juga supaya TIDAK keluar aplikasi,
-    // sesuai permintaan user ("bukan lagi keluar aplikasi").
-    pasangGuardHistory();
-  }
-});
 
 /* =====================================================================
    UTIL JAM / TANGGAL
@@ -814,9 +764,15 @@ function dalamJadwalShift(akun){
 }
 
 /* =====================================================================
-   AUTH
+   AUTH SEDERHANA BERBASIS FIRESTORE (koleksi "akun")
+   Dokumen akun: { username, password, jabatan, namaTampilan, outlet, mulaiJam, sampaiJam }
+   Token sesi disimpan di localStorage (etd_sesi) supaya TIDAK perlu login ulang
+   setiap refresh -- hanya logout kalau lewat jadwal shift atau logout manual.
    ===================================================================== */
 async function cariAkunByUsername(username){
+  // Dibuat TIDAK case-sensitive (mirip perilaku sistem lama) -- "Owner", "owner", "OWNER"
+  // semua dianggap sama. Firestore where("==") itu sendiri case-sensitive, jadi
+  // perbandingannya dilakukan di JS setelah data diambil, bukan di query.
   const target = String(username || '').trim().toLowerCase();
   if(!target) return null;
   const snap = await getDocs(collection(db, "akun"));
@@ -828,9 +784,15 @@ async function cariAkunByUsername(username){
   return null;
 }
 
-function simpanSesiLokal(sesi){ try{ localStorage.setItem('etd_sesi', JSON.stringify(sesi)); }catch(e){} }
-function ambilSesiLokal(){ try{ return JSON.parse(localStorage.getItem('etd_sesi') || 'null'); }catch(e){ return null; } }
-function hapusSesiLokal(){ try{ localStorage.removeItem('etd_sesi'); }catch(e){} }
+function simpanSesiLokal(sesi){
+  try{ localStorage.setItem('etd_sesi', JSON.stringify(sesi)); }catch(e){}
+}
+function ambilSesiLokal(){
+  try{ return JSON.parse(localStorage.getItem('etd_sesi') || 'null'); }catch(e){ return null; }
+}
+function hapusSesiLokal(){
+  try{ localStorage.removeItem('etd_sesi'); }catch(e){}
+}
 
 async function prosesLogin(){
   const username = el('loginUsername').value.trim();
@@ -909,6 +871,8 @@ function prosesLogout(diam){
 }
 el('logoutBtn').onclick = ()=>{ if(confirm('Keluar dari sistem?')) prosesLogout(); };
 
+// Cek berkala (tiap 15 detik): masih dalam jadwal shift kamu? Kalau tidak, logout paksa.
+// Ini yang membuat "1x login" tetap aman -- sesi persisten TAPI otomatis berhenti pas lewat jam.
 function mulaiPengecekanSesiBerkala(){
   if(cekSesiTimer) clearInterval(cekSesiTimer);
   cekSesiTimer = setInterval(async ()=>{
@@ -920,6 +884,7 @@ function mulaiPengecekanSesiBerkala(){
         showToast("Sesi berakhir, silakan login ulang", false);
         return;
       }
+      // Selalu sinkron ulang jabatan/outlet/jadwal terbaru dari database.
       SESI.jabatan = akun.jabatan; SESI.outlet = akun.outlet || '';
       SESI.mulaiJam = akun.mulaiJam || ''; SESI.sampaiJam = akun.sampaiJam || '';
       simpanSesiLokal(SESI);
@@ -929,7 +894,7 @@ function mulaiPengecekanSesiBerkala(){
         prosesLogout(true);
         showToast(cekShift.alasan, false);
       }
-    }catch(e){ }
+    }catch(e){ /* koneksi bermasalah sesaat, jangan langsung logout paksa */ }
   }, 15000);
 }
 
@@ -969,6 +934,7 @@ function terapkanTampilanJabatan(){
   el('karyawanTampil').textContent = SESI ? SESI.namaTampilan : '-';
 }
 
+// Coba auto-login dari sesi tersimpan di localStorage saat halaman pertama dibuka.
 async function cobaAutoLogin(){
   const sesiLokal = ambilSesiLokal();
   if(!sesiLokal || !sesiLokal.username){ bukaLoginScreen(); return; }
@@ -988,6 +954,8 @@ async function cobaAutoLogin(){
     mulaiSemuaSetelahLogin();
     mulaiPengecekanSesiBerkala();
   }catch(e){
+    // Gagal cek ke server (misal sedang offline) -- tetap pakai sesi lokal apa adanya
+    // supaya kasir tetap bisa jalan, biar pengecekan berkala yang nanti menyusul kalau online lagi.
     SESI = sesiLokal;
     terapkanTampilanJabatan();
     tutupLoginScreen();
@@ -1012,7 +980,7 @@ el('menuDropdownOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'm
 });
 
 /* =====================================================================
-   KALKULATOR
+   KALKULATOR (parser manual, anti-error)
    ===================================================================== */
 let calcTokens = [];
 let calcLastResult = null;
@@ -1098,7 +1066,7 @@ el('calcGrid').querySelectorAll('button').forEach(b=>{
 });
 
 /* =====================================================================
-   KARYAWAN & MOTIVASI
+   KARYAWAN LIST & MOTIVASI (koleksi "karyawan" dan "motivasi")
    ===================================================================== */
 async function loadKaryawanList(){
   try{
@@ -1135,17 +1103,9 @@ function mulaiSiklusMotivasi(){
 el('motivClose').onclick = ()=>{ if(motivHideTimer) clearTimeout(motivHideTimer); el('motivToast').classList.remove('show'); };
 
 /* =====================================================================
-   MENU (realtime)
-   Struktur dokumen menu: { kategori, nama, varian: [{ukuran, tambahan, harga, habis}] }
-   Field "tambahan" (opsional) ditampilkan menyatu dengan ukuran untuk kemudahan.
+   MENU (koleksi "menu") — realtime listener
+   Dokumen: { kategori, nama, varian: [{ukuran, harga, habis}] }
    ===================================================================== */
-function namaVarianLengkap(v){
-  const u = (v.ukuran || '').trim();
-  const t = (v.tambahan || '').trim();
-  if(!t) return u;
-  return u + ' \u00b7 ' + t;
-}
-
 function loadMenuRealtime(){
   if(unsubMenu) unsubMenu();
   unsubMenu = onSnapshot(collection(db, "menu"), async (snap)=>{
@@ -1156,6 +1116,7 @@ function loadMenuRealtime(){
   });
 }
 
+// Gabungkan status habis dari koleksi "stok" (per outlet) ke MENU, mirip logika lama.
 async function terapkanStokKeMenu(rows){
   let stokMap = {};
   if(SESI && SESI.outlet){
@@ -1168,6 +1129,7 @@ async function terapkanStokKeMenu(rows){
       });
     }catch(e){}
   }
+  // Kelompokkan per kategori > nama > varian, sesuai struktur lama biar UI tak berubah.
   const catMap = {}; const catOrder = [];
   rows.forEach(r=>{
     const kategori = r.kategori || 'Lainnya';
@@ -1178,18 +1140,11 @@ async function terapkanStokKeMenu(rows){
     (r.varian || []).forEach(v=>{
       let habis = !!v.habis;
       let stokSisa = null;
-      const namaLengkap = namaVarianLengkap(v);
       if(SESI && SESI.outlet){
-        const key = kategori+'|'+nama+'|'+namaLengkap;
+        const key = kategori+'|'+nama+'|'+v.ukuran;
         if(key in stokMap){ stokSisa = stokMap[key]; if(stokSisa <= 0) habis = true; }
       }
-      catMap[kategori][nama].varian.push({
-        nama: namaLengkap,
-        ukuran: v.ukuran || '',
-        tambahan: v.tambahan || '',
-        harga: v.harga||0,
-        habis, stok: stokSisa
-      });
+      catMap[kategori][nama].varian.push({ nama: v.ukuran, harga: v.harga||0, habis, stok: stokSisa });
     });
   });
   MENU = catOrder.map(kat => ({ kategori: kat, items: Object.values(catMap[kat]) }));
@@ -1295,7 +1250,7 @@ el('payTabs').querySelectorAll('button').forEach(b=>{
 });
 
 /* =====================================================================
-   CHECKOUT
+   CHECKOUT — transaksi + kurangi stok, pakai Firestore transaction
    ===================================================================== */
 el('checkoutBtn').onclick = async ()=>{
   if(!SESI){ showToast("Sesi tidak valid, silakan login ulang", false); return; }
@@ -1321,6 +1276,7 @@ el('checkoutBtn').onclick = async ()=>{
       items: items
     });
 
+    // Kurangi stok per item (kalau outlet-nya kelola stok untuk varian itu).
     if(SESI.outlet){
       for(const it of items){
         const stokDocId = (SESI.outlet+'_'+it.kategori+'_'+it.nama+'_'+it.varian).replace(/[^a-zA-Z0-9]/g,'_');
@@ -1328,12 +1284,12 @@ el('checkoutBtn').onclick = async ()=>{
         try{
           await runTransaction(db, async (tx)=>{
             const snap = await tx.get(stokRef);
-            if(!snap.exists()) return;
+            if(!snap.exists()) return; // outlet ini belum kelola stok utk varian ini, lewati
             const skrg = Number(snap.data().jumlah)||0;
             const baru = Math.max(0, skrg - it.qty);
             tx.update(stokRef, { jumlah: baru });
           });
-        }catch(e){ }
+        }catch(e){ /* gagal kurangi stok utk 1 item, jangan batalkan seluruh transaksi */ }
       }
     }
 
@@ -1353,8 +1309,8 @@ function tickClock(){
 tickClock(); setInterval(tickClock, 15000);
 
 /* =====================================================================
-   KELOLA MENU (khusus Owner)
-   Form varian: Ukuran (bisa diketik sendiri) + Tambahan (opsional) + Harga
+   KELOLA MENU (khusus Owner) — form kategori & nama KETIK BEBAS,
+   ukuran dipilih dari daftar oz baku (dropdown), bukan ketik bebas.
    ===================================================================== */
 el('adminBtn').onclick = ()=>{ if(!SESI || SESI.jabatan !== 'Owner') return; renderAdminList(); el('adminOverlay2').classList.add('show'); };
 el('adminClose').onclick = ()=> el('adminOverlay2').classList.remove('show');
@@ -1408,22 +1364,12 @@ function openAdminForm(target){
   const item = target ? cat.items[target.ii] : null;
   const kategoriVal = item ? cat.kategori : '';
   const namaVal = item ? item.nama : '';
-  // Setiap varian: { nama (ukuran), tambahan, harga }
-  const varianList = item ? item.varian.map(v=>({
-    nama: v.ukuran || v.nama || '',
-    tambahan: v.tambahan || '',
-    harga: v.harga
-  })) : [{nama:'', tambahan:'', harga:0}];
+  const varianList = item ? item.varian.map(v=>({nama:v.nama, harga:v.harga})) : [{nama:'', harga:0}];
 
   let html = `<button class="backLink" id="backToList"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>Kembali</button>
     <div class="formField"><label>Kategori</label><input id="fKategori" type="text" value="${kategoriVal}" placeholder="Ketik kategori sendiri, contoh: Es Teh Manis"><div class="hint">Ketik bebas \u2014 boleh kategori baru atau yang sudah ada.</div></div>
     <div class="formField"><label>Nama Menu</label><input id="fNama" type="text" value="${namaVal}" placeholder="Ketik nama menu sendiri, contoh: Es Teh Lemon"><div class="hint">Ketik bebas sesuai nama menu yang kamu mau.</div></div>
-    <div class="formField">
-      <label>Ukuran, Tambahan &amp; Harga</label>
-      <div id="varList"></div>
-      <button class="addVarBtn" id="addVarBtn">+ Tambah varian</button>
-      <div class="hint" style="margin-top:-8px;">Ukuran &amp; Tambahan boleh diketik sendiri. Contoh ukuran: "Large 18oz". Contoh tambahan: "+Susu" atau "+Es Sedikit".</div>
-    </div>
+    <div class="formField"><label>Ukuran & Harga</label><div id="varList"></div><button class="addVarBtn" id="addVarBtn">+ Tambah ukuran</button></div>
     <button class="saveFormBtn" id="saveFormBtn">${target ? 'Simpan Perubahan' : 'Tambah Menu'}</button>`;
 
   el('adminBody').innerHTML = html;
@@ -1432,42 +1378,34 @@ function openAdminForm(target){
   function renderVarList(){
     el('varList').innerHTML = varianList.map((v,i)=>`
       <div class="varRow" data-i="${i}">
-        <input class="vNama" type="text" list="ukuranDatalist" value="${v.nama||''}" placeholder="Ukuran (contoh: Large 18oz)">
-        <input class="vTambahan" type="text" value="${v.tambahan||''}" placeholder="Tambahan (opsional)">
-        <input class="vHarga" type="number" value="${v.harga||0}" placeholder="Harga">
+        <select class="vNama">
+          <option value="" disabled ${!v.nama?'selected':''}>Pilih ukuran...</option>
+          ${UKURAN_OZ.map(u=>`<option value="${u.value}" ${u.value===v.nama?'selected':''}>${u.label}</option>`).join('')}
+        </select>
+        <input class="vHarga" type="number" value="${v.harga}" placeholder="Harga" style="max-width:110px;">
         ${varianList.length>1 ? `<button class="rmVar">\u2715</button>` : ''}
       </div>`).join('');
     el('varList').querySelectorAll('.varRow').forEach(row=>{
       const i = +row.dataset.i;
-      row.querySelector('.vNama').oninput = e=> varianList[i].nama = e.target.value;
-      row.querySelector('.vTambahan').oninput = e=> varianList[i].tambahan = e.target.value;
+      row.querySelector('.vNama').onchange = e=> varianList[i].nama = e.target.value;
       row.querySelector('.vHarga').oninput = e=> varianList[i].harga = Number(e.target.value)||0;
       const rm = row.querySelector('.rmVar');
       if(rm) rm.onclick = ()=>{ varianList.splice(i,1); renderVarList(); };
     });
   }
   renderVarList();
-  el('addVarBtn').onclick = ()=>{ varianList.push({nama:'', tambahan:'', harga:0}); renderVarList(); };
+  el('addVarBtn').onclick = ()=>{ varianList.push({nama:'', harga:0}); renderVarList(); };
 
   el('saveFormBtn').onclick = async ()=>{
     const kategori = el('fKategori').value.trim();
     const nama = el('fNama').value.trim();
     if(!kategori || !nama){ showToast("Isi kategori dan nama menu dulu", false); return; }
     const validVarian = varianList.filter(v=>v.nama && v.nama.trim());
-    if(validVarian.length===0){ showToast("Isi minimal 1 ukuran", false); return; }
+    if(validVarian.length===0){ showToast("Pilih minimal 1 ukuran", false); return; }
 
     const btn = el('saveFormBtn'); btn.disabled = true; btn.textContent = "Menyimpan...";
     try{
-      const payload = {
-        kategori,
-        nama,
-        varian: validVarian.map(v=>({
-          ukuran: String(v.nama || '').trim(),
-          tambahan: String(v.tambahan || '').trim(),
-          harga: v.harga||0,
-          habis: false
-        }))
-      };
+      const payload = { kategori, nama, varian: validVarian.map(v=>({ ukuran: v.nama, harga: v.harga||0, habis: false })) };
       if(target){
         await updateDoc(doc(db, "menu", item.id), payload);
         showToast("Menu diperbarui");
@@ -1493,7 +1431,8 @@ function confirmDelete(ci, ii){
 }
 
 /* =====================================================================
-   LAPORAN
+   LAPORAN — Owner: semua outlet / pilih outlet. Karyawan: HANYA outlet sendiri.
+   Karyawan TIDAK BISA menghapus transaksi sama sekali (tombol tak ditampilkan).
    ===================================================================== */
 el('laporanBtn').onclick = ()=>{ if(!SESI) return; openLaporan(); };
 el('lapClose').onclick = ()=> el('lapOverlay').classList.remove('show');
@@ -1539,6 +1478,10 @@ function labelShiftDariJam(jam){
 }
 
 async function ambilTransaksiUntukLaporan(tanggal, outlet){
+  // Sengaja HANYA filter "tanggal" di query Firestore (single-field, tidak butuh composite
+  // index apa pun). Filter "outlet" dilakukan di sisi client (JS) supaya laporan tetap bisa
+  // langsung jalan tanpa perlu bikin index gabungan tanggal+outlet di Firebase Console dulu
+  // -- itu penyebab paling umum kalau laporan tiba-tiba gagal padahal koneksi normal.
   const qy = query(collection(db, "transaksi"), where("tanggal","==",tanggal));
   const snap = await getDocs(qy);
   let rows = snap.docs.map(d => ({ id:d.id, ...d.data() }));
@@ -1596,6 +1539,7 @@ async function muatLaporanTanggal(tanggal, diam){
   try{
     let data;
     if(!lapOutletAktif && SESI && SESI.jabatan === 'Owner'){
+      // Owner mode "semua outlet": ambil semua transaksi tanggal ini, kelompokkan per outlet.
       const semua = await ambilTransaksiUntukLaporan(tanggal, '');
       const outletSet = new Set(); semua.forEach(t=>{ if(t.outlet) outletSet.add(t.outlet); });
       await muatDaftarOutlet();
@@ -1620,6 +1564,8 @@ async function muatLaporanTanggal(tanggal, diam){
     if(!diam || dataBaru !== JSON.stringify(lapDataTerakhir)){ lapDataTerakhir = data; renderLaporan(data); }
   }catch(e){
     if(!diam){
+      // Tampilkan pesan error ASLI dari Firestore (bukan cuma "cek koneksi" generik) supaya
+      // penyebab sebenarnya (index belum dibuat, rules menolak, dsb) langsung kelihatan.
       const pesanAsli = (e && e.message) ? e.message : String(e);
       el('lapBody').innerHTML = `<div class="empty">Gagal memuat laporan.<br><span style="font-size:11px; color:var(--muted-soft);">${pesanAsli}</span></div>`;
       console.error('Gagal memuat laporan:', e);
@@ -1705,6 +1651,8 @@ function renderLaporanSatuOutlet(data){
   html += `<div class="lapSection"><h4>Riwayat Transaksi (${data.transaksi.length})</h4><div id="trxList"></div></div>`;
   el('lapBody').innerHTML = html;
 
+  // Karyawan boleh lihat laporan tapi TIDAK BISA menghapus transaksi -- tombol void
+  // dihilangkan total dari tampilan, tidak cuma disembunyikan, supaya tidak ada jalan sama sekali.
   const bolehHapus = SESI && SESI.jabatan === 'Owner';
   if(data.transaksi.length === 0){
     el('trxList').innerHTML = '<div class="empty" style="padding:24px 0;">Belum ada transaksi hari ini.</div>';
@@ -1726,7 +1674,7 @@ function renderLaporanSatuOutlet(data){
 }
 
 async function voidTransaksi(trxId){
-  if(!SESI || SESI.jabatan !== 'Owner') return;
+  if(!SESI || SESI.jabatan !== 'Owner') return; // pengaman tambahan sisi client
   if(!confirm("Batalkan transaksi ini? Data akan dihapus dari laporan.")) return;
   try{
     await deleteDoc(doc(db, "transaksi", trxId));
@@ -1749,6 +1697,8 @@ function susunTeksLaporan(data){
   return t;
 }
 async function bagikanLaporanWA(data){
+  // Selalu kirim sebagai teks pesan WA langsung (bukan file) supaya konsisten dengan apa
+  // yang tampil di layar dan yang ada di file unduhan -- tidak bergantung perilaku share-file HP.
   const teks = susunTeksLaporan(data);
   window.open("https://wa.me/?text=" + encodeURIComponent(teks), '_blank');
 }
@@ -1764,7 +1714,7 @@ function unduhLaporan(data){
 }
 
 /* =====================================================================
-   OUTLET
+   OUTLET (koleksi "outlet") — daftar nama outlet yang bisa dipilih Owner
    ===================================================================== */
 async function muatDaftarOutlet(){
   try{
@@ -1774,7 +1724,9 @@ async function muatDaftarOutlet(){
 }
 
 /* =====================================================================
-   KELOLA AKUN (khusus Owner)
+   KELOLA AKUN (khusus Owner) — CRUD langsung dari UI, bukan cuma instruksi
+   buka spreadsheet. Owner bisa: tambah akun, ubah jabatan/outlet/jadwal,
+   pecat (ubah jabatan jadi "Pecat").
    ===================================================================== */
 el('akunBtn').onclick = async ()=>{ if(!SESI || SESI.jabatan !== 'Owner') return; await renderAkunList(); el('akunOverlay').classList.add('show'); };
 el('akunClose').onclick = ()=> el('akunOverlay').classList.remove('show');
@@ -1848,6 +1800,7 @@ function openAkunForm(akun){
 
     const btn = el('afSaveBtn'); btn.disabled = true; btn.textContent = 'Menyimpan...';
     try{
+      // Cek username bentrok (kecuali sedang edit akun yang sama).
       const existing = await cariAkunByUsername(username);
       if(existing && (!akun || existing.id !== akun.id)){
         showToast("Username sudah dipakai akun lain", false);
@@ -1858,7 +1811,10 @@ function openAkunForm(akun){
       if(akun){ await updateDoc(doc(db, "akun", akun.id), payload); showToast("Akun diperbarui"); }
       else{ await addDoc(collection(db, "akun"), payload); showToast("Akun ditambahkan"); }
 
-      if(outlet){ await pastikanOutletTercatat(outlet); }
+      // Pastikan outlet baru (kalau ada) tercatat di koleksi "outlet" supaya muncul di daftar.
+      if(outlet){
+        await pastikanOutletTercatat(outlet);
+      }
 
       el('akunFormOverlay').classList.remove('show');
       renderAkunList();
@@ -1890,7 +1846,10 @@ async function pastikanOutletTercatat(namaOutlet){
 }
 
 /* =====================================================================
-   KELOLA STOK (khusus Owner)
+   KELOLA STOK (khusus Owner) — SEKARANG BISA SEMUA OUTLET, Owner pilih
+   outlet mana yang mau dikelola dari daftar tombol di atas.
+   Dokumen stok id-nya deterministik: outlet_kategori_nama_ukuran (disanitasi)
+   supaya restock & checkout bisa langsung update tanpa perlu query cari dulu.
    ===================================================================== */
 let STOK_OUTLET_AKTIF = '';
 let STOK_LIST = [];
@@ -1991,7 +1950,8 @@ async function simpanStokManual(kategori, nama, ukuran, stokBaru){
 }
 
 /* =====================================================================
-   RESTOCK
+   RESTOCK — mendukung satuan CUP atau ROLL (1 roll = N cup, default 50,
+   bisa diubah manual saat itu juga).
    ===================================================================== */
 let restockSatuanAktif = 'cup';
 let restockIsiRollAktif = DEFAULT_ISI_ROLL;
@@ -2112,9 +2072,6 @@ async function bukaRiwayatRestock(){
    BOOT
    ===================================================================== */
 cekWaktuTutupSetiapDetik();
-// Pasang guard history pertama kali halaman dibuka, supaya back button di HP
-// langsung tertangkap oleh popstate handler dan tidak keluar aplikasi.
-pasangGuardHistory();
 cobaAutoLogin().finally(()=>{ el('bootLoading').style.display = 'none'; });
 </script>
 

@@ -3,9 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>Kasir — Es Teh Manis Djawa</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
@@ -425,6 +422,7 @@
   .shiftGrid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
   .shiftCard{background:var(--card); border:1px solid var(--line-soft); border-radius:13px; padding:12px 13px; box-shadow:var(--shadow-card);}
   .shiftCard .scLbl{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-weight:700; margin-bottom:5px; display:flex; align-items:center; gap:5px;}
+  .shiftCard .scJam{font-size:10.5px; color:var(--muted-soft); margin-bottom:6px;}
   .shiftCard .scVal{font-family:"Fraunces",serif; font-size:16px; font-weight:600; color:var(--pine-950);}
   .shiftCard .scSub{font-size:10.5px; color:var(--muted-soft); margin-top:3px;}
   .trxRow{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line-soft); cursor:pointer;}
@@ -719,28 +717,6 @@
   </div>
 </div>
 
-<script>
-/* =====================================================================
-   AUTO-UPDATE VERSION CHECK
-   Naikkan APP_VERSION setiap kali file ini di-update & di-push ke GitHub.
-   Kalau versi yang tersimpan di HP (localStorage) beda dari versi baru
-   yang baru dimuat, halaman di-reload SEKALI secara paksa (bypass cache)
-   supaya APK (WebView Appilix) langsung dapat versi terbaru tanpa perlu
-   uninstall/install ulang atau force-close manual.
-   ===================================================================== */
-(function(){
-  var APP_VERSION = "2026.09.12-1";
-  try{
-    var versiTersimpan = localStorage.getItem('kasirAppVersion');
-    if(versiTersimpan && versiTersimpan !== APP_VERSION){
-      localStorage.setItem('kasirAppVersion', APP_VERSION);
-      location.reload(true);
-      return;
-    }
-    localStorage.setItem('kasirAppVersion', APP_VERSION);
-  }catch(e){ /* localStorage tidak tersedia, lewati saja, tidak fatal */ }
-})();
-</script>
 <script type="module">
 /* =====================================================================
    FIREBASE INIT
@@ -1573,6 +1549,13 @@ async function muatDaftarOutletLaporan(){
 }
 el('lapOutletFilter').addEventListener('change', ()=>{ lapOutletAktif = el('lapOutletFilter').value; muatLaporanTanggal(lapTanggalAktif); });
 
+const SHIFT_JAM = {
+  "Pagi": "09:00\u201312:00",
+  "Siang": "12:00\u201315:00",
+  "Sore": "15:00\u201318:00",
+  "Malam": "18:00\u201321:00",
+  "Luar Jam Operasional": ""
+};
 function labelShiftDariJam(jam){
   if(jam>=9 && jam<12) return "Pagi";
   if(jam>=12 && jam<15) return "Siang";
@@ -1748,7 +1731,7 @@ function renderLaporanSatuOutlet(data){
     </div>`;
   if(data.perShift && data.perShift.length){
     html += `<div class="lapSection"><h4>Penjualan per Shift</h4><div class="shiftGrid">`;
-    data.perShift.forEach((s, idx)=>{ html += `<div class="shiftCard" data-shiftidx="${idx}"><div class="scLbl">${SHIFT_ICON[s.shift]||''} ${s.shift}</div><div class="scVal">${rupiah(s.total)}</div><div class="scSub">${s.jumlahTrx} transaksi \u00b7 ${s.jumlahItem} item</div></div>`; });
+    data.perShift.forEach((s, idx)=>{ html += `<div class="shiftCard" data-shiftidx="${idx}"><div class="scLbl">${SHIFT_ICON[s.shift]||''} ${s.shift}</div>${SHIFT_JAM[s.shift] ? `<div class="scJam">${SHIFT_JAM[s.shift]}</div>` : ''}<div class="scVal">${rupiah(s.total)}</div><div class="scSub">${s.jumlahTrx} transaksi \u00b7 ${s.jumlahItem} item</div></div>`; });
     html += `</div></div>`;
   }
   if(data.perUkuranCup && data.perUkuranCup.length){
@@ -1807,7 +1790,7 @@ function renderLaporanSatuOutlet(data){
 function bukaDetailShift(s){
   if(!s) return;
   el('trxDetailTitle').innerHTML = (SHIFT_ICON[s.shift]||'') + ' ' + s.shift;
-  el('trxDetailSub').textContent = s.jumlahTrx + ' transaksi \u00b7 ' + s.jumlahItem + ' item terjual';
+  el('trxDetailSub').textContent = (SHIFT_JAM[s.shift] ? SHIFT_JAM[s.shift]+' \u00b7 ' : '') + s.jumlahTrx + ' transaksi \u00b7 ' + s.jumlahItem + ' item terjual';
 
   const itemsHtml = (s.items && s.items.length) ? s.items.map(it=>`
     <div class="trxItemRow">

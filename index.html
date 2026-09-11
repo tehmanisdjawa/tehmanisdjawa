@@ -372,6 +372,19 @@
   .adminItem .aiBtns .habisB{color:var(--gold-dark); background:var(--gold-light); border-color:#e6d3a5;}
   .adminItem .aiBtns .habisB.active{color:#fff; background:var(--merah); border-color:var(--merah);}
 
+  .akunItem{background:var(--card); border:1px solid var(--line-soft); border-radius:13px; padding:12px 14px; margin-bottom:9px; box-shadow:var(--shadow-card); display:flex; align-items:center; gap:11px; cursor:pointer;}
+  .akunItem:active{background:var(--pine-50);}
+  .akunItem .akAvatar{width:38px; height:38px; border-radius:11px; background:var(--pine-100); color:var(--pine-800); font-family:"Fraunces",serif; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .akunItem .akInfo{flex:1; min-width:0;}
+  .akunItem .aun{font-size:13.5px; font-weight:650; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .akunItem .auu{font-size:11px; color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .akunItem .akRight{display:flex; align-items:center; gap:8px; flex:0 0 auto;}
+  .akunJabatan{font-size:10px; font-weight:700; padding:4px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:.3px; white-space:nowrap;}
+  .akunJabatan.owner{background:var(--gold-light); color:var(--gold-dark);}
+  .akunJabatan.karyawan{background:var(--pine-50); color:var(--pine-700);}
+  .akunJabatan.pecat{background:var(--merah-light); color:var(--merah);}
+  .akunItem .akChevron{width:16px; height:16px; color:var(--muted-soft); flex:0 0 auto;}
+
   .formField{margin-bottom:14px;}
   .formField label{font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:6px;}
   .formField input, .formField select{width:100%; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);}
@@ -1175,6 +1188,15 @@ async function terapkanStokKeMenu(rows){
     });
   });
   MENU = catOrder.map(kat => ({ kategori: kat, items: Object.values(catMap[kat]) }));
+  // Kategori "Es Teh Manis" selalu ditaruh paling atas/pertama, sisanya tetap urutan semula.
+  const KATEGORI_PRIORITAS_ATAS = "Es Teh Manis";
+  MENU.sort((a,b)=>{
+    const aTop = a.kategori === KATEGORI_PRIORITAS_ATAS;
+    const bTop = b.kategori === KATEGORI_PRIORITAS_ATAS;
+    if(aTop && !bTop) return -1;
+    if(bTop && !aTop) return 1;
+    return 0; // biarkan urutan relatif lainnya tidak berubah (stable sort)
+  });
   renderCatTabs(); renderMenu();
 }
 
@@ -1651,6 +1673,10 @@ const SHIFT_ICON = {
   "Malam": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>',
   "Luar Jam Operasional": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'
 };
+// Semua ikon shift dipakai inline di dalam teks (.scLbl / judul detail), jadi wajib dikasih
+// width/height eksplisit -- kalau tidak, SVG bisa membesar mengikuti lebar container dan
+// bikin tampilan kacau/aneh alih-alih jadi ikon kecil di depan tulisan.
+Object.keys(SHIFT_ICON).forEach(k=>{ SHIFT_ICON[k] = SHIFT_ICON[k].replace('<svg ', '<svg width="14" height="14" style="vertical-align:-2px;" '); });
 
 function renderLaporan(data){ if(data.modeSemuaOutlet){ renderLaporanSemuaOutlet(data); return; } renderLaporanSatuOutlet(data); }
 
@@ -1755,7 +1781,7 @@ function renderLaporanSatuOutlet(data){
 
 function bukaDetailShift(s){
   if(!s) return;
-  el('trxDetailTitle').textContent = (SHIFT_ICON[s.shift]||'') + ' ' + s.shift;
+  el('trxDetailTitle').innerHTML = (SHIFT_ICON[s.shift]||'') + ' ' + s.shift;
   el('trxDetailSub').textContent = s.jumlahTrx + ' transaksi \u00b7 ' + s.jumlahItem + ' item terjual';
 
   const itemsHtml = (s.items && s.items.length) ? s.items.map(it=>`
@@ -1888,12 +1914,18 @@ async function renderAkunList(){
     if(daftar.length === 0){ html += '<div class="empty">Belum ada akun.</div>'; }
     daftar.forEach(a=>{
       const cls = JABATAN_LABEL_CLASS[a.jabatan] || 'karyawan';
+      const nama = a.namaTampilan || a.username;
+      const inisial = nama.trim().slice(0,1).toUpperCase() || '?';
       html += `<div class="akunItem" data-id="${a.id}">
-        <div style="min-width:0; flex:1;">
-          <div class="aun">${a.namaTampilan || a.username}</div>
+        <div class="akAvatar">${inisial}</div>
+        <div class="akInfo">
+          <div class="aun">${nama}</div>
           <div class="auu">@${a.username}${a.outlet ? ' \u00b7 '+a.outlet : ''}${a.mulaiJam && a.sampaiJam ? ' \u00b7 '+a.mulaiJam+'\u2013'+a.sampaiJam : ''}</div>
         </div>
-        <span class="akunJabatan ${cls}">${a.jabatan}</span>
+        <div class="akRight">
+          <span class="akunJabatan ${cls}">${a.jabatan}</span>
+          <svg class="akChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
       </div>`;
     });
     el('akunBody').innerHTML = html;

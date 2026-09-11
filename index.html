@@ -752,7 +752,7 @@ let payMethod = "Cash";
 let SESI = null;             // { token, jabatan, namaTampilan, username, outlet }
 let KARYAWAN_LIST = [];
 let MOTIVASI_POOL = [];
-let motivIdx = 0, motivTimer = null, motivHideTimer = null;
+let motivIdx = 0, motivTimer = null, motivHideTimer = null, sudahUcapkanSelamatIstirahat = false;
 let cekSesiTimer = null, logoutCountdownTimer = null;
 let OUTLET_LIST = [];        // daftar semua outlet (dari sheet akun / koleksi outlet)
 let unsubMenu = null;        // listener realtime menu
@@ -1122,26 +1122,38 @@ async function loadMotivasiPool(){
   }catch(e){ MOTIVASI_POOL = []; }
 }
 function jamSekarang(){ return new Date().getHours(); }
+function sembunyikanToastMotivasi(){
+  el('motivToast').classList.remove('show');
+}
 function tampilkanNotifikasiMotivasi(teks){
-  if(motivHideTimer) clearTimeout(motivHideTimer);
+  // Selalu bersihkan timer lama dulu -- ini yang mencegah dua notifikasi "rebutan"
+  // dan bikin toast kelihatan nyangkut/tidak pernah benar-benar hilang.
+  if(motivHideTimer){ clearTimeout(motivHideTimer); motivHideTimer = null; }
   el('motivText').textContent = teks;
   el('motivToast').classList.add('show');
-  motivHideTimer = setTimeout(()=> el('motivToast').classList.remove('show'), 15000);
+  motivHideTimer = setTimeout(sembunyikanToastMotivasi, 15000);
 }
 function tampilkanMotivasiBerikutnya(){
   if(!SESI) return;
-  if(jamSekarang() >= 21){ tampilkanNotifikasiMotivasi("Terima kasih atas kerja kerasmu hari ini. Selamat beristirahat! \ud83d\ude4f"); return; }
+  if(jamSekarang() >= 21){
+    // Pesan "selamat istirahat" cukup ditampilkan SEKALI per sesi login, bukan
+    // diulang tiap 30 menit -- itu penyebab utama toast kelihatan nyangkut terus.
+    if(sudahUcapkanSelamatIstirahat) return;
+    sudahUcapkanSelamatIstirahat = true;
+    tampilkanNotifikasiMotivasi("Terima kasih atas kerja kerasmu hari ini. Selamat beristirahat! \ud83d\ude4f");
+    return;
+  }
   if(MOTIVASI_POOL.length === 0) return;
   if(motivIdx >= MOTIVASI_POOL.length){ MOTIVASI_POOL.sort(()=>Math.random()-0.5); motivIdx = 0; }
   tampilkanNotifikasiMotivasi(MOTIVASI_POOL[motivIdx]); motivIdx++;
 }
 function mulaiSiklusMotivasi(){
-  MOTIVASI_POOL.sort(()=>Math.random()-0.5); motivIdx = 0;
+  MOTIVASI_POOL.sort(()=>Math.random()-0.5); motivIdx = 0; sudahUcapkanSelamatIstirahat = false;
   tampilkanMotivasiBerikutnya();
   if(motivTimer) clearInterval(motivTimer);
   motivTimer = setInterval(tampilkanMotivasiBerikutnya, 30*60*1000);
 }
-el('motivClose').onclick = ()=>{ if(motivHideTimer) clearTimeout(motivHideTimer); el('motivToast').classList.remove('show'); };
+el('motivClose').onclick = ()=>{ if(motivHideTimer){ clearTimeout(motivHideTimer); motivHideTimer = null; } sembunyikanToastMotivasi(); };
 
 /* =====================================================================
    MENU (koleksi "menu") — realtime listener

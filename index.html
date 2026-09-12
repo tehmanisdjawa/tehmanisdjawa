@@ -1600,7 +1600,7 @@ function tampilkanPopupPecat(){
   el('pecatOverlay').classList.add('show');
 }
 el('pecatLogoutBtn').onclick = ()=>{
-  el('pecatOverlay').classList.remove('show');
+  tutupOverlaySmooth(el('pecatOverlay'));
   prosesLogout(true);
 };
 
@@ -1614,7 +1614,7 @@ function mulaiPeringatanTutup(){
     el('logoutCountdown').textContent = sisa;
     if(sisa <= 0){
       clearInterval(logoutCountdownTimer);
-      el('logoutWarnOverlay').classList.remove('show');
+      tutupOverlaySmooth(el('logoutWarnOverlay'));
       prosesLogout(true);
     }
   }, 1000);
@@ -1750,9 +1750,9 @@ function mulaiPengecekanStokMenipis(){
    MENU DROPDOWN
    ===================================================================== */
 el('menuBtn').onclick = (e)=>{ e.stopPropagation(); el('menuDropdownOverlay').classList.add('show'); };
-el('menuDropdownOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'menuDropdownOverlay') el('menuDropdownOverlay').classList.remove('show'); });
+el('menuDropdownOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'menuDropdownOverlay') tutupOverlaySmooth(el('menuDropdownOverlay')); });
 ['calcBtn','laporanBtn','grafikBtn','adminBtn','modeEditMenuBtn','stokBtn','stokCupBtn','akunBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
-  el(id).addEventListener('click', ()=> el('menuDropdownOverlay').classList.remove('show'));
+  el(id).addEventListener('click', ()=> tutupOverlaySmooth(el('menuDropdownOverlay')));
 });
 
 // Toggle Mode Edit Menu: saat aktif, kartu menu di layar utama menampilkan ikon
@@ -1834,8 +1834,8 @@ function renderCalcTampilan(){
   try{ el('calcResult').textContent = calcFormatAngka(calcEvaluasi(calcTokens)); }catch(e){}
 }
 el('calcBtn').onclick = ()=>{ calcTokens=[]; calcLastResult=null; renderCalcTampilan(); el('calcOverlay').classList.add('show'); };
-el('calcClose').onclick = ()=> el('calcOverlay').classList.remove('show');
-el('calcOverlay').onclick = (e)=>{ if(e.target.id==='calcOverlay') el('calcOverlay').classList.remove('show'); };
+el('calcClose').onclick = ()=> tutupOverlaySmooth(el('calcOverlay'));
+el('calcOverlay').onclick = (e)=>{ if(e.target.id==='calcOverlay') tutupOverlaySmooth(el('calcOverlay')); };
 el('calcGrid').querySelectorAll('button').forEach(b=>{
   b.onclick = ()=>{
     const k=b.dataset.k;
@@ -2088,8 +2088,8 @@ function attachSheetEvents(cat, item, ci, ii){
     bar.querySelector('.minus').onclick = ()=>{ cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; openVariantSheet(ci, ii); renderMenu(); updateFab(); };
   });
 }
-el('sheetClose').onclick = ()=> el('sheetOverlay').classList.remove('show');
-el('sheetOverlay').onclick = (e)=>{ if(e.target.id==='sheetOverlay') el('sheetOverlay').classList.remove('show'); };
+el('sheetClose').onclick = ()=> tutupOverlaySmooth(el('sheetOverlay'));
+el('sheetOverlay').onclick = (e)=>{ if(e.target.id==='sheetOverlay') tutupOverlaySmooth(el('sheetOverlay')); };
 el('searchBox').addEventListener('input', renderMenu);
 
 function cartTotalRp(){ return Object.values(cart).reduce((s,c)=> s + c.qty*c.harga, 0); }
@@ -2117,8 +2117,8 @@ function renderCartBody(){
   }
   el('cartTotal').textContent = rupiah(cartTotalRp());
 }
-el('cartClose').onclick = ()=> el('cartOverlay').classList.remove('show');
-el('cartOverlay').onclick = (e)=>{ if(e.target.id==='cartOverlay') el('cartOverlay').classList.remove('show'); };
+el('cartClose').onclick = ()=> tutupOverlaySmooth(el('cartOverlay'));
+el('cartOverlay').onclick = (e)=>{ if(e.target.id==='cartOverlay') tutupOverlaySmooth(el('cartOverlay')); };
 el('payTabs').querySelectorAll('button').forEach(b=>{
   b.onclick = ()=>{ payMethod = b.dataset.pay; el('payTabs').querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); };
 });
@@ -2190,7 +2190,7 @@ el('checkoutBtn').onclick = async ()=>{
     showToast("Pesanan terkirim \u2014 " + rupiah(total));
     cart = {}; el('catatanOrder').value = ''; payMethod = 'Cash';
     el('payTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x.dataset.pay==='Cash'));
-    el('cartOverlay').classList.remove('show'); renderMenu(); updateFab();
+    tutupOverlaySmooth(el('cartOverlay')); renderMenu(); updateFab();
   }catch(err){ showToast("Gagal mengirim: " + (err && err.message ? err.message : "cek koneksi internet."), false); console.error('Checkout gagal:', err); }
   finally{ btn.disabled = false; btn.textContent = "Selesai & Kirim Pesanan"; }
 };
@@ -2207,7 +2207,7 @@ tickClock(); setInterval(tickClock, 15000);
    ukuran dipilih dari daftar oz baku (dropdown), bukan ketik bebas.
    ===================================================================== */
 el('adminBtn').onclick = ()=>{ if(!SESI || SESI.jabatan !== 'Owner') return; renderAdminList(); el('adminOverlay2').classList.add('show'); };
-el('adminClose').onclick = ()=> el('adminOverlay2').classList.remove('show');
+el('adminClose').onclick = ()=> tutupOverlaySmooth(el('adminOverlay2'));
 
 function renderAdminList(){
   let html = `<button class="addBtn" id="addNewBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Tambah Menu Baru</button>`;
@@ -2269,7 +2269,7 @@ function openAdminForm(target, dariLuar){
 
   el('adminBody').innerHTML = html;
   el('backToList').onclick = ()=>{
-    if(dariLuar){ el('adminOverlay2').classList.remove('show'); }
+    if(dariLuar){ tutupOverlaySmooth(el('adminOverlay2')); }
     else { renderAdminList(); }
   };
 
@@ -2338,7 +2338,7 @@ function openAdminForm(target, dariLuar){
         await addDoc(collection(db, "menu"), payload);
         showToast("Menu ditambahkan");
       }
-      if(dariLuar){ el('adminOverlay2').classList.remove('show'); }
+      if(dariLuar){ tutupOverlaySmooth(el('adminOverlay2')); }
       else { renderAdminList(); }
     }catch(e){
       showToast("Gagal menyimpan. Cek koneksi.", false);
@@ -2361,7 +2361,7 @@ function confirmDelete(ci, ii){
    Karyawan TIDAK BISA menghapus transaksi sama sekali (tombol tak ditampilkan).
    ===================================================================== */
 el('laporanBtn').onclick = ()=>{ if(!SESI) return; openLaporan(); };
-el('lapClose').onclick = ()=> el('lapOverlay').classList.remove('show');
+el('lapClose').onclick = ()=> tutupOverlaySmooth(el('lapOverlay'));
 
 let lapTanggalAktif = tanggalHariIniStr();
 let lapOutletAktif = '';
@@ -2405,7 +2405,7 @@ el('lapOutletFilter').addEventListener('change', ()=>{ lapOutletAktif = el('lapO
 let grafikOutletAktif = '';
 
 el('grafikBtn').onclick = ()=>{ if(!SESI || SESI.jabatan !== 'Owner') return; openGrafikPenjualan(); };
-el('grafikClose').onclick = ()=> el('grafikOverlay').classList.remove('show');
+el('grafikClose').onclick = ()=> tutupOverlaySmooth(el('grafikOverlay'));
 
 async function openGrafikPenjualan(){
   el('grafikOverlay').classList.add('show');
@@ -2953,8 +2953,8 @@ function bukaDetailTransaksi(trxId){
   }
   el('trxDetailOverlay').classList.add('show');
 }
-el('trxDetailClose').onclick = ()=> el('trxDetailOverlay').classList.remove('show');
-el('trxDetailOverlay').onclick = (e)=>{ if(e.target.id==='trxDetailOverlay') el('trxDetailOverlay').classList.remove('show'); };
+el('trxDetailClose').onclick = ()=> tutupOverlaySmooth(el('trxDetailOverlay'));
+el('trxDetailOverlay').onclick = (e)=>{ if(e.target.id==='trxDetailOverlay') tutupOverlaySmooth(el('trxDetailOverlay')); };
 
 async function voidTransaksi(trxId, dariDetail){
   if(!SESI || SESI.jabatan !== 'Owner') return; // pengaman tambahan sisi client
@@ -2964,7 +2964,7 @@ async function voidTransaksi(trxId, dariDetail){
   // Tutup overlay detail (kalau void dipicu dari situ) DI AWAL, sebelum proses async
   // apapun jalan -- supaya animasi tutup overlay sudah selesai duluan dan tidak numpuk
   // sama toast yang muncul belakangan. Ini salah satu penyebab toast kelihatan "nyangkut".
-  if(dariDetail) el('trxDetailOverlay').classList.remove('show');
+  if(dariDetail) tutupOverlaySmooth(el('trxDetailOverlay'));
 
   try{
     // Kembalikan stok tiap item (kalau outlet-nya kelola stok utk varian itu) SEBELUM
@@ -3068,8 +3068,8 @@ async function muatDaftarOutlet(){
    pecat (ubah jabatan jadi "Pecat").
    ===================================================================== */
 el('akunBtn').onclick = async ()=>{ if(!SESI || SESI.jabatan !== 'Owner') return; await renderAkunList(); el('akunOverlay').classList.add('show'); };
-el('akunClose').onclick = ()=> el('akunOverlay').classList.remove('show');
-el('akunFormClose').onclick = ()=> el('akunFormOverlay').classList.remove('show');
+el('akunClose').onclick = ()=> tutupOverlaySmooth(el('akunOverlay'));
+el('akunFormClose').onclick = ()=> tutupOverlaySmooth(el('akunFormOverlay'));
 
 const JABATAN_LABEL_CLASS = { Owner:'owner', Karyawan:'karyawan', Pecat:'pecat' };
 
@@ -3161,7 +3161,7 @@ function openAkunForm(akun){
         await pastikanOutletTercatat(outlet);
       }
 
-      el('akunFormOverlay').classList.remove('show');
+      tutupOverlaySmooth(el('akunFormOverlay'));
       renderAkunList();
     }catch(e){
       showToast("Gagal menyimpan. Cek koneksi.", false);
@@ -3177,7 +3177,7 @@ function openAkunForm(akun){
       try{
         await deleteDoc(doc(db, "akun", akun.id));
         showToast("Akun dihapus");
-        el('akunFormOverlay').classList.remove('show');
+        tutupOverlaySmooth(el('akunFormOverlay'));
         renderAkunList();
       }catch(e){ showToast("Gagal menghapus. Cek koneksi.", false); }
     };
@@ -3201,7 +3201,7 @@ el('pengaturanBtn').onclick = ()=>{
   if(!SESI) return;
   bukaHalamanPengaturan();
 };
-el('pengaturanClose').onclick = ()=> el('pengaturanOverlay').classList.remove('show');
+el('pengaturanClose').onclick = ()=> tutupOverlaySmooth(el('pengaturanOverlay'));
 
 async function bukaHalamanPengaturan(){
   renderHalamanPengaturan();
@@ -3571,7 +3571,7 @@ function bukaGame(jenis){
   else if(jenis === 'flappy'){ el('gameOverlayTitle').textContent = 'Flappy Cup'; renderGameFlappy(); }
   else if(jenis === 'g2048'){ el('gameOverlayTitle').textContent = '2048'; renderGame2048(); }
 }
-el('gameClose').onclick = ()=>{ tutupSemuaGameTimer(); el('gameOverlay').classList.remove('show'); };
+el('gameClose').onclick = ()=>{ tutupSemuaGameTimer(); tutupOverlaySmooth(el('gameOverlay')); };
 
 /* ---------- GAME 1: MEMORY CARD ---------- */
 function renderGameMemory(){
@@ -3833,7 +3833,7 @@ el('stokBtn').onclick = async ()=>{
   await muatKelolaStok();
   el('stokOverlay').classList.add('show');
 };
-el('stokClose').onclick = ()=> el('stokOverlay').classList.remove('show');
+el('stokClose').onclick = ()=> tutupOverlaySmooth(el('stokOverlay'));
 
 /* =====================================================================
    KELOLA STOK CUP (per UKURAN, independen dari menu) — khusus Owner.
@@ -3858,7 +3858,7 @@ el('stokCupBtn').onclick = async ()=>{
   await muatKelolaStokCup();
   el('stokCupOverlay').classList.add('show');
 };
-el('stokCupClose').onclick = ()=> el('stokCupOverlay').classList.remove('show');
+el('stokCupClose').onclick = ()=> tutupOverlaySmooth(el('stokCupOverlay'));
 
 function stokCupUkuranDocId(outlet, ukuran){
   return (outlet+'_'+ukuran).replace(/[^a-zA-Z0-9]/g,'_');
@@ -4013,7 +4013,7 @@ function bukaFormRestockCup(ukuran){
         jumlahDitambahCup: totalCupDitambah, stokSesudah, oleh: SESI.namaTampilan
       });
       showToast(`Restock cup berhasil \u2014 +${catatanSatuan}, stok sekarang ${stokSesudah} cup`);
-      el('restockOverlay').classList.remove('show');
+      tutupOverlaySmooth(el('restockOverlay'));
       await muatKelolaStokCup();
     }catch(e){ showToast("Gagal restock. Cek koneksi.", false); btn.disabled=false; btn.textContent="Simpan Restock"; }
   };
@@ -4216,13 +4216,13 @@ function bukaFormRestock(kategori, nama, ukuran){
         jumlahDitambahCup: totalCupDitambah, stokSesudah, oleh: SESI.namaTampilan
       });
       showToast(`Restock berhasil \u2014 +${catatanSatuan}, stok sekarang ${stokSesudah} cup`);
-      el('restockOverlay').classList.remove('show');
+      tutupOverlaySmooth(el('restockOverlay'));
       await muatKelolaStok();
     }catch(e){ showToast("Gagal restock. Cek koneksi.", false); btn.disabled=false; btn.textContent="Simpan Restock"; }
   };
   el('restockOverlay').classList.add('show');
 }
-el('restockClose').onclick = ()=> el('restockOverlay').classList.remove('show');
+el('restockClose').onclick = ()=> tutupOverlaySmooth(el('restockOverlay'));
 
 async function bukaRiwayatRestock(){
   el('restockBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat riwayat...</div>';
@@ -4274,9 +4274,53 @@ function overlayTerbukaSaatIni(){
 }
 
 function tutupOverlay(id){
-  const elm = document.getElementById(id);
+  tutupOverlaySmooth(document.getElementById(id));
+}
+
+/* =====================================================================
+   PENUTUP OVERLAY UNIVERSAL DENGAN ANIMASI KELUAR
+   CSS ".closing" (didefinisikan di <style>) sudah menyiapkan animasi
+   keluar (fade + slide/scale turun) utk semua overlay/sheet, tapi CSS
+   itu cuma jalan kalau class "closing" benar-benar dipasang ke elemen
+   SEBELUM class "show" dilepas -- kalau langsung classList.remove('show')
+   begitu saja, browser langsung display:none seketika (animasi keluar
+   tidak sempat kelihatan sama sekali).
+   Fungsi ini: pasang "closing" -> tunggu durasi transisi CSS selesai
+   (dibaca otomatis dari --ios-med, dgn fallback timer jaga-jaga kalau
+   browser lama/aneh tidak memicu event transitionend) -> baru lepas
+   "show" dan "closing". Dibuat SEKALI dipakai di semua tempat supaya
+   perilakunya konsisten & gampang dirawat.
+   ===================================================================== */
+function tutupOverlaySmooth(elm){
   if(!elm) return;
-  elm.classList.remove('show');
+  if(!elm.classList.contains('show')) return; // sudah tertutup, tidak perlu apa2
+  if(elm.classList.contains('closing')) return; // animasi keluar sudah jalan, jangan dobel
+  elm.classList.add('closing');
+  let selesai = false;
+  const bereskan = ()=>{
+    if(selesai) return;
+    selesai = true;
+    elm.classList.remove('show');
+    elm.classList.remove('closing');
+  };
+  // Durasi diambil dari CSS var --ios-med (default .28s) + sedikit jeda
+  // pengaman, supaya kalau suatu saat durasi transisi CSS diubah, timer
+  // fallback ini otomatis ikut menyesuaikan tanpa perlu diubah manual di JS.
+  let durasiMs = 280;
+  try{
+    const v = getComputedStyle(document.documentElement).getPropertyValue('--ios-med').trim();
+    const detik = parseFloat(v);
+    if(!isNaN(detik)) durasiMs = Math.round(detik * 1000);
+  }catch(e){ /* pakai default kalau gagal baca */ }
+  elm.addEventListener('transitionend', function onEnd(e){
+    if(e.target !== elm) return; // abaikan transisi dari child (mis. .sheet ikut animasi sendiri)
+    elm.removeEventListener('transitionend', onEnd);
+    bereskan();
+  });
+  // Fallback: kalau transitionend entah kenapa tidak pernah terpicu
+  // (misal elemen sempat disembunyikan browser di tengah animasi),
+  // tetap pastikan overlay ke-close supaya app tidak "nyangkut".
+  setTimeout(bereskan, durasiMs + 120);
 }
 
 function dorongStateOverlay(){

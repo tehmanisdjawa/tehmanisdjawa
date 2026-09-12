@@ -532,8 +532,46 @@
   .satuanToggle{display:flex; gap:7px; margin-bottom:14px;}
   .satuanToggle button{flex:1; padding:11px; border-radius:11px; border:1.4px solid var(--line); background:var(--card); font-size:12.5px; font-weight:650; color:var(--muted); cursor:pointer;}
   .satuanToggle button.active{background:var(--pine-900); border-color:var(--pine-900); color:#f3ede0;}
+
+  /* ============ TOGGLE SWITCH (Pengaturan Notifikasi) ============ */
+  .prefToggle{position:relative; display:inline-block; width:46px; height:27px; flex:0 0 auto;}
+  .prefToggle input{opacity:0; width:0; height:0;}
+  .prefToggleSlider{position:absolute; cursor:pointer; inset:0; background:var(--line); border-radius:999px; transition:.2s;}
+  .prefToggleSlider::before{content:""; position:absolute; width:21px; height:21px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.25);}
+  .prefToggle input:checked + .prefToggleSlider{background:var(--pine-700);}
+  .prefToggle input:checked + .prefToggleSlider::before{transform:translateX(19px);}
+
+  /* ============ TOMBOL PILIH GAME (Pengaturan) ============ */
+  .gamePickBtn{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    padding:18px 10px; border-radius:14px; border:1.4px solid var(--line-soft); background:var(--card);
+    cursor:pointer; box-shadow:var(--shadow-card); color:var(--pine-800);
+  }
+  .gamePickBtn:active{transform:scale(.97);}
+  .gamePickBtn svg{width:26px; height:26px;}
+  .gamePickBtn span{font-size:12.5px; font-weight:650; color:var(--ink);}
+
+  /* ============ GAME: MEMORY CARD ============ */
+  .memGrid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px;}
+  .memCard{aspect-ratio:1; border-radius:11px; background:var(--pine-900); display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer; user-select:none; box-shadow:var(--shadow-card); transition:transform .15s;}
+  .memCard.terbuka{background:var(--card); border:1.4px solid var(--line-soft); transform:rotateY(0);}
+  .memCard.cocok{background:var(--pine-100); border:1.4px solid var(--pine-500); opacity:.6;}
+
+  /* ============ GAME: REAKSI CEPAT ============ */
+  .reaksiBox{height:220px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-size:16px; font-weight:600; color:#f3ede0; text-align:center; padding:20px; cursor:pointer; user-select:none;}
+
+  /* ============ GAME: FLAPPY CUP ============ */
+  #flappyCanvas{width:100%; border-radius:14px; display:block; background:var(--pine-50); touch-action:none;}
+
+  /* ============ GAME: 2048 ============ */
+  .g2048Grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; background:var(--line-soft); padding:8px; border-radius:14px; touch-action:none;}
+  .g2048Cell{aspect-ratio:1; border-radius:9px; background:var(--card); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:var(--ink);}
+
+  .gameScoreBar{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; font-size:13px; font-weight:650; color:var(--muted);}
+  .gameScoreBar b{color:var(--pine-800); font-size:16px;}
 </style>
 </head>
+
 <body class="terkunci">
 
 <div class="bootLoading" id="bootLoading">
@@ -790,6 +828,13 @@
   </div>
 </div>
 
+<div class="cartOverlay" id="gameOverlay">
+  <div class="adminSheet">
+    <div class="adminHead"><h2 id="gameOverlayTitle">Game</h2><button id="gameClose">✕</button></div>
+    <div class="adminBody" id="gameBody"></div>
+  </div>
+</div>
+
 <script type="module">
 /* =====================================================================
    FIREBASE INIT
@@ -871,6 +916,37 @@ const el = id => document.getElementById(id);
 const rupiah = n => "Rp" + Number(n).toLocaleString('id-ID');
 const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+/* =====================================================================
+   PREFERENSI NOTIFIKASI (per perangkat, disimpan di localStorage -- bukan
+   per akun, karena ini soal perangkat/kasir yang dipakai, bukan identitas
+   orangnya). Default: suara checkout ON, notifikasi motivasi ON.
+   ===================================================================== */
+function ambilPrefNotifikasi(){
+  try{
+    const raw = JSON.parse(localStorage.getItem('etd_prefNotif') || '{}');
+    return { suaraCheckout: raw.suaraCheckout !== false, motivasiAktif: raw.motivasiAktif !== false };
+  }catch(e){ return { suaraCheckout: true, motivasiAktif: true }; }
+}
+function simpanPrefNotifikasi(pref){
+  try{ localStorage.setItem('etd_prefNotif', JSON.stringify(pref)); }catch(e){}
+}
+// Bunyikan "ting" pendek pakai Web Audio API (tidak butuh file suara eksternal).
+function mainkanSuaraCheckout(){
+  if(!ambilPrefNotifikasi().suaraCheckout) return;
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.22, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime + 0.35);
+  }catch(e){ /* browser tidak mendukung audio, lewati saja */ }
+}
 
 let toastHideTimer = null;
 let toastPanggilanId = 0;
@@ -1280,6 +1356,7 @@ function tampilkanNotifikasiMotivasi(teks){
 }
 function tampilkanMotivasiBerikutnya(){
   if(!SESI) return;
+  if(!ambilPrefNotifikasi().motivasiAktif) return;
   if(jamSekarang() >= 21){
     // Pesan "selamat istirahat" cukup ditampilkan SEKALI per sesi login, bukan
     // diulang tiap 30 menit -- itu penyebab utama toast kelihatan nyangkut terus.
@@ -1530,6 +1607,7 @@ el('checkoutBtn').onclick = async ()=>{
       }
     }
 
+    mainkanSuaraCheckout();
     showToast("Pesanan terkirim \u2014 " + rupiah(total));
     cart = {}; el('catatanOrder').value = ''; payMethod = 'Cash';
     el('payTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x.dataset.pay==='Cash'));
@@ -2373,6 +2451,7 @@ function rgbKeHex(r,g,b){
 
 function renderHalamanPengaturan(){
   const temaSekarang = Object.assign({}, TEMA_WARNA_DEFAULT, (SESI && SESI.temaWarna) || {});
+  const prefNotif = ambilPrefNotifikasi();
   el('pengaturanBody').innerHTML = `
     <div class="catLabelAdmin" style="margin-top:0;">Profil Akun</div>
     <div class="formField">
@@ -2385,6 +2464,49 @@ function renderHalamanPengaturan(){
       <input id="pgNamaTampilan" type="text" value="${SESI.namaTampilan}" placeholder="Nama yang tampil di transaksi & laporan">
     </div>
     <button class="saveFormBtn" id="pgSimpanNamaBtn">Simpan Nama Tampilan</button>
+
+    <div class="catLabelAdmin">Notifikasi</div>
+    <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div>
+        <div style="font-size:13.5px; font-weight:650; color:var(--ink);">Suara saat Checkout</div>
+        <div class="hint" style="margin-top:2px;">Bunyi "ting" pendek tiap pesanan berhasil dikirim.</div>
+      </div>
+      <label class="prefToggle">
+        <input type="checkbox" id="pgToggleSuara" ${prefNotif.suaraCheckout ? 'checked' : ''}>
+        <span class="prefToggleSlider"></span>
+      </label>
+    </div>
+    <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div>
+        <div style="font-size:13.5px; font-weight:650; color:var(--ink);">Notifikasi Motivasi</div>
+        <div class="hint" style="margin-top:2px;">Pesan semangat yang muncul berkala selama kamu login.</div>
+      </div>
+      <label class="prefToggle">
+        <input type="checkbox" id="pgToggleMotivasi" ${prefNotif.motivasiAktif ? 'checked' : ''}>
+        <span class="prefToggleSlider"></span>
+      </label>
+    </div>
+
+    <div class="catLabelAdmin">Santai Sebentar</div>
+    <div class="hint" style="margin-bottom:12px;">Lagi nunggu pembeli? Main game kecil dulu, yuk.</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+      <button class="gamePickBtn" data-game="memory">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Memory Card</span>
+      </button>
+      <button class="gamePickBtn" data-game="reaksi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+        <span>Reaksi Cepat</span>
+      </button>
+      <button class="gamePickBtn" data-game="flappy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8 2 5 5 5 9c0 3 2 5 2 8 0 3 2 5 5 5s5-2 5-5c0-3 2-5 2-8 0-4-3-7-7-7z"/><circle cx="10" cy="9" r="1"/></svg>
+        <span>Flappy Cup</span>
+      </button>
+      <button class="gamePickBtn" data-game="g2048">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+        <span>2048</span>
+      </button>
+    </div>
 
     <div class="catLabelAdmin">Sesuaikan Warna Tampilan</div>
     <div class="hint" style="margin-bottom:14px;">Pilih warna sesukamu. Pratinjau di bawah langsung berubah begitu warna diganti -- belum tersimpan permanen sampai kamu pencet "Simpan Warna".</div>
@@ -2445,6 +2567,25 @@ function renderHalamanPengaturan(){
     finally{ btn.disabled = false; btn.textContent = 'Simpan Nama Tampilan'; }
   };
 
+  // --- Bagian Notifikasi (tersimpan langsung ke localStorage begitu diganti, tidak perlu tombol simpan) ---
+  el('pgToggleSuara').addEventListener('change', ()=>{
+    const pref = ambilPrefNotifikasi();
+    pref.suaraCheckout = el('pgToggleSuara').checked;
+    simpanPrefNotifikasi(pref);
+    if(pref.suaraCheckout) mainkanSuaraCheckout(); // beri contoh bunyinya langsung
+  });
+  el('pgToggleMotivasi').addEventListener('change', ()=>{
+    const pref = ambilPrefNotifikasi();
+    pref.motivasiAktif = el('pgToggleMotivasi').checked;
+    simpanPrefNotifikasi(pref);
+    showToast(pref.motivasiAktif ? "Notifikasi motivasi diaktifkan" : "Notifikasi motivasi dimatikan");
+  });
+
+  // --- Bagian Santai Sebentar (game) ---
+  el('pengaturanBody').querySelectorAll('.gamePickBtn').forEach(btn=>{
+    btn.onclick = ()=> bukaGame(btn.dataset.game);
+  });
+
   // --- Bagian Sesuaikan Warna Tampilan ---
   function ambilTemaDariForm(){
     return {
@@ -2495,6 +2636,266 @@ function renderHalamanPengaturan(){
     }catch(e){ showToast("Gagal menyimpan. Cek koneksi.", false); }
     finally{ btn.disabled = false; btn.textContent = 'Simpan Warna'; }
   };
+}
+
+/* =====================================================================
+   SANTAI SEBENTAR — 4 game kecil untuk mengisi waktu senggang, dibuka dari
+   halaman Pengaturan. Semua game self-contained (tidak menyimpan skor ke
+   Firestore, cukup dimainkan lokal saat itu juga).
+   ===================================================================== */
+let gameTimerAktif = null; // pembersih interval/timeout game yang sedang berjalan
+
+function tutupSemuaGameTimer(){
+  if(gameTimerAktif){ clearInterval(gameTimerAktif); clearTimeout(gameTimerAktif); gameTimerAktif = null; }
+}
+
+function bukaGame(jenis){
+  tutupSemuaGameTimer();
+  el('gameOverlay').classList.add('show');
+  if(jenis === 'memory'){ el('gameOverlayTitle').textContent = 'Memory Card'; renderGameMemory(); }
+  else if(jenis === 'reaksi'){ el('gameOverlayTitle').textContent = 'Reaksi Cepat'; renderGameReaksi(); }
+  else if(jenis === 'flappy'){ el('gameOverlayTitle').textContent = 'Flappy Cup'; renderGameFlappy(); }
+  else if(jenis === 'g2048'){ el('gameOverlayTitle').textContent = '2048'; renderGame2048(); }
+}
+el('gameClose').onclick = ()=>{ tutupSemuaGameTimer(); el('gameOverlay').classList.remove('show'); };
+
+/* ---------- GAME 1: MEMORY CARD ---------- */
+function renderGameMemory(){
+  const emoji = ['\ud83c\udf75','\ud83c\udf6c','\ud83c\udf70','\ud83c\udf6b','\ud83c\udf6d','\ud83e\uddca','\ud83c\udf6a','\ud83c\udf59'];
+  let kartu = emoji.concat(emoji).sort(()=>Math.random()-0.5).map(e=>({emoji:e, terbuka:false, cocok:false}));
+  let terbukaIdx = [];
+  let langkah = 0;
+  let mengunci = false;
+
+  function render(){
+    el('gameBody').innerHTML = `
+      <div class="gameScoreBar"><span>Langkah: <b id="memLangkah">${langkah}</b></span><button class="addVarBtn" id="memUlangBtn" style="margin:0; padding:8px 14px; width:auto;">Ulangi</button></div>
+      <div class="memGrid" id="memGrid"></div>
+      <div class="empty" id="memMenang" style="display:none; padding:14px 0;">\ud83c\udf89 Selesai dalam ${langkah} langkah!</div>
+    `;
+    const grid = el('memGrid');
+    kartu.forEach((k,i)=>{
+      const c = document.createElement('div');
+      c.className = 'memCard' + (k.terbuka||k.cocok ? ' terbuka' : '') + (k.cocok ? ' cocok' : '');
+      c.textContent = (k.terbuka||k.cocok) ? k.emoji : '';
+      c.onclick = ()=> pilihKartu(i);
+      grid.appendChild(c);
+    });
+    el('memUlangBtn').onclick = renderGameMemory;
+  }
+  function pilihKartu(i){
+    if(mengunci || kartu[i].terbuka || kartu[i].cocok) return;
+    kartu[i].terbuka = true; terbukaIdx.push(i);
+    render();
+    if(terbukaIdx.length === 2){
+      langkah++; mengunci = true;
+      const [a,b] = terbukaIdx;
+      if(kartu[a].emoji === kartu[b].emoji){
+        kartu[a].cocok = true; kartu[b].cocok = true;
+        kartu[a].terbuka = false; kartu[b].terbuka = false;
+        terbukaIdx = []; mengunci = false;
+        render();
+        if(kartu.every(k=>k.cocok)){ el('memMenang').style.display = 'block'; }
+      } else {
+        gameTimerAktif = setTimeout(()=>{
+          kartu[a].terbuka = false; kartu[b].terbuka = false;
+          terbukaIdx = []; mengunci = false;
+          render();
+        }, 700);
+      }
+    }
+  }
+  render();
+}
+
+/* ---------- GAME 2: REAKSI CEPAT ---------- */
+function renderGameReaksi(){
+  let status = 'tunggu'; // tunggu -> siap -> hijau -> hasil
+  let waktuMulai = 0;
+  el('gameBody').innerHTML = `
+    <div class="hint" style="margin-bottom:12px;">Pencet kotak di bawah begitu warnanya berubah HIJAU. Secepat mungkin!</div>
+    <div class="reaksiBox" id="reaksiBox" style="background:var(--merah);">Pencet untuk mulai</div>
+  `;
+  const box = el('reaksiBox');
+  box.onclick = ()=>{
+    if(status === 'tunggu'){
+      status = 'siap';
+      box.style.background = 'var(--gold-dark)';
+      box.textContent = 'Tunggu warna hijau...';
+      const delay = 1200 + Math.random()*2500;
+      gameTimerAktif = setTimeout(()=>{
+        status = 'hijau';
+        waktuMulai = Date.now();
+        box.style.background = 'var(--pine-600)';
+        box.textContent = 'PENCET SEKARANG!';
+      }, delay);
+    } else if(status === 'siap'){
+      tutupSemuaGameTimer();
+      status = 'tunggu';
+      box.style.background = 'var(--merah)';
+      box.textContent = 'Kecepetan! Pencet untuk coba lagi';
+    } else if(status === 'hijau'){
+      const reaksiMs = Date.now() - waktuMulai;
+      status = 'hasil';
+      box.style.background = 'var(--pine-900)';
+      box.textContent = 'Waktu reaksimu: ' + reaksiMs + ' ms\n(pencet untuk main lagi)';
+      box.onclick = ()=>{ renderGameReaksi(); };
+    }
+  };
+}
+
+/* ---------- GAME 3: FLAPPY CUP ---------- */
+function renderGameFlappy(){
+  el('gameBody').innerHTML = `
+    <div class="gameScoreBar"><span>Skor: <b id="flapSkor">0</b></span><span class="hint" style="margin:0;">Ketuk layar untuk terbang</span></div>
+    <canvas id="flappyCanvas" height="320"></canvas>
+    <div class="empty" id="flapGameOver" style="display:none; padding:14px 0;">Game Over \u2014 ketuk untuk main lagi</div>
+  `;
+  const canvas = el('flappyCanvas');
+  const ctx = canvas.getContext('2d');
+  function resize(){ canvas.width = canvas.clientWidth; }
+  resize();
+
+  let cupY = canvas.height/2, kecepatanY = 0;
+  const gravitasi = 0.45, dorongan = -7.2;
+  let pipa = []; let skor = 0; let hidup = true; let frame = 0;
+
+  function reset(){
+    cupY = (canvas.height||320)/2; kecepatanY = 0; pipa = []; skor = 0; hidup = true; frame = 0;
+    el('flapSkor').textContent = '0'; el('flapGameOver').style.display = 'none';
+  }
+  reset();
+
+  function tick(){
+    if(!hidup) return;
+    frame++;
+    kecepatanY += gravitasi; cupY += kecepatanY;
+    if(frame % 90 === 0){
+      const bukaan = 120;
+      const posisi = 40 + Math.random()*(canvas.height - bukaan - 80);
+      pipa.push({x: canvas.width, atas: posisi, bawah: posisi + bukaan});
+    }
+    pipa.forEach(p=> p.x -= 2.6);
+    pipa = pipa.filter(p=> p.x > -40);
+    pipa.forEach(p=>{
+      if(p.x < 55 && p.x > 15 && !p.dihitung){
+        if(cupY < p.atas || cupY > p.bawah) hidup = false;
+      }
+      if(p.x < 35 && !p.dihitung){ p.dihitung = true; skor++; el('flapSkor').textContent = skor; }
+    });
+    if(cupY < 0 || cupY > canvas.height) hidup = false;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--pine-600') || '#3a6b47';
+    pipa.forEach(p=>{
+      ctx.fillRect(p.x, 0, 22, p.atas);
+      ctx.fillRect(p.x, p.bawah, 22, canvas.height - p.bawah);
+    });
+    ctx.font = '26px serif';
+    ctx.fillText('\ud83e\udd64', 30, cupY);
+
+    if(!hidup){ el('flapGameOver').style.display = 'block'; return; }
+    gameTimerAktif = requestAnimationFrame(tick);
+  }
+  tick();
+
+  function lompat(){
+    if(!hidup){ reset(); tick(); return; }
+    kecepatanY = dorongan;
+  }
+  canvas.onclick = lompat;
+  canvas.ontouchstart = (e)=>{ e.preventDefault(); lompat(); };
+}
+
+/* ---------- GAME 4: 2048 ---------- */
+function renderGame2048(){
+  let papan = Array.from({length:4}, ()=> [0,0,0,0]);
+  let skor = 0;
+  function selUntukKosong(){
+    const kosong = [];
+    for(let r=0;r<4;r++) for(let c=0;c<4;c++) if(papan[r][c]===0) kosong.push([r,c]);
+    return kosong;
+  }
+  function tambahAngkaBaru(){
+    const kosong = selUntukKosong();
+    if(kosong.length===0) return;
+    const [r,c] = kosong[Math.floor(Math.random()*kosong.length)];
+    papan[r][c] = Math.random()<0.9 ? 2 : 4;
+  }
+  function warnaSel(v){
+    const peta = {2:'#eee4da',4:'#ede0c8',8:'#f2b179',16:'#f59563',32:'#f67c5f',64:'#f65e3b',128:'#edcf72',256:'#edcc61',512:'#edc850',1024:'#edc53f',2048:'#edc22e'};
+    return peta[v] || '#3c3a32';
+  }
+  function render(){
+    el('gameBody').innerHTML = `
+      <div class="gameScoreBar"><span>Skor: <b id="g2048Skor">${skor}</b></span><button class="addVarBtn" id="g2048UlangBtn" style="margin:0; padding:8px 14px; width:auto;">Ulangi</button></div>
+      <div class="hint" style="margin-bottom:10px;">Geser (swipe) di dalam kotak untuk menggabungkan angka.</div>
+      <div class="g2048Grid" id="g2048Grid"></div>
+    `;
+    const grid = el('g2048Grid');
+    for(let r=0;r<4;r++) for(let c=0;c<4;c++){
+      const cell = document.createElement('div');
+      cell.className = 'g2048Cell';
+      const v = papan[r][c];
+      if(v){ cell.textContent = v; cell.style.background = warnaSel(v); cell.style.color = v<=4 ? '#5b5347' : '#fff'; }
+      grid.appendChild(cell);
+    }
+    el('g2048UlangBtn').onclick = mulaiUlang;
+  }
+  function geser(arah){
+    // arah: 'kiri','kanan','atas','bawah'
+    let berubah = false;
+    function gabungBaris(baris){
+      let vals = baris.filter(v=>v!==0);
+      for(let i=0;i<vals.length-1;i++){
+        if(vals[i]===vals[i+1]){ vals[i]*=2; skor+=vals[i]; vals.splice(i+1,1); }
+      }
+      while(vals.length<4) vals.push(0);
+      return vals;
+    }
+    for(let i=0;i<4;i++){
+      let baris;
+      if(arah==='kiri') baris = papan[i];
+      else if(arah==='kanan') baris = [...papan[i]].reverse();
+      else if(arah==='atas') baris = [0,1,2,3].map(r=>papan[r][i]);
+      else baris = [0,1,2,3].map(r=>papan[r][i]).reverse();
+
+      const hasil = gabungBaris(baris);
+      const final = (arah==='kanan'||arah==='bawah') ? [...hasil].reverse() : hasil;
+
+      if(arah==='kiri' || arah==='kanan'){
+        if(JSON.stringify(papan[i]) !== JSON.stringify(final)) berubah = true;
+        papan[i] = final;
+      } else {
+        for(let r=0;r<4;r++){ if(papan[r][i] !== final[r]) berubah = true; papan[r][i] = final[r]; }
+      }
+    }
+    if(berubah){ tambahAngkaBaru(); render(); }
+  }
+  function mulaiUlang(){
+    papan = Array.from({length:4}, ()=> [0,0,0,0]); skor = 0;
+    tambahAngkaBaru(); tambahAngkaBaru(); render();
+  }
+  mulaiUlang();
+
+  // Deteksi swipe sederhana di area game.
+  let startX=0, startY=0;
+  el('gameBody').ontouchstart = (e)=>{ startX = e.touches[0].clientX; startY = e.touches[0].clientY; };
+  el('gameBody').ontouchend = (e)=>{
+    const dx = e.changedTouches[0].clientX - startX, dy = e.changedTouches[0].clientY - startY;
+    if(Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+    if(Math.abs(dx) > Math.abs(dy)) geser(dx>0 ? 'kanan' : 'kiri');
+    else geser(dy>0 ? 'bawah' : 'atas');
+  };
+  // Dukung juga tombol panah keyboard (untuk yang buka lewat desktop).
+  document.addEventListener('keydown', fungsiKeydown2048);
+  function fungsiKeydown2048(e){
+    if(!el('gameOverlay').classList.contains('show')) { document.removeEventListener('keydown', fungsiKeydown2048); return; }
+    if(e.key==='ArrowLeft') geser('kiri');
+    else if(e.key==='ArrowRight') geser('kanan');
+    else if(e.key==='ArrowUp') geser('atas');
+    else if(e.key==='ArrowDown') geser('bawah');
+  }
 }
 
 /* =====================================================================

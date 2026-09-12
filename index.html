@@ -212,6 +212,12 @@
   .searchWrap input::placeholder{color:rgba(243,237,224,.42);}
   .searchWrap input:focus{outline:none; border-color:rgba(200,151,63,.55); background:rgba(243,237,224,.09);}
 
+  .updCooldownBar{
+    display:flex; align-items:center; gap:7px; margin-top:10px; padding:8px 12px; border-radius:11px;
+    background:rgba(200,151,63,.14); border:1px solid rgba(200,151,63,.3); color:var(--gold-dark); font-size:11.5px; font-weight:650;
+  }
+  .updCooldownBar svg{width:14px; height:14px; flex:0 0 auto; animation:updSpinRot 1.4s linear infinite;}
+  .updCooldownBar b{font-variant-numeric:tabular-nums;}
   .catTabs{display:flex; gap:7px; overflow-x:auto; padding:13px 0 2px; scrollbar-width:none;}
   .catTabs::-webkit-scrollbar{display:none;}
   .catTabs button{
@@ -785,6 +791,10 @@
   <div class="searchWrap">
     <svg class="sIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
     <input id="searchBox" type="text" placeholder="Cari menu...">
+  </div>
+  <div class="updCooldownBar" id="updCooldownBar" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3.5-7.13"/><path d="M21 3v6h-6"/></svg>
+    <span>Update otomatis dalam <b id="updCooldownDetik">30</b> detik\u2026</span>
   </div>
   <div class="catTabs" id="catTabs"></div>
 </div>
@@ -3993,16 +4003,24 @@ function tampilkanBannerUpdate(){
   const toastEl = el('updToast');
   const countdownEl = el('updCountdown');
   const progressEl = el('updProgressFill');
+  const cooldownBar = el('updCooldownBar');
+  const cooldownDetikEl = el('updCooldownDetik');
 
   wrap.style.display = 'flex';
   requestAnimationFrame(()=> toastEl.classList.add('show'));
   countdownEl.textContent = sisaDetik + 'd';
   progressEl.style.width = '100%';
 
+  // Strip cooldown kecil di layar utama (di atas tab kategori) -- tetap kelihatan
+  // walau banner notifikasi di atas sudah hilang setelah 7 detik, supaya kasir
+  // masih ingat update bakal jalan otomatis.
+  if(cooldownBar){ cooldownBar.style.display = 'flex'; cooldownDetikEl.textContent = sisaDetik; }
+
   // Progress bar & countdown angka jalan penuh 30 detik (proses auto-update tetap
   // berjalan di background walau notifikasi visualnya sudah disembunyikan di detik ke-7).
   updCountdownInterval = setInterval(()=>{
     sisaDetik--;
+    if(cooldownDetikEl) cooldownDetikEl.textContent = Math.max(sisaDetik, 0);
     if(sisaDetik <= 0){ clearInterval(updCountdownInterval); return; }
     countdownEl.textContent = sisaDetik + 'd';
     progressEl.style.width = (sisaDetik / DETIK_AUTO_UPDATE * 100) + '%';
@@ -4045,6 +4063,8 @@ function mulaiProsesUpdate(){
   clearTimeout(updAutoUpdateTimer);
   clearInterval(updCountdownInterval);
   sembunyikanBannerUpdate();
+  const cooldownBar = el('updCooldownBar');
+  if(cooldownBar) cooldownBar.style.display = 'none';
 
   const overlay = el('updInstallOverlay');
   const textEl = el('updInstallText');

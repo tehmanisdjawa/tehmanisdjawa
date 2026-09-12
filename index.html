@@ -706,6 +706,108 @@
   /* Tombol utama full-width (login, checkout, dsb.) -- efek tekan halus */
   .loginBtn, .checkoutBtn{transition:transform .1s ease, box-shadow .1s ease, opacity .13s ease;}
   .loginBtn:active, .checkoutBtn:active{transform:scale(.98);}
+
+  /* =====================================================================
+     ANIMASI HALUS ALA iOS (60fps) -- lapisan global
+     Prinsip: pakai easing "spring-like" cubic-bezier (bukan ease/linear polos),
+     animasikan cuma transform & opacity (murah utk GPU, tidak memicu reflow),
+     kasih will-change biar browser siapin layer-nya dari awal.
+     ===================================================================== */
+  :root{
+    --ios-ease:cubic-bezier(.25,.1,.25,1);       /* easing standar utk transisi umum */
+    --ios-spring:cubic-bezier(.34,1.32,.64,1);    /* easing "mantul" halus (ala iOS sheet/pop) */
+    --ios-fast:.16s;
+    --ios-med:.28s;
+    --ios-slow:.42s;
+  }
+
+  /* Semua elemen interaktif ikut easing seragam kecuali sudah didefinisikan
+     lebih spesifik di atas (aturan lebih spesifik tetap menang). */
+  button, .btn, a, input, select, textarea{
+    transition-timing-function:var(--ios-ease);
+  }
+
+  /* Kartu produk / list item -- efek tekan lembut + shadow melayang saat disentuh */
+  .item, .adminItem, .akunItem, .cupUkuranItem, .trxItemRow, .gamePickBtn{
+    transition:transform var(--ios-fast) var(--ios-spring),
+               box-shadow var(--ios-med) var(--ios-ease),
+               background var(--ios-fast) var(--ios-ease);
+    will-change:transform;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .item:active, .adminItem:active{
+    transform:scale(.97);
+    box-shadow:0 2px 8px rgba(34,31,25,.08);
+  }
+
+  /* Semua tombol bulat/ikon -- tekan halus dgn spring, bukan langsung "loncat" */
+  button{
+    -webkit-tap-highlight-color:transparent;
+  }
+  button:active{
+    transition:transform .1s var(--ios-spring);
+  }
+
+  /* Sheet/modal (bottom sheet) -- ganti easing jadi spring iOS + sedikit lebih lambat
+     supaya berasa "meluncur", bukan "muncul tiba-tiba". Override durasi lama (.22s ease
+     bawaan) dengan versi spring. */
+  .sheet, .cartSheet, .adminSheet, .calcSheet{
+    animation-duration:.32s !important;
+    animation-timing-function:var(--ios-spring) !important;
+    will-change:transform, opacity;
+  }
+  @keyframes slideUp{
+    from{transform:translateY(48px); opacity:0;}
+    to{transform:translateY(0); opacity:1;}
+  }
+
+  /* Overlay backdrop (belakang modal) -- fade halus, bukan langsung on/off */
+  .sheetOverlay, .cartOverlay, .adminOverlay, .calcOverlay, .matanyamanOverlay,
+  .menuDropdownOverlay, .logoutWarnOverlay, .loginOverlay{
+    transition:opacity var(--ios-med) var(--ios-ease), backdrop-filter var(--ios-med) var(--ios-ease);
+  }
+
+  /* Toast / banner (update notif, dsb) -- pakai spring biar geser masuknya halus */
+  .updToast{
+    transition:transform var(--ios-med) var(--ios-spring), opacity var(--ios-med) var(--ios-ease) !important;
+    will-change:transform, opacity;
+  }
+
+  /* Dropdown menu kecil -- spring pop yang lembut */
+  @keyframes menuDropIn{
+    from{opacity:0; transform:translateY(-6px) scale(.97);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+
+  /* Toggle switch (preferensi) -- geser knob lebih smooth pakai easing custom */
+  .prefToggleSlider, .prefToggleSlider::before{
+    transition:all var(--ios-med) var(--ios-spring) !important;
+  }
+
+  /* Tab kategori / pill selector -- transisi warna & posisi halus saat ganti tab */
+  .outletPickRow button, .satuanToggle button, .menuDropItem{
+    transition:background var(--ios-fast) var(--ios-ease),
+               border-color var(--ios-fast) var(--ios-ease),
+               color var(--ios-fast) var(--ios-ease),
+               transform .1s var(--ios-spring) !important;
+  }
+
+  /* Angka total / harga yang berubah -- sedikit "pop" halus tiap update, dibantu JS
+     lewat class .pulseUpdate (opsional, aman kalau tidak dipakai). */
+  @keyframes pulseUpdate{
+    0%{transform:scale(1);}
+    35%{transform:scale(1.045);}
+    100%{transform:scale(1);}
+  }
+  .pulseUpdate{animation:pulseUpdate .32s var(--ios-spring);}
+
+  /* Hormati preferensi user yang minta kurangi animasi (aksesibilitas) */
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration:.001ms !important;
+      transition-duration:.001ms !important;
+    }
+  }
 </style>
 </head>
 

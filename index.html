@@ -762,12 +762,17 @@
     box-shadow:0 2px 8px rgba(34,31,25,.08);
   }
 
-  /* Semua tombol bulat/ikon -- tekan halus dgn spring, bukan langsung "loncat" */
+  /* Semua tombol bulat/ikon -- tekan halus dgn spring, bukan langsung "loncat".
+     PENTING: transition HARUS dipasang di state normal (bukan cuma di :active),
+     kalau cuma di ":active" maka pas jari DILEPAS, state :active sudah hilang
+     duluan sebelum sempat transisi jalan mundur -- efeknya balik ke ukuran
+     semula seketika/patah (kelihatan gampang di tombol yg tidak override
+     :active sendiri). Dipasang di sini jadi keluar-masuknya sama2 smooth. */
   button{
     -webkit-tap-highlight-color:transparent;
-  }
-  button:active{
-    transition:transform .1s var(--ios-spring);
+    transition:transform var(--ios-fast) var(--ios-spring),
+               background var(--ios-fast) var(--ios-ease),
+               opacity var(--ios-fast) var(--ios-ease);
   }
 
   /* Sheet/modal (bottom sheet) -- ganti easing jadi spring iOS + sedikit lebih lambat

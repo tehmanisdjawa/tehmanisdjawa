@@ -397,6 +397,59 @@
   .motivToast .motivText{font-family:"Fraunces",serif; font-size:13.5px; line-height:1.4; font-weight:500;}
   .motivToast .motivClose{background:none; border:none; color:rgba(243,237,224,.55); font-size:15px; cursor:pointer; padding:2px 4px; flex:0 0 auto; line-height:1;}
 
+  /* Banner "Update Tersedia" -- muncul di atas layar (di atas segalanya, termasuk
+     overlay lain) saat Owner menekan Paksa Update Semua Perangkat. */
+  .updToastWrap{position:fixed; top:12px; left:0; right:0; z-index:400; display:flex; justify-content:center; pointer-events:none; padding:0 14px;}
+  .updToast{
+    display:flex; flex-direction:column; gap:10px;
+    background:linear-gradient(165deg, var(--pine-900), var(--pine-950)); color:#f3ede0; border-radius:18px;
+    padding:15px 16px 13px; width:100%; max-width:420px; box-shadow:var(--shadow-float); border:1px solid rgba(243,237,224,.14);
+    transform:translateY(-130%); opacity:0; transition:transform .38s cubic-bezier(.2,.8,.3,1), opacity .38s;
+    pointer-events:auto;
+  }
+  .updToast.show{transform:translateY(0); opacity:1;}
+  .updToast.leaving{transform:translateY(-130%); opacity:0;}
+  .updToast .updTop{display:flex; align-items:flex-start; gap:11px;}
+  .updToast .updIcon{width:36px; height:36px; border-radius:11px; background:rgba(200,151,63,.18); display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .updToast .updIcon svg{width:19px; height:19px; color:var(--gold);}
+  .updToast .updBody{flex:1; min-width:0; padding-top:1px;}
+  .updToast .updLabel{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:rgba(243,237,224,.55); margin-bottom:3px;}
+  .updToast .updText{font-family:"Fraunces",serif; font-size:13px; line-height:1.42; font-weight:500;}
+  .updToast .updClose{background:none; border:none; color:rgba(243,237,224,.55); font-size:16px; cursor:pointer; padding:2px 4px; flex:0 0 auto; line-height:1;}
+  .updToast .updBtnRow{display:flex; align-items:center; gap:9px; padding-left:47px;}
+  .updToast .updGoBtn{
+    flex:1; background:linear-gradient(160deg, var(--gold), var(--gold-dark)); color:var(--pine-950); border:none;
+    border-radius:11px; padding:9px 12px; font-size:12.5px; font-weight:750; cursor:pointer; font-family:inherit;
+  }
+  .updToast .updCountdown{font-size:11px; color:rgba(243,237,224,.55); flex:0 0 auto; font-variant-numeric:tabular-nums;}
+  .updToast .updProgressTrack{height:3px; border-radius:99px; background:rgba(243,237,224,.14); overflow:hidden; margin-left:47px;}
+  .updToast .updProgressFill{height:100%; background:var(--gold); border-radius:99px; width:100%; transition:width 1s linear;}
+
+  /* Overlay full-screen "Memasang update..." -- muncul 3 detik dengan animasi
+     smooth saat tombol "Pasang Sekarang" dipencet, sebelum halaman reload. */
+  .updInstallOverlay{
+    position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; flex-direction:column; gap:18px;
+    background:linear-gradient(165deg, var(--pine-950), var(--pine-900)); opacity:0; transition:opacity .4s ease;
+  }
+  .updInstallOverlay.show{display:flex; opacity:1;}
+  .updInstallOverlay .updSpin{
+    width:52px; height:52px; border-radius:50%; border:3.5px solid rgba(243,237,224,.18); border-top-color:var(--gold);
+    animation:updSpinRot .85s linear infinite;
+  }
+  @keyframes updSpinRot{ to{ transform:rotate(360deg); } }
+  .updInstallOverlay .updInstallText{color:#f3ede0; font-family:"Fraunces",serif; font-size:15.5px; font-weight:600; text-align:center; padding:0 30px;}
+  .updInstallOverlay .updInstallSub{color:rgba(243,237,224,.55); font-size:12px; text-align:center;}
+  .updInstallOverlay .updCheckWrap{width:52px; height:52px; display:none; align-items:center; justify-content:center;}
+  .updInstallOverlay.done .updSpin{display:none;}
+  .updInstallOverlay.done .updCheckWrap{display:flex;}
+  .updInstallOverlay .updCheckCircle{
+    width:52px; height:52px; border-radius:50%; background:rgba(200,151,63,.16); display:flex; align-items:center; justify-content:center;
+    animation:updPop .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .updInstallOverlay .updCheckCircle svg{width:26px; height:26px; color:var(--gold); stroke-dasharray:24; stroke-dashoffset:24; animation:updCheckDraw .35s ease .1s forwards;}
+  @keyframes updPop{ 0%{transform:scale(.6); opacity:0;} 100%{transform:scale(1); opacity:1;} }
+  @keyframes updCheckDraw{ to{ stroke-dashoffset:0; } }
+
   /* ============ ADMIN / SHEETS ============ */
   .adminOverlay{position:fixed; inset:0; background:rgba(12,20,15,.55); backdrop-filter:blur(3px); z-index:60; display:none; align-items:center; justify-content:center; padding:20px;}
   .adminOverlay.show{display:flex;}
@@ -472,7 +525,7 @@
   .lapRow .lrv{font-weight:650; color:var(--pine-700);}
 
   /* ============ KELOLA STOK CUP (per ukuran, bukan per menu) ============ */
-  .cupUkuranItem{border:1px solid var(--line-soft); border-radius:14px; padding:14px; margin-bottom:12px; background:var(--card); box-shadow:var(--shadow-card);}
+  .cupUkuranItem{border:1px solid var(--line-soft); border-radius:14px; padding:14px; margin-bottom:12px; background:var(--card); box-shadow:var(--shadow-card); overflow:hidden;}
   .cupUkuranItem .cuiTop{display:flex; align-items:center; justify-content:space-between; gap:8px;}
   .cupUkuranItem .cuiName{font-family:"Fraunces",serif; font-size:15px; font-weight:600; color:var(--pine-950);}
   .cupUkuranItem .cuiStokBadge{font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; background:var(--pine-50); color:var(--pine-700);}
@@ -800,6 +853,31 @@
     <div class="motivBody"><div class="motivLabel">Semangat!</div><div class="motivText" id="motivText">Semangat!</div></div>
     <button class="motivClose" id="motivClose">✕</button>
   </div>
+</div>
+
+<div class="updToastWrap" id="updToastWrap">
+  <div class="updToast" id="updToast">
+    <div class="updTop">
+      <div class="updIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3.5-7.13"/><path d="M21 3v6h-6"/></svg></div>
+      <div class="updBody">
+        <div class="updLabel">Update Tersedia</div>
+        <div class="updText">Sistem menemukan versi terbaru. Halaman akan otomatis di-refresh untuk memasangnya \u2014 pastikan dulu tidak sedang ada pembeli yang lagi dilayani.</div>
+      </div>
+      <button class="updClose" id="updToastClose">✕</button>
+    </div>
+    <div class="updBtnRow">
+      <button class="updGoBtn" id="updGoBtn">Pasang Sekarang</button>
+      <div class="updCountdown" id="updCountdown">30d</div>
+    </div>
+    <div class="updProgressTrack"><div class="updProgressFill" id="updProgressFill"></div></div>
+  </div>
+</div>
+
+<div class="updInstallOverlay" id="updInstallOverlay">
+  <div class="updSpin"></div>
+  <div class="updCheckWrap"><div class="updCheckCircle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div></div>
+  <div class="updInstallText" id="updInstallText">Memasang update terbaru\u2026</div>
+  <div class="updInstallSub">Mohon tunggu sebentar</div>
 </div>
 
 <div class="cartOverlay" id="adminOverlay2">
@@ -3429,10 +3507,10 @@ function renderKelolaStokCup(){
         <div class="cuiName">${u.label}</div>
         <div class="cuiStokBadge ${badgeCupCls}">${badgeCupTxt}</div>
       </div>
-      <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
-        <input type="number" class="stokCupInput" value="${stokSekarang}" min="0" style="flex:1; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
-        <button class="stokCupSaveB" style="flex:0 0 auto; padding:10px 14px; border-radius:10px; border:none; background:var(--pine-900); color:#f3ede0; font-size:12.5px; font-weight:650; cursor:pointer;">Simpan</button>
-        <button class="restockCupOpenB" title="Restock (tambah stok)" style="flex:0 0 auto; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line-soft); background:var(--pine-50); color:var(--pine-700); cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+      <div style="display:flex; align-items:center; gap:8px; margin-top:10px; width:100%;">
+        <input type="number" class="stokCupInput" value="${stokSekarang}" min="0" style="flex:1 1 0%; min-width:0; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
+        <button class="stokCupSaveB" style="flex:0 0 auto; padding:10px 14px; border-radius:10px; border:none; background:var(--pine-900); color:#f3ede0; font-size:12.5px; font-weight:650; cursor:pointer; white-space:nowrap;">Simpan</button>
+        <button class="restockCupOpenB" title="Restock (tambah stok)" style="flex:0 0 auto; width:38px; height:38px; padding:0; border-radius:10px; border:1.4px solid var(--line-soft); background:var(--pine-50); color:var(--pine-700); cursor:pointer; display:flex; align-items:center; justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
     </div>`;
   });
@@ -3855,7 +3933,7 @@ onSnapshot(UPDATE_SIGNAL_REF, async (snap)=>{
     return;
   }
   if(!snap.exists()) return;
-  await paksaAmbilVersiTerbaru();
+  tampilkanBannerUpdate();
 }, (err)=>{ console.error('Gagal memantau sinyal update sistem (realtime):', err); });
 
 function waktuSinyalKeMs(data){
@@ -3878,7 +3956,7 @@ async function cekSinyalUpdateManual(){
     if(updateSignalWaktuTerakhir === null){ updateSignalWaktuTerakhir = waktuMs; return; }
     if(waktuMs && waktuMs > updateSignalWaktuTerakhir){
       updateSignalWaktuTerakhir = waktuMs;
-      await paksaAmbilVersiTerbaru();
+      tampilkanBannerUpdate();
     }
   }catch(e){ console.error('Gagal cek sinyal update sistem (polling):', e); }
 }
@@ -3898,6 +3976,90 @@ window.addEventListener('pageshow', cekSinyalUpdateManual);
 // mengambil ulang dari server, WebView tetap menyajikan versi lama dari cache
 // internal. Fungsi ini mencoba semua cara pembersihan cache yang tersedia di
 // halaman SEBELUM pindah ke URL baru, supaya reload-nya benar-benar "bersih".
+let updBannerSudahTampil = false; // cegah dobel banner kalau ada 2 sinyal susul-susulan / realtime+polling nembak bareng
+let updAutoUpdateTimer = null;
+let updHideNotifTimer = null;
+let updCountdownInterval = null;
+
+function tampilkanBannerUpdate(){
+  if(updBannerSudahTampil) return; // sudah ada banner jalan / update sudah diproses, jangan mulai ulang
+  updBannerSudahTampil = true;
+
+  const DETIK_AUTO_UPDATE = 30;
+  const DETIK_TAMPIL_NOTIF = 7;
+  let sisaDetik = DETIK_AUTO_UPDATE;
+
+  const wrap = el('updToastWrap');
+  const toastEl = el('updToast');
+  const countdownEl = el('updCountdown');
+  const progressEl = el('updProgressFill');
+
+  wrap.style.display = 'flex';
+  requestAnimationFrame(()=> toastEl.classList.add('show'));
+  countdownEl.textContent = sisaDetik + 'd';
+  progressEl.style.width = '100%';
+
+  // Progress bar & countdown angka jalan penuh 30 detik (proses auto-update tetap
+  // berjalan di background walau notifikasi visualnya sudah disembunyikan di detik ke-7).
+  updCountdownInterval = setInterval(()=>{
+    sisaDetik--;
+    if(sisaDetik <= 0){ clearInterval(updCountdownInterval); return; }
+    countdownEl.textContent = sisaDetik + 'd';
+    progressEl.style.width = (sisaDetik / DETIK_AUTO_UPDATE * 100) + '%';
+  }, 1000);
+
+  // Sembunyikan notifikasi (geser ke atas) setelah 7 detik -- TIDAK membatalkan
+  // proses auto-update, cuma menyembunyikan tampilannya dari layar.
+  updHideNotifTimer = setTimeout(()=>{ sembunyikanBannerUpdate(); }, DETIK_TAMPIL_NOTIF * 1000);
+
+  // Auto-update paksa setelah 30 detik kalau tidak ada aksi dari user.
+  updAutoUpdateTimer = setTimeout(()=>{ mulaiProsesUpdate(); }, DETIK_AUTO_UPDATE * 1000);
+
+  el('updToastClose').onclick = ()=>{
+    clearTimeout(updHideNotifTimer);
+    sembunyikanBannerUpdate();
+    // Auto-update 30 detik TETAP berjalan walau notifikasi ditutup manual.
+  };
+
+  el('updGoBtn').onclick = ()=>{
+    clearTimeout(updHideNotifTimer);
+    clearTimeout(updAutoUpdateTimer);
+    clearInterval(updCountdownInterval);
+    sembunyikanBannerUpdate();
+    mulaiProsesUpdate();
+  };
+}
+
+function sembunyikanBannerUpdate(){
+  const toastEl = el('updToast');
+  if(!toastEl) return;
+  toastEl.classList.remove('show');
+  toastEl.classList.add('leaving');
+  setTimeout(()=>{ const w = el('updToastWrap'); if(w) w.style.display = 'none'; }, 400);
+}
+
+// Animasi "Memasang update..." selama 3 detik (spinner -> centang sukses) lalu
+// reload halaman. Dipanggil baik dari tombol "Pasang Sekarang" (langsung) maupun
+// dari auto-update 30 detik (tanpa notifikasi kalau bannernya sudah ditutup duluan).
+function mulaiProsesUpdate(){
+  clearTimeout(updAutoUpdateTimer);
+  clearInterval(updCountdownInterval);
+  sembunyikanBannerUpdate();
+
+  const overlay = el('updInstallOverlay');
+  const textEl = el('updInstallText');
+  overlay.classList.remove('done');
+  textEl.textContent = 'Memasang update terbaru\u2026';
+  overlay.classList.add('show');
+
+  setTimeout(()=>{
+    overlay.classList.add('done');
+    textEl.textContent = 'Berhasil! Memuat ulang\u2026';
+  }, 1900);
+
+  setTimeout(()=>{ paksaAmbilVersiTerbaru(); }, 3000);
+}
+
 async function paksaAmbilVersiTerbaru(){
   try{
     // 1) Hapus semua Cache Storage API (kalau browser/WebView mendukungnya).

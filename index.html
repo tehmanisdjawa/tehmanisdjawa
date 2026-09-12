@@ -411,9 +411,9 @@
     background:linear-gradient(165deg, var(--pine-900), var(--pine-950)); color:#f3ede0; border-radius:16px;
     padding:13px 14px; width:100%; max-width:400px; box-shadow:var(--shadow-float); border:1px solid rgba(243,237,224,.12);
     transform:translateY(-120%); opacity:0; transition:transform .32s cubic-bezier(.2,.8,.3,1), opacity .32s;
-    pointer-events:auto;
+    pointer-events:none;
   }
-  .motivToast.show{transform:translateY(0); opacity:1;}
+  .motivToast.show{transform:translateY(0); opacity:1; pointer-events:auto;}
   .motivToast .motivIcon{width:34px; height:34px; border-radius:10px; background:rgba(200,151,63,.16); display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
   .motivToast .motivIcon svg{width:18px;height:18px; color:var(--gold);}
   .motivToast .motivBody{flex:1; min-width:0; padding-top:2px;}
@@ -429,10 +429,10 @@
     background:linear-gradient(165deg, var(--pine-900), var(--pine-950)); color:#f3ede0; border-radius:18px;
     padding:15px 16px 13px; width:100%; max-width:420px; box-shadow:var(--shadow-float); border:1px solid rgba(243,237,224,.14);
     transform:translateY(-130%); opacity:0; transition:transform .38s cubic-bezier(.2,.8,.3,1), opacity .38s;
-    pointer-events:auto;
+    pointer-events:none;
   }
-  .updToast.show{transform:translateY(0); opacity:1;}
-  .updToast.leaving{transform:translateY(-130%); opacity:0;}
+  .updToast.show{transform:translateY(0); opacity:1; pointer-events:auto;}
+  .updToast.leaving{transform:translateY(-130%); opacity:0; pointer-events:none;}
   .updToast .updTop{display:flex; align-items:flex-start; gap:11px;}
   .updToast .updIcon{width:36px; height:36px; border-radius:11px; background:rgba(200,151,63,.18); display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
   .updToast .updIcon svg{width:19px; height:19px; color:var(--gold);}

@@ -3724,11 +3724,46 @@ history.pushState({ kasirBase: true }, '');
    ===================================================================== */
 const UPDATE_SIGNAL_REF = doc(db, "sistem", "updateSignal");
 let updateSignalAwalDiabaikan = false; // lewati pembacaan pertama (snapshot awal saat app baru dibuka)
+let updateSignalWaktuTerakhir = null; // waktu sinyal terakhir yang sudah diketahui, dipakai fallback polling
+
 onSnapshot(UPDATE_SIGNAL_REF, async (snap)=>{
-  if(!updateSignalAwalDiabaikan){ updateSignalAwalDiabaikan = true; return; }
+  if(!updateSignalAwalDiabaikan){
+    updateSignalAwalDiabaikan = true;
+    if(snap.exists()) updateSignalWaktuTerakhir = waktuSinyalKeMs(snap.data());
+    return;
+  }
   if(!snap.exists()) return;
   await paksaAmbilVersiTerbaru();
-}, (err)=>{ console.error('Gagal memantau sinyal update sistem:', err); });
+}, (err)=>{ console.error('Gagal memantau sinyal update sistem (realtime):', err); });
+
+function waktuSinyalKeMs(data){
+  if(!data || !data.waktu) return null;
+  return data.waktu.toMillis ? data.waktu.toMillis() : (data.waktu.seconds ? data.waktu.seconds*1000 : null);
+}
+
+// FALLBACK POLLING -- di sebagian HP (terutama Chrome Android saat OS menghemat
+// baterai/data di background atau koneksi WebSocket realtime "nyangkut"),
+// onSnapshot bisa berhenti menerima update walau tab kelihatan masih terbuka.
+// Sebagai jaring pengaman, kita CEK ULANG manual tiap 20 detik pakai getDoc
+// biasa (request HTTP sekali jalan, jauh lebih tahan terhadap pembekuan OS
+// dibanding koneksi realtime) -- supaya HP tetap ke-refresh walau listener
+// realtime-nya diam.
+async function cekSinyalUpdateManual(){
+  try{
+    const snap = await getDoc(UPDATE_SIGNAL_REF);
+    if(!snap.exists()) return;
+    const waktuMs = waktuSinyalKeMs(snap.data());
+    if(updateSignalWaktuTerakhir === null){ updateSignalWaktuTerakhir = waktuMs; return; }
+    if(waktuMs && waktuMs > updateSignalWaktuTerakhir){
+      updateSignalWaktuTerakhir = waktuMs;
+      await paksaAmbilVersiTerbaru();
+    }
+  }catch(e){ console.error('Gagal cek sinyal update sistem (polling):', e); }
+}
+setInterval(cekSinyalUpdateManual, 20000); // cek ulang tiap 20 detik
+// Cek juga setiap kali tab kembali terlihat (misal HP dibuka lagi dari kunci
+// layar/background) supaya tidak perlu nunggu sampai 20 detik berikutnya.
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible') cekSinyalUpdateManual(); });
 
 // Beberapa WebView Android (termasuk APK hasil convert Appilix) menyimpan cache
 // HTML/JS di level native, bukan cuma cache browser biasa -- sekadar ganti query

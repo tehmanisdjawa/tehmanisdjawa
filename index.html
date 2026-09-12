@@ -209,6 +209,7 @@
   .notifReqItem .nriBtns button{flex:1; padding:8px; border-radius:9px; border:none; font-size:12px; font-weight:700; cursor:pointer;}
   .notifReqItem .nriApprove, .notifReqItem .permCupApprove{background:var(--pine-900); color:#f3ede0;}
   .notifReqItem .nriTolak, .notifReqItem .permCupTolak{background:var(--merah-light); color:var(--merah);}
+  .notifReqItem .nriCabut{background:var(--merah-light); color:var(--merah);}
 
   .menuDropdownOverlay{position:fixed; inset:0; z-index:65; display:none;}
   .menuDropdownOverlay.show{display:block;}
@@ -4368,6 +4369,9 @@ function renderPanelNotifStokCup(){
         <button class="nriApprove">Setujui</button>
         <button class="nriTolak">Tolak</button>
       </div>` : ''}
+      ${r.status === 'disetujui' && !r.dipakai ? `<div class="nriBtns">
+        <button class="nriCabut">Cabut Izin</button>
+      </div>` : ''}
     </div>`;
   }).join('');
 
@@ -4375,8 +4379,10 @@ function renderPanelNotifStokCup(){
     const id = itemEl.dataset.id;
     const approveBtn = itemEl.querySelector('.nriApprove');
     const tolakBtn = itemEl.querySelector('.nriTolak');
+    const cabutBtn = itemEl.querySelector('.nriCabut');
     if(approveBtn) approveBtn.onclick = ()=> putuskanPermintaanStokCup(id, 'disetujui');
     if(tolakBtn) tolakBtn.onclick = ()=> putuskanPermintaanStokCup(id, 'ditolak');
+    if(cabutBtn) cabutBtn.onclick = ()=> cabutIzinStokCup(id);
   });
 }
 
@@ -4405,6 +4411,26 @@ async function putuskanPermintaanStokCup(id, statusBaru){
     // "menunggu" di sana ikut update begitu diputuskan dari lonceng.
     if(el('stokCupOverlay').classList.contains('show')) await muatKelolaStokCup();
   }catch(e){ showToast("Gagal memproses permintaan. Cek koneksi.", false); console.error('Gagal memutuskan permintaan stok cup:', e); }
+}
+
+// Cabut izin yang SUDAH disetujui tapi belum dipakai -- dipakai kalau Owner
+// berubah pikiran/salah pencet Setujui, atau karyawan yang bersangkutan
+// sudah tidak butuh akses itu lagi. Begitu dicabut, izin langsung tidak
+// bisa dipakai restock lagi (status berubah jadi "ditolak").
+async function cabutIzinStokCup(id){
+  try{
+    const r = NOTIF_STOKCUP_LIST.find(x => x.id === id) || PERMINTAAN_CUP_OWNER_LIST.find(x => x.id === id);
+    await updateDoc(doc(db, "permintaan_stok_cup", id), { status: 'ditolak', dibacaOwner: true });
+    if(r){
+      catatKeSheetRiwayatIzinCup({
+        outlet: r.outlet, pemohonUsername: r.pemohonUsername, pemohonNama: r.pemohonNama,
+        status: 'Dicabut', keterangan: 'Owner mencabut izin restock stok cup yang sudah disetujui',
+        diprosesOleh: SESI ? SESI.namaTampilan : ''
+      });
+    }
+    showToast("Izin dicabut");
+    if(el('stokCupOverlay').classList.contains('show')) await muatKelolaStokCup();
+  }catch(e){ showToast("Gagal mencabut izin. Cek koneksi.", false); console.error('Gagal mencabut izin stok cup:', e); }
 }
 
 /* =====================================================================

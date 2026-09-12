@@ -467,11 +467,18 @@
   }
   .popupSuksesOverlay.show{display:flex; opacity:1;}
   .popupSuksesBox{
+    position:relative;
     background:var(--card); border-radius:22px; padding:30px 26px; width:100%; max-width:320px; text-align:center;
     box-shadow:var(--shadow-float); border:1px solid var(--line-soft);
     transform:scale(.82) translateY(10px); opacity:0;
     transition:transform .38s var(--ios-spring, cubic-bezier(.34,1.32,.64,1)), opacity .3s;
   }
+  #popupSuksesCloseBtn{
+    position:absolute; top:12px; right:12px; width:28px; height:28px; border-radius:50%; border:none;
+    background:var(--paper); color:var(--muted); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; padding:0; transition:background .15s var(--ios-ease, cubic-bezier(.25,.1,.25,1));
+  }
+  #popupSuksesCloseBtn:active{background:var(--line-soft);}
   .popupSuksesOverlay.show .popupSuksesBox{transform:scale(1) translateY(0); opacity:1;}
   .popupSuksesOverlay.leaving{opacity:0;}
   .popupSuksesOverlay.leaving .popupSuksesBox{transform:scale(.9) translateY(6px); opacity:0;}
@@ -1340,6 +1347,7 @@
 
 <div class="popupSuksesOverlay" id="popupSuksesOverlay">
   <div class="popupSuksesBox">
+    <button id="popupSuksesCloseBtn" aria-label="Tutup" title="Tutup"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     <div class="popupSuksesIcon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg></div>
     <div class="popupSuksesTitle" id="popupSuksesTitle">Permintaan Disetujui</div>
     <div class="popupSuksesSub" id="popupSuksesSub"></div>
@@ -4807,6 +4815,13 @@ function kirimSinyalPopupSukses(outlet, judul, pesan, jenis){
 }
 
 let popupSuksesHideTimer = null;
+function tutupPopupSuksesSekarang(){
+  const overlay = el('popupSuksesOverlay');
+  if(popupSuksesHideTimer){ clearTimeout(popupSuksesHideTimer); popupSuksesHideTimer = null; }
+  overlay.classList.add('leaving');
+  setTimeout(()=>{ overlay.classList.remove('show'); overlay.classList.remove('leaving'); }, 320);
+}
+el('popupSuksesCloseBtn').onclick = ()=> tutupPopupSuksesSekarang();
 function tampilkanPopupSukses(judul, pesan, jenis){
   const overlay = el('popupSuksesOverlay');
   if(popupSuksesHideTimer){ clearTimeout(popupSuksesHideTimer); popupSuksesHideTimer = null; }
@@ -4818,7 +4833,7 @@ function tampilkanPopupSukses(judul, pesan, jenis){
   popupSuksesHideTimer = setTimeout(()=>{
     overlay.classList.add('leaving');
     setTimeout(()=>{ overlay.classList.remove('show'); overlay.classList.remove('leaving'); }, 320);
-  }, 5000);
+  }, 3000);
 }
 
 /* =====================================================================

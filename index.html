@@ -761,8 +761,11 @@
     to{transform:translateY(0); opacity:1;}
   }
 
-  /* Overlay backdrop (belakang modal) -- fade halus, bukan langsung on/off */
-  .sheetOverlay, .cartOverlay, .adminOverlay, .calcOverlay, .matanyamanOverlay,
+  /* Overlay backdrop (belakang modal) -- fade halus, bukan langsung on/off.
+     CATATAN: .matanyamanOverlay SENGAJA tidak dimasukkan -- itu bukan modal,
+     tapi lapisan efek warna transparan permanen (mode mata nyaman) yang WAJIB
+     selalu pointer-events:none, jangan disamakan perlakuannya dgn overlay modal. */
+  .sheetOverlay, .cartOverlay, .adminOverlay, .calcOverlay,
   .menuDropdownOverlay, .logoutWarnOverlay, .loginOverlay{
     transition:opacity var(--ios-med) var(--ios-ease), backdrop-filter var(--ios-med) var(--ios-ease);
   }
@@ -809,19 +812,19 @@
      selama durasi animasi keluar berjalan, BARU display:none diterapkan.
      ===================================================================== */
   .sheetOverlay, .cartOverlay, .adminOverlay, .adminOverlay2, .calcOverlay,
-  .matanyamanOverlay, .menuDropdownOverlay, .logoutWarnOverlay, .loginOverlay,
+  .menuDropdownOverlay, .logoutWarnOverlay, .loginOverlay,
   .lapOverlay, .grafikOverlay, .trxDetailOverlay, .akunOverlay, .akunFormOverlay,
   .pengaturanOverlay, .gameOverlay, .stokOverlay, .stokCupOverlay, .restockOverlay,
   .pecatOverlay{
     transition:opacity var(--ios-med) var(--ios-ease) !important;
   }
   .sheetOverlay.closing, .cartOverlay.closing, .adminOverlay.closing, .adminOverlay2.closing,
-  .calcOverlay.closing, .matanyamanOverlay.closing, .menuDropdownOverlay.closing,
+  .calcOverlay.closing, .menuDropdownOverlay.closing,
   .logoutWarnOverlay.closing, .loginOverlay.closing, .lapOverlay.closing, .grafikOverlay.closing,
   .trxDetailOverlay.closing, .akunOverlay.closing, .akunFormOverlay.closing,
   .pengaturanOverlay.closing, .gameOverlay.closing, .stokOverlay.closing,
   .stokCupOverlay.closing, .restockOverlay.closing, .pecatOverlay.closing{
-    display:flex !important; opacity:0;
+    display:flex !important; opacity:0; pointer-events:none !important;
   }
   /* Sheet/box di dalam overlay ikut meluncur turun (bukan cuma overlay-nya fade) */
   .sheetOverlay.closing .sheet, .cartOverlay.closing .cartSheet,
@@ -4486,11 +4489,17 @@ cobaAutoLogin().finally(()=>{ el('bootLoading').style.display = 'none'; });
    ===================================================================== */
 (function(){
   const DURASI_KELUAR = 300; // sedikit lebih lama dari --ios-med (280ms) sbg jaga2
+
+  // Elemen yang SENGAJA dikecualikan dari animasi keluar otomatis -- ini bukan
+  // modal/sheet yg dibuka-tutup pakai class 'show', tapi lapisan efek statis.
+  const ID_DIKECUALIKAN = ['matanyamanOverlay'];
+
   const timerPerElemen = new WeakMap();
 
   function elemenOverlay(node){
-    return node && node.nodeType === 1 && node.classList &&
-      Array.from(node.classList).some(c => /overlay/i.test(c));
+    if(!node || node.nodeType !== 1 || !node.classList) return false;
+    if(ID_DIKECUALIKAN.includes(node.id)) return false;
+    return Array.from(node.classList).some(c => /overlay/i.test(c));
   }
 
   function tanganiPerubahan(node){
@@ -4499,18 +4508,25 @@ cobaAutoLogin().finally(()=>{ el('bootLoading').style.display = 'none'; });
     const timerLama = timerPerElemen.get(node);
 
     if(sedangShow){
-      // Baru dibuka -- batalkan proses "closing" yg mungkin masih berjalan.
+      // Baru dibuka -- batalkan proses "closing" yg mungkin masih berjalan,
+      // dan pastikan pointer-events dikembalikan normal (bukan none).
       if(timerLama) clearTimeout(timerLama);
       node.classList.remove('closing');
+      node.style.pointerEvents = '';
     } else if(node.classList.contains('closing')){
       // Sudah dalam proses closing (dipicu kita sendiri) -- biarkan jalan.
       return;
     } else {
-      // Baru saja ditutup (show dicabut) & belum closing -- mainkan animasi keluar.
+      // Baru saja ditutup (show dicabut) & belum closing -- mainkan animasi
+      // keluar, sekaligus matikan pointer-events LANGSUNG dari JS (failsafe
+      // ganda -- tidak cuma andalkan CSS !important) supaya overlay yg lagi
+      // fade-out tidak pernah bisa menangkap klik/tap.
       if(timerLama) clearTimeout(timerLama);
       node.classList.add('closing');
+      node.style.pointerEvents = 'none';
       const t = setTimeout(()=>{
         node.classList.remove('closing');
+        node.style.pointerEvents = '';
         timerPerElemen.delete(node);
       }, DURASI_KELUAR);
       timerPerElemen.set(node, t);
@@ -4528,6 +4544,19 @@ cobaAutoLogin().finally(()=>{ el('bootLoading').style.display = 'none'; });
   observer.observe(document.body, {
     attributes:true, attributeFilter:['class'], subtree:true
   });
+
+  // FAILSAFE TAMBAHAN: kalau karena sebab apa pun (error JS lain, elemen
+  // dihapus dari DOM saat timer jalan, dsb) ada overlay yg nyangkut dalam
+  // keadaan 'closing' lebih dari semestinya, paksa bersihkan tiap 2 detik
+  // supaya TIDAK PERNAH ada overlay transparan yg mengunci seluruh layar.
+  setInterval(()=>{
+    document.querySelectorAll('.closing').forEach(elm=>{
+      if(!elm.classList.contains('show')){
+        elm.classList.remove('closing');
+        elm.style.pointerEvents = '';
+      }
+    });
+  }, 2000);
 })();
 </script>
 

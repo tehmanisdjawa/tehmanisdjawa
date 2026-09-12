@@ -3724,14 +3724,46 @@ history.pushState({ kasirBase: true }, '');
    ===================================================================== */
 const UPDATE_SIGNAL_REF = doc(db, "sistem", "updateSignal");
 let updateSignalAwalDiabaikan = false; // lewati pembacaan pertama (snapshot awal saat app baru dibuka)
-onSnapshot(UPDATE_SIGNAL_REF, (snap)=>{
+onSnapshot(UPDATE_SIGNAL_REF, async (snap)=>{
   if(!updateSignalAwalDiabaikan){ updateSignalAwalDiabaikan = true; return; }
   if(!snap.exists()) return;
-  // Hard reload: tambahkan query string acak supaya browser/WebView tidak
-  // menyajikan versi dari cache, benar-benar ambil ulang dari server.
-  const pemisah = location.href.includes('?') ? '&' : '?';
-  location.href = location.href.split('#')[0].split('?')[0] + pemisah + '_upd=' + Date.now();
+  await paksaAmbilVersiTerbaru();
 }, (err)=>{ console.error('Gagal memantau sinyal update sistem:', err); });
+
+// Beberapa WebView Android (termasuk APK hasil convert Appilix) menyimpan cache
+// HTML/JS di level native, bukan cuma cache browser biasa -- sekadar ganti query
+// string di URL ("location.href = ...?_upd=...") TIDAK CUKUP untuk memaksanya
+// mengambil ulang dari server, WebView tetap menyajikan versi lama dari cache
+// internal. Fungsi ini mencoba semua cara pembersihan cache yang tersedia di
+// halaman SEBELUM pindah ke URL baru, supaya reload-nya benar-benar "bersih".
+async function paksaAmbilVersiTerbaru(){
+  try{
+    // 1) Hapus semua Cache Storage API (kalau browser/WebView mendukungnya).
+    if(window.caches && caches.keys){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){ /* abaikan kalau tidak didukung */ }
+  try{
+    // 2) Matikan service worker kalau ada (jaga-jaga, walau app ini tidak pasang sendiri).
+    if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+  }catch(e){ /* abaikan */ }
+  try{
+    // 3) "Pemanasan" fetch dengan cache:'reload' -- memaksa satu request nyata ke
+    // server (skip cache HTTP) sebelum kita pindah halaman, supaya versi terbaru
+    // sempat masuk ke cache jaringan yang akan dipakai saat reload berikutnya.
+    await fetch(location.pathname + '?_warm=' + Date.now(), { cache: 'reload' });
+  }catch(e){ /* offline atau gagal, tetap lanjut ke langkah reload di bawah */ }
+
+  const urlBersih = location.href.split('#')[0].split('?')[0];
+  const urlBaru = urlBersih + '?_upd=' + Date.now();
+  // location.replace (bukan location.href) supaya tidak menambah entry history,
+  // dan dipanggil setelah cache dibersihkan supaya WebView benar-benar fetch baru.
+  location.replace(urlBaru);
+}
 
 /* =====================================================================
    BOOT

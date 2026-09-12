@@ -213,11 +213,11 @@
   .searchWrap input:focus{outline:none; border-color:rgba(200,151,63,.55); background:rgba(243,237,224,.09);}
 
   .updCooldownBar{
-    display:flex; align-items:center; gap:7px; margin-top:10px; padding:8px 12px; border-radius:11px;
-    background:rgba(200,151,63,.14); border:1px solid rgba(200,151,63,.3); color:var(--gold-dark); font-size:11.5px; font-weight:650;
+    display:flex; align-items:center; gap:7px; margin-top:10px; padding:9px 13px; border-radius:11px;
+    background:rgba(200,151,63,.22); border:1px solid rgba(200,151,63,.45); color:var(--gold); font-size:12px; font-weight:650;
   }
-  .updCooldownBar svg{width:14px; height:14px; flex:0 0 auto; animation:updSpinRot 1.4s linear infinite;}
-  .updCooldownBar b{font-variant-numeric:tabular-nums;}
+  .updCooldownBar svg{width:14px; height:14px; flex:0 0 auto; color:var(--gold); animation:updSpinRot 1.4s linear infinite;}
+  .updCooldownBar b{font-variant-numeric:tabular-nums; color:#fff;}
   .catTabs{display:flex; gap:7px; overflow-x:auto; padding:13px 0 2px; scrollbar-width:none;}
   .catTabs::-webkit-scrollbar{display:none;}
   .catTabs button{
@@ -794,7 +794,7 @@
   </div>
   <div class="updCooldownBar" id="updCooldownBar" style="display:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3.5-7.13"/><path d="M21 3v6h-6"/></svg>
-    <span>Update otomatis dalam <b id="updCooldownDetik">30</b> detik\u2026</span>
+    <span>Update otomatis dalam <b id="updCooldownDetik">30</b> detik…</span>
   </div>
   <div class="catTabs" id="catTabs"></div>
 </div>

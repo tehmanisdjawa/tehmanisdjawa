@@ -218,6 +218,14 @@
   }
   .updCooldownBar svg{width:14px; height:14px; flex:0 0 auto; color:var(--gold); animation:updSpinRot 1.4s linear infinite;}
   .updCooldownBar b{font-variant-numeric:tabular-nums; color:#fff;}
+  /* Mode Perlindungan Mata -- lapisan overlay kekuningan transparan di atas
+     seluruh layar (mirip "night light"), meredam cahaya biru. Diterapkan lewat
+     kelas di <body>, disimpan per HP (localStorage), bukan per akun Firestore. */
+  .matanyamanOverlay{
+    position:fixed; inset:0; z-index:9999; pointer-events:none; display:none;
+    background:rgba(255,172,61,.12); mix-blend-mode:multiply;
+  }
+  body.matanyaman-aktif .matanyamanOverlay{display:block;}
   .catTabs{display:flex; gap:7px; overflow-x:auto; padding:13px 0 2px; scrollbar-width:none;}
   .catTabs::-webkit-scrollbar{display:none;}
   .catTabs button{
@@ -883,6 +891,8 @@
   </div>
 </div>
 
+<div class="matanyamanOverlay" id="matanyamanOverlay"></div>
+
 <div class="updInstallOverlay" id="updInstallOverlay">
   <div class="updSpin"></div>
   <div class="updCheckWrap"><div class="updCheckCircle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div></div>
@@ -1094,6 +1104,22 @@ function ambilPrefNotifikasi(){
 function simpanPrefNotifikasi(pref){
   try{ localStorage.setItem('etd_prefNotif', JSON.stringify(pref)); }catch(e){}
 }
+
+/* =====================================================================
+   MODE PERLINDUNGAN MATA -- filter overlay kekuningan (kurangi cahaya biru),
+   tersimpan per HP (localStorage), tersedia untuk SEMUA jabatan.
+   ===================================================================== */
+function ambilPrefMataNyaman(){
+  try{ return localStorage.getItem('etd_matanyaman') === '1'; }catch(e){ return false; }
+}
+function simpanPrefMataNyaman(aktif){
+  try{ localStorage.setItem('etd_matanyaman', aktif ? '1' : '0'); }catch(e){}
+}
+function terapkanModeMataNyaman(aktif){
+  document.body.classList.toggle('matanyaman-aktif', aktif);
+}
+terapkanModeMataNyaman(ambilPrefMataNyaman()); // terapkan langsung sejak boot, sebelum login pun
+
 // Bunyikan "ting" pendek pakai Web Audio API (tidak butuh file suara eksternal).
 function mainkanSuaraCheckout(){
   if(!ambilPrefNotifikasi().suaraCheckout) return;
@@ -2997,6 +3023,16 @@ function renderHalamanPengaturan(){
         <span class="prefToggleSlider"></span>
       </label>
     </div>
+    <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div>
+        <div style="font-size:13.5px; font-weight:650; color:var(--ink);">Mode Perlindungan Mata</div>
+        <div class="hint" style="margin-top:2px;">Lapisan warna hangat kekuningan di layar untuk mengurangi cahaya biru, cocok dipakai malam hari. Hanya berlaku di HP ini.</div>
+      </div>
+      <label class="prefToggle">
+        <input type="checkbox" id="pgToggleMataNyaman" ${ambilPrefMataNyaman() ? 'checked' : ''}>
+        <span class="prefToggleSlider"></span>
+      </label>
+    </div>
 
     <div class="catLabelAdmin">Santai Sebentar</div>
     <div class="hint" style="margin-bottom:12px;">Lagi nunggu pembeli? Main game kecil dulu, yuk.</div>
@@ -3103,6 +3139,12 @@ function renderHalamanPengaturan(){
     pref.motivasiAktif = el('pgToggleMotivasi').checked;
     simpanPrefNotifikasi(pref);
     showToast(pref.motivasiAktif ? "Notifikasi motivasi diaktifkan" : "Notifikasi motivasi dimatikan");
+  });
+  el('pgToggleMataNyaman').addEventListener('change', ()=>{
+    const aktif = el('pgToggleMataNyaman').checked;
+    simpanPrefMataNyaman(aktif);
+    terapkanModeMataNyaman(aktif);
+    showToast(aktif ? "Mode Perlindungan Mata diaktifkan" : "Mode Perlindungan Mata dimatikan");
   });
 
   // --- Bagian Santai Sebentar (game) ---

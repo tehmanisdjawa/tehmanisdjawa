@@ -1614,11 +1614,13 @@ function terapkanTampilanJabatan(){
 }
 
 // Coba auto-login dari sesi tersimpan di localStorage saat halaman pertama dibuka.
+function tunggu(ms){ return new Promise((_,rej)=>setTimeout(()=>rej(new Error('Waktu tunggu habis')), ms)); }
+
 async function cobaAutoLogin(){
   const sesiLokal = ambilSesiLokal();
   if(!sesiLokal || !sesiLokal.username){ bukaLoginScreen(); return; }
   try{
-    const akun = await cariAkunByUsername(sesiLokal.username);
+    const akun = await Promise.race([ cariAkunByUsername(sesiLokal.username), tunggu(8000) ]);
     if(!akun || akun.jabatan === 'Pecat'){ hapusSesiLokal(); bukaLoginScreen(); return; }
     const cekShift = dalamJadwalShift(akun);
     if(!cekShift.ok){ hapusSesiLokal(); bukaLoginScreen(); return; }
@@ -4474,7 +4476,23 @@ async function paksaAmbilVersiTerbaru(){
    BOOT
    ===================================================================== */
 cekWaktuTutupSetiapDetik();
-cobaAutoLogin().finally(()=>{ el('bootLoading').style.display = 'none'; });
+
+// FAILSAFE: apapun yang terjadi (error tak terduga, promise nyangkut), paksa
+// sembunyikan loading awal setelah maksimal 10 detik supaya halaman TIDAK
+// PERNAH terkunci selamanya oleh overlay bootLoading (z-index:300 menutupi
+// & memblokir klik ke seluruh isi halaman di bawahnya).
+let bootSelesai = false;
+function tutupBootLoading(){
+  if(bootSelesai) return;
+  bootSelesai = true;
+  const b = el('bootLoading');
+  if(b) b.style.display = 'none';
+}
+setTimeout(tutupBootLoading, 10000);
+
+cobaAutoLogin()
+  .catch(e=>{ console.error('cobaAutoLogin gagal total, fallback ke layar login:', e); try{ bukaLoginScreen(); }catch(_){} })
+  .finally(tutupBootLoading);
 
 /* =====================================================================
    ANIMASI KELUAR OTOMATIS UTK SEMUA OVERLAY (WAJIB ada animasi masuk & keluar)

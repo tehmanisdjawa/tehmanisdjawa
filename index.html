@@ -2026,6 +2026,12 @@ async function voidTransaksi(trxId, dariDetail){
   if(!SESI || SESI.jabatan !== 'Owner') return; // pengaman tambahan sisi client
   const t = trxDetailMap[trxId];
   if(!confirm("Batalkan transaksi ini? Data akan dihapus dari laporan dan stok barang yang terjual akan dikembalikan.")) return;
+
+  // Tutup overlay detail (kalau void dipicu dari situ) DI AWAL, sebelum proses async
+  // apapun jalan -- supaya animasi tutup overlay sudah selesai duluan dan tidak numpuk
+  // sama toast yang muncul belakangan. Ini salah satu penyebab toast kelihatan "nyangkut".
+  if(dariDetail) el('trxDetailOverlay').classList.remove('show');
+
   try{
     // Kembalikan stok tiap item (kalau outlet-nya kelola stok utk varian itu) SEBELUM
     // dokumen transaksinya dihapus, supaya kalau gagal di tengah jalan datanya masih ada
@@ -2045,10 +2051,17 @@ async function voidTransaksi(trxId, dariDetail){
       }
     }
     await deleteDoc(doc(db, "transaksi", trxId));
+
+    // Muat ulang laporan DULU, baru tampilkan toast PALING AKHIR -- supaya toast ini
+    // adalah hal terakhir yang terjadi di layar, tiketnya (lihat showToast) pasti yang
+    // paling baru, dan tidak ke-skip/ketutup keliru oleh proses render laporan yang
+    // masih berjalan di background.
+    await muatLaporanTanggal(lapTanggalAktif);
     showToast("Transaksi dibatalkan, stok dikembalikan");
-    if(dariDetail) el('trxDetailOverlay').classList.remove('show');
-    muatLaporanTanggal(lapTanggalAktif);
-  }catch(e){ showToast("Gagal membatalkan. Cek koneksi.", false); }
+  }catch(e){
+    showToast("Gagal membatalkan. Cek koneksi.", false);
+    console.error('Gagal void transaksi:', e);
+  }
 }
 
 function susunTeksLaporan(data){

@@ -2967,23 +2967,8 @@ async function bukaHalamanPengaturan(){
 const TEMA_WARNA_DEFAULT = {
   pineUtama: '#12291d',   // warna gelap utama (topbar, tombol, dsb -- var(--pine-900))
   aksenEmas: '#c8973f',   // warna aksen/highlight (var(--gold))
-  latarBelakang: '#dcd6c6', // warna latar halaman (var(--paper))
-  merah: '#a8452f',        // warna status/peringatan (habis, hapus, error -- var(--merah))
-  teks: '#221f19'          // warna teks utama di atas latar terang (var(--ink))
+  latarBelakang: '#dcd6c6' // warna latar halaman (var(--paper))
 };
-
-// Preset palet cepat -- kombinasi warna siap pakai supaya user tidak perlu
-// utak-atik hex satu-satu kalau cuma mau ganti nuansa/tema keseluruhan.
-const TEMA_PRESET_LIST = [
-  { nama:'Hijau Djawa',  pineUtama:'#12291d', aksenEmas:'#c8973f', latarBelakang:'#dcd6c6', merah:'#a8452f', teks:'#221f19' },
-  { nama:'Biru Malam',   pineUtama:'#12233d', aksenEmas:'#5b9bd5', latarBelakang:'#d9dfe6', merah:'#b0463a', teks:'#1a2233' },
-  { nama:'Coklat Kopi',  pineUtama:'#3a2418', aksenEmas:'#d1a054', latarBelakang:'#e6dcce', merah:'#a8452f', teks:'#2a1c12' },
-  { nama:'Merah Bata',   pineUtama:'#3d1414', aksenEmas:'#e0a458', latarBelakang:'#e8ddd2', merah:'#c0392b', teks:'#2a1414' },
-  { nama:'Ungu Senja',   pineUtama:'#2a1b3d', aksenEmas:'#c9a0e0', latarBelakang:'#e2dbe8', merah:'#a8452f', teks:'#221a2e' },
-  { nama:'Abu Modern',   pineUtama:'#26292b', aksenEmas:'#8fa3ad', latarBelakang:'#e2e4e2', merah:'#a8452f', teks:'#1f2224' },
-  { nama:'Teal Segar',   pineUtama:'#0d3330', aksenEmas:'#5fc7b8', latarBelakang:'#dbe6e3', merah:'#a8452f', teks:'#0f2422' },
-  { nama:'Gelap Elegan', pineUtama:'#1a1a1a', aksenEmas:'#c8973f', latarBelakang:'#c9c9c9', merah:'#c0392b', teks:'#141414' }
-];
 
 // Terapkan tema warna ke CSS custom properties di :root, dipanggil saat login
 // dan setiap kali warna diganti di halaman Pengaturan (untuk pratinjau langsung).
@@ -2995,17 +2980,11 @@ function terapkanTemaWarna(tema){
   root.setProperty('--pine-800', gelapkanWarna(t.pineUtama, -0.08));
   root.setProperty('--pine-700', gelapkanWarna(t.pineUtama, -0.18));
   root.setProperty('--pine-600', gelapkanWarna(t.pineUtama, -0.28));
-  root.setProperty('--pine-500', gelapkanWarna(t.pineUtama, -0.40));
-  root.setProperty('--pine-100', terangkanWarna(t.pineUtama, 0.88));
-  root.setProperty('--pine-50', terangkanWarna(t.pineUtama, 0.94));
   root.setProperty('--gold', t.aksenEmas);
   root.setProperty('--gold-dark', gelapkanWarna(t.aksenEmas, 0.15));
   root.setProperty('--gold-light', terangkanWarna(t.aksenEmas, 0.82));
   root.setProperty('--paper', t.latarBelakang);
   root.setProperty('--card', terangkanWarna(t.latarBelakang, 0.35));
-  root.setProperty('--merah', t.merah);
-  root.setProperty('--merah-light', terangkanWarna(t.merah, 0.85));
-  root.setProperty('--ink', t.teks);
 }
 
 // Helper kecil: gelapkan/terangkan warna hex sebesar persentase tertentu (0-1),
@@ -3109,19 +3088,7 @@ function renderHalamanPengaturan(){
     </div>
 
     <div class="catLabelAdmin">Sesuaikan Warna Tampilan</div>
-    <div class="hint" style="margin-bottom:14px;">Pilih warna sesukamu, atau langsung pakai salah satu palet cepat di bawah. Pratinjau langsung berubah -- belum tersimpan permanen sampai kamu pencet "Simpan Warna".</div>
-
-    <div class="formField">
-      <label>Palet Cepat</label>
-      <div id="pgPaletRow" style="display:flex; gap:10px; overflow-x:auto; padding:2px 2px 8px; scrollbar-width:none;">
-        ${TEMA_PRESET_LIST.map((p,i)=>`
-          <button type="button" class="pgPaletBtn" data-preset="${i}" title="${p.nama}" style="flex:0 0 auto; width:52px; height:52px; border-radius:14px; border:1.4px solid var(--line-soft); cursor:pointer; padding:5px; display:flex; flex-direction:column; gap:2px; background:${p.latarBelakang};">
-            <span style="display:block; flex:1; border-radius:5px; background:${p.pineUtama};"></span>
-            <span style="display:block; height:7px; border-radius:5px; background:${p.aksenEmas};"></span>
-          </button>
-        `).join('')}
-      </div>
-    </div>
+    <div class="hint" style="margin-bottom:14px;">Pilih warna sesukamu. Pratinjau di bawah langsung berubah begitu warna diganti -- belum tersimpan permanen sampai kamu pencet "Simpan Warna".</div>
 
     <div class="formField">
       <label>Warna Utama (topbar, tombol, aksen gelap)</label>
@@ -3144,20 +3111,6 @@ function renderHalamanPengaturan(){
         <input id="pgWarnaLatarHex" type="text" value="${temaSekarang.latarBelakang}" style="flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13px; font-family:monospace; background:var(--card); color:var(--ink);">
       </div>
     </div>
-    <div class="formField">
-      <label>Warna Teks</label>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <input id="pgWarnaTeks" type="color" value="${temaSekarang.teks}" style="width:52px; height:42px; border-radius:10px; border:1.4px solid var(--line); padding:2px; background:var(--card); cursor:pointer;">
-        <input id="pgWarnaTeksHex" type="text" value="${temaSekarang.teks}" style="flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13px; font-family:monospace; background:var(--card); color:var(--ink);">
-      </div>
-    </div>
-    <div class="formField">
-      <label>Warna Status/Peringatan (habis, hapus, error)</label>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <input id="pgWarnaMerah" type="color" value="${temaSekarang.merah}" style="width:52px; height:42px; border-radius:10px; border:1.4px solid var(--line); padding:2px; background:var(--card); cursor:pointer;">
-        <input id="pgWarnaMerahHex" type="text" value="${temaSekarang.merah}" style="flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13px; font-family:monospace; background:var(--card); color:var(--ink);">
-      </div>
-    </div>
 
     <div class="formField">
       <label>Pratinjau</label>
@@ -3170,7 +3123,6 @@ function renderHalamanPengaturan(){
           <div style="flex:1; min-width:120px; border-radius:12px; padding:12px; font-size:12.5px; font-weight:650;">Contoh Menu Item<br><span style="font-weight:700; font-size:12px;">Rp8.000</span></div>
           <button id="pgPratinjauBtn" style="border:none; border-radius:12px; padding:12px 16px; font-size:13px; font-weight:700; color:#f3ede0; cursor:default;">Tombol Aksi</button>
         </div>
-        <div id="pgPratinjauHabis" style="padding:0 16px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.2px;">Contoh Habis</div>
       </div>
     </div>
 

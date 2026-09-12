@@ -1168,6 +1168,10 @@ function tutupLoginScreen(){
 function prosesLogout(diam){
   if(cekSesiTimer) clearInterval(cekSesiTimer);
   if(unsubMenu){ unsubMenu(); unsubMenu = null; }
+  if(unsubStokMenu){ unsubStokMenu(); unsubStokMenu = null; }
+  if(unsubStokCupMenu){ unsubStokCupMenu(); unsubStokCupMenu = null; }
+  if(unsubStokMenipis){ unsubStokMenipis(); unsubStokMenipis = null; }
+  if(unsubStokCupMenipis){ unsubStokCupMenipis(); unsubStokCupMenipis = null; }
   SESI = null;
   hapusSesiLokal();
   terapkanTampilanJabatan();
@@ -1286,41 +1290,63 @@ function mulaiSemuaSetelahLogin(){
    NOTIFIKASI STOK MENIPIS (khusus Owner) — cek semua outlet, dua koleksi
    stok ("stok" per menu & "stok_cup_ukuran" per ukuran fisik). Kalau ada
    yang stoknya <= BATAS_STOK_MENIPIS (termasuk yang sudah 0/Habis), Owner
-   dapat toast peringatan sesaat setelah login, lalu dicek ulang tiap 10 menit
-   selama sesi aktif supaya Owner sempat restock sebelum benar-benar kehabisan.
+   dapat toast peringatan.
+   Dipasang sebagai REALTIME LISTENER (onSnapshot), bukan polling getDocs
+   berulang -- ini jauh lebih hemat kuota Firestore: onSnapshot cuma
+   membayar "read" penuh sekali di awal (saat listener pertama nyala),
+   setelah itu Firestore cuma mengirim PERUBAHAN datanya (jauh lebih
+   murah), sekaligus otomatis realtime begitu ada yang restock/laku --
+   tidak perlu nunggu siklus 10 menit seperti sebelumnya.
    ===================================================================== */
-let stokMenipisTimer = null;
-async function cekStokMenipisSemuaOutlet(){
-  try{
-    const [snapStok, snapStokCup] = await Promise.all([
-      getDocs(collection(db, "stok")),
-      getDocs(collection(db, "stok_cup_ukuran"))
-    ]);
-    const menipisList = [];
-    const habisList = [];
-    snapStok.docs.forEach(d=>{
-      const s = d.data();
-      const jumlah = Number(s.jumlah)||0;
-      if(jumlah <= 0) habisList.push(`${s.nama} (${normalisasiUkuran(s.ukuran, s.nama)}) \u2014 ${s.outlet}`);
-      else if(jumlah <= BATAS_STOK_MENIPIS) menipisList.push(`${s.nama} (${normalisasiUkuran(s.ukuran, s.nama)}) \u2014 ${s.outlet}: sisa ${jumlah}`);
-    });
-    snapStokCup.docs.forEach(d=>{
-      const s = d.data();
-      const jumlah = Number(s.jumlah)||0;
-      if(jumlah <= 0) habisList.push(`Cup ${s.ukuran} \u2014 ${s.outlet}`);
-      else if(jumlah <= BATAS_STOK_MENIPIS) menipisList.push(`Cup ${s.ukuran} \u2014 ${s.outlet}: sisa ${jumlah}`);
-    });
+let unsubStokMenipis = null, unsubStokCupMenipis = null;
+let stokMenipisTerakhir = {}, stokCupMenipisTerakhir = {}; // simpan snapshot data terbaru dari kedua listener
+let toastStokMenipisTimer = null;
+
+function evaluasiDanTampilkanStokMenipis(){
+  const menipisList = [], habisList = [];
+  Object.values(stokMenipisTerakhir).forEach(s=>{
+    const jumlah = Number(s.jumlah)||0;
+    if(jumlah <= 0) habisList.push(`${s.nama} (${normalisasiUkuran(s.ukuran, s.nama)}) \u2014 ${s.outlet}`);
+    else if(jumlah <= BATAS_STOK_MENIPIS) menipisList.push(`${s.nama} (${normalisasiUkuran(s.ukuran, s.nama)}) \u2014 ${s.outlet}: sisa ${jumlah}`);
+  });
+  Object.values(stokCupMenipisTerakhir).forEach(s=>{
+    const jumlah = Number(s.jumlah)||0;
+    if(jumlah <= 0) habisList.push(`Cup ${s.ukuran} \u2014 ${s.outlet}`);
+    else if(jumlah <= BATAS_STOK_MENIPIS) menipisList.push(`Cup ${s.ukuran} \u2014 ${s.outlet}: sisa ${jumlah}`);
+  });
+  // Debounce kecil (1.5 detik) supaya kalau banyak dokumen berubah beruntun
+  // (misal restock banyak item sekaligus), toast tidak numpuk berkali-kali.
+  if(toastStokMenipisTimer) clearTimeout(toastStokMenipisTimer);
+  toastStokMenipisTimer = setTimeout(()=>{
     if(habisList.length>0){
       showToast(`\u26a0\ufe0f ${habisList.length} stok sudah HABIS: ${habisList.slice(0,3).join(', ')}${habisList.length>3?', dll':''}`, false);
     } else if(menipisList.length>0){
       showToast(`\u26a0\ufe0f Stok menipis (\u2264${BATAS_STOK_MENIPIS}): ${menipisList.slice(0,3).join(', ')}${menipisList.length>3?', dll':''}`, false);
     }
-  }catch(e){ /* diam-diam gagal, jangan ganggu kasir kalau cek notifikasi ini error */ console.error('Gagal cek stok menipis:', e); }
+  }, 1500);
 }
+
 function mulaiPengecekanStokMenipis(){
-  if(stokMenipisTimer) clearInterval(stokMenipisTimer);
-  setTimeout(cekStokMenipisSemuaOutlet, 2500); // beri jeda sedikit supaya tidak numpuk toast dgn proses login
-  stokMenipisTimer = setInterval(cekStokMenipisSemuaOutlet, 10*60*1000); // cek ulang tiap 10 menit
+  if(unsubStokMenipis) unsubStokMenipis();
+  if(unsubStokCupMenipis) unsubStokCupMenipis();
+  let siapTampilAwal = false;
+  unsubStokMenipis = onSnapshot(collection(db, "stok"), (snap)=>{
+    snap.docChanges().forEach(ch=>{
+      if(ch.type === 'removed') delete stokMenipisTerakhir[ch.doc.id];
+      else stokMenipisTerakhir[ch.doc.id] = ch.doc.data();
+    });
+    if(siapTampilAwal) evaluasiDanTampilkanStokMenipis();
+  }, (err)=> console.error('Gagal memantau stok menipis:', err));
+  unsubStokCupMenipis = onSnapshot(collection(db, "stok_cup_ukuran"), (snap)=>{
+    snap.docChanges().forEach(ch=>{
+      if(ch.type === 'removed') delete stokCupMenipisTerakhir[ch.doc.id];
+      else stokCupMenipisTerakhir[ch.doc.id] = ch.doc.data();
+    });
+    if(siapTampilAwal) evaluasiDanTampilkanStokMenipis();
+  }, (err)=> console.error('Gagal memantau stok cup menipis:', err));
+  // Kasih toast ringkasan awal sekali begitu kedua listener sudah dapat data pertamanya,
+  // lalu baru listener aktif merespons perubahan realtime berikutnya.
+  setTimeout(()=>{ siapTampilAwal = true; evaluasiDanTampilkanStokMenipis(); }, 3000);
 }
 
 /* =====================================================================
@@ -1478,48 +1504,69 @@ function mulaiSiklusMotivasi(){
 el('motivClose').onclick = ()=>{ if(motivHideTimer){ clearTimeout(motivHideTimer); motivHideTimer = null; } sembunyikanToastMotivasi(); };
 
 /* =====================================================================
-   MENU (koleksi "menu") — realtime listener
-   Dokumen: { kategori, nama, varian: [{ukuran, harga, habis}] }
+   MENU (koleksi "menu") + STOK (koleksi "stok" & "stok_cup_ukuran") —
+   ketiganya dipasang sebagai REALTIME LISTENER independen sejak login,
+   digabung ulang (gabungkanMenuDanStok) tiap kali SALAH SATU dari
+   ketiganya berubah. Ini menggantikan pendekatan lama yang melakukan
+   getDocs (fetch penuh) ke stok SETIAP KALI menu berubah -- boros dan
+   tidak realtime kalau stok berubah duluan (misal Owner restock, atau
+   ada kasir lain checkout). Dengan pendekatan ini:
+   - Tiap listener cuma "bayar" read penuh SEKALI di awal, sisanya
+     Firestore kirim delta perubahan saja (jauh lebih hemat kuota).
+   - Stok yang berubah (restock/checkout) langsung ter-refleksi ke
+     tampilan menu semua kasir yang login di outlet itu tanpa delay,
+     tanpa perlu fetch manual sama sekali.
    ===================================================================== */
+let MENU_MENTAH = [];       // data mentah dari collection "menu" (belum digabung stok)
+let STOK_MAP_AKTIF = {};    // "kategori|nama|ukuran" -> jumlah stok, khusus outlet SESI aktif
+let unsubStokMenu = null, unsubStokCupMenu = null;
+
 function loadMenuRealtime(){
   if(unsubMenu) unsubMenu();
-  unsubMenu = onSnapshot(collection(db, "menu"), async (snap)=>{
-    const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    await terapkanStokKeMenu(rows);
+  if(unsubStokMenu) unsubStokMenu();
+  if(unsubStokCupMenu) unsubStokCupMenu();
+
+  unsubMenu = onSnapshot(collection(db, "menu"), (snap)=>{
+    MENU_MENTAH = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    gabungkanMenuDanStok();
   }, (err)=>{
     el('menuArea').innerHTML = '<div class="empty">Gagal memuat menu. Cek koneksi/Firebase config.</div>';
   });
+
+  if(SESI && SESI.outlet){
+    const qyStok = query(collection(db, "stok"), where("outlet", "==", SESI.outlet));
+    unsubStokMenu = onSnapshot(qyStok, (snap)=>{
+      const map = {};
+      snap.docs.forEach(d=>{ const s = d.data(); map[s.kategori+'|'+s.nama+'|'+s.ukuran] = s.jumlah; });
+      STOK_MAP_AKTIF = map;
+      gabungkanMenuDanStok();
+    }, (err)=> console.error('Gagal memantau stok menu:', err));
+
+    const qyStokCup = query(collection(db, "stok_cup_ukuran"), where("outlet", "==", SESI.outlet));
+    unsubStokCupMenu = onSnapshot(qyStokCup, (snap)=>{
+      const map = {};
+      snap.docs.forEach(d=>{ const s = d.data(); map[s.ukuran] = s.jumlah; });
+      STOK_CUP_UKURAN_MAP_AKTIF = map;
+      gabungkanMenuDanStok();
+    }, (err)=> console.error('Gagal memantau stok cup:', err));
+  } else {
+    STOK_MAP_AKTIF = {};
+    STOK_CUP_UKURAN_MAP_AKTIF = {};
+  }
 }
 
 // Gabungkan status habis dari koleksi "stok" (per outlet) ke MENU, mirip logika lama.
 // Lapisan tambahan: status habis dari STOK CUP PER UKURAN ("stok_cup_ukuran") --
 // ini independen dari menu, jadi kalau Cup ukuran tertentu habis di outlet ini,
 // SEMUA menu dengan ukuran itu otomatis ikut habis, apapun menunya.
-async function terapkanStokKeMenu(rows){
-  let stokMap = {};
-  let cupUkuranMap = {}; // ukuran (dinormalisasi) -> jumlah stok cup fisik
-  if(SESI && SESI.outlet){
-    try{
-      const qy = query(collection(db, "stok"), where("outlet", "==", SESI.outlet));
-      const snap = await getDocs(qy);
-      snap.docs.forEach(d=>{
-        const s = d.data();
-        stokMap[s.kategori+'|'+s.nama+'|'+s.ukuran] = s.jumlah;
-      });
-    }catch(e){}
-    try{
-      const qyCup = query(collection(db, "stok_cup_ukuran"), where("outlet", "==", SESI.outlet));
-      const snapCup = await getDocs(qyCup);
-      snapCup.docs.forEach(d=>{
-        const s = d.data();
-        cupUkuranMap[s.ukuran] = s.jumlah;
-      });
-      STOK_CUP_UKURAN_MAP_AKTIF = cupUkuranMap;
-    }catch(e){}
-  }
+// Fungsi ini SINKRON (tidak fetch apa pun) -- semua datanya sudah tersedia dari
+// state realtime (MENU_MENTAH, STOK_MAP_AKTIF, STOK_CUP_UKURAN_MAP_AKTIF) di atas.
+function gabungkanMenuDanStok(){
+  const stokMap = STOK_MAP_AKTIF;
+  const cupUkuranMap = STOK_CUP_UKURAN_MAP_AKTIF;
   // Kelompokkan per kategori > nama > varian, sesuai struktur lama biar UI tak berubah.
   const catMap = {}; const catOrder = [];
-  rows.forEach(r=>{
+  MENU_MENTAH.forEach(r=>{
     const kategori = r.kategori || 'Lainnya';
     const nama = r.nama || '';
     if(!nama) return;
@@ -3240,7 +3287,7 @@ el('stokClose').onclick = ()=> el('stokOverlay').classList.remove('show');
    Beda dari Kelola Stok di atas: ini bukan stok per menu+ukuran, tapi
    stok cup FISIK per ukuran saja (Small/Medium/Large/Jumbo). Kalau stok
    ukuran tertentu habis, SEMUA menu dengan ukuran itu otomatis ikut
-   ditandai habis (lihat terapkanStokKeMenu), apapun menunya.
+   ditandai habis (lihat gabungkanMenuDanStok), apapun menunya.
    Dokumen id: outlet_ukuran (disanitasi), koleksi "stok_cup_ukuran".
    ===================================================================== */
 let STOKCUP_OUTLET_AKTIF = '';
@@ -3760,7 +3807,7 @@ async function cekSinyalUpdateManual(){
     }
   }catch(e){ console.error('Gagal cek sinyal update sistem (polling):', e); }
 }
-setInterval(cekSinyalUpdateManual, 20000); // cek ulang tiap 20 detik
+setInterval(cekSinyalUpdateManual, 45000); // cek ulang tiap 45 detik -- cukup cepat utk kebutuhan update, tapi lebih hemat read dibanding 20 detik
 // Cek juga setiap kali tab/WebView kembali terlihat (misal HP dibuka lagi dari
 // kunci layar/background) supaya tidak perlu nunggu sampai 20 detik berikutnya.
 // Dipasang di beberapa event sekaligus karena WebView APK (Appilix) tidak selalu

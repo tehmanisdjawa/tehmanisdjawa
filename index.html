@@ -1145,8 +1145,9 @@
 <div class="dlSuccessOverlay" id="dlSuccessOverlay">
   <div class="dlSuccessBox">
     <div class="dlCheckCircle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>
-    <h3>Berhasil Diunduh</h3>
+    <h3>File Diproses</h3>
     <p id="dlSuccessNama"></p>
+    <p style="margin-top:8px; font-size:11.5px; color:var(--muted-soft);">Cek folder Download. Kalau tidak muncul, gunakan tombol "Bagikan WA" sebagai gantinya.</p>
   </div>
 </div>
 
@@ -3016,46 +3017,19 @@ async function bagikanLaporanWA(data){
 function unduhLaporan(data){
   const teks = susunTeksLaporan(data);
   const fileName = `Laporan-EsTehManisDjawa-${data.tanggal}.txt`;
-
-  // CATATAN PENTING soal kompatibilitas Android WebView (APK Appilix):
-  // Cara lama (Blob + <a download> + klik otomatis) TIDAK didukung dengan baik
-  // oleh WebView Android -- WebView sering diam-diam mengabaikan trigger
-  // download dari blob URL sama sekali, walau di browser Chrome biasa itu
-  // jalan normal. Sebagai gantinya, kita pakai DATA URI (bukan blob URL) lalu
-  // buka lewat window.open(). Data URI yang dibuka via window.open() ini lebih
-  // sering diteruskan WebView ke Intent Android bawaan (ACTION_VIEW), yang pada
-  // gilirannya memicu Download Manager sistem Android -- jalur ini TIDAK
-  // bergantung pada dukungan blob-download WebView itu sendiri.
-  //
-  // Ini bukan solusi yang 100% pasti berhasil di SEMUA WebView/APK, karena
-  // perilakunya bisa beda-beda tergantung versi Android & konfigurasi WebView,
-  // tapi ini pendekatan alternatif yang lebih sering berhasil dibanding blob
-  // biasa ketika APK-nya tidak menyediakan handler download native sendiri.
-  try{
-    const dataUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(teks);
-    const win = window.open(dataUri, '_blank');
-    // Kalau window.open gagal/di-blok (mengembalikan null/undefined), coba
-    // fallback ke cara lama (blob + <a download>) -- di browser desktop/Chrome
-    // Android biasa, cara lama ini tetap lebih rapi (nama file lebih terjaga).
-    if(!win){
-      const blob = new Blob([teks], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = fileName;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(()=> URL.revokeObjectURL(url), 4000);
-    }
-  }catch(e){
-    // Kalau data URI ditolak (jarang, tapi bisa terjadi di beberapa WebView lama),
-    // tetap coba jalur blob sebagai jaring pengaman terakhir.
-    try{
-      const blob = new Blob([teks], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = fileName;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(()=> URL.revokeObjectURL(url), 4000);
-    }catch(e2){ console.error('Gagal total memicu unduhan laporan:', e2); }
-  }
-
+  // CATATAN: sempat dicoba pakai data:URI + window.open() sebagai alternatif untuk
+  // WebView Android (APK Appilix), tapi ternyata itu malah membuka layar viewer
+  // kosong/hitam di WebView -- bukan memicu Download Manager seperti di Chrome
+  // biasa. Jadi dikembalikan ke cara Blob + <a download> standar, karena minimal
+  // TIDAK membuat tampilan aneh walau di beberapa WebView tetap tidak tersimpan.
+  const blob = new Blob([teks], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = fileName;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  // Jeda sebelum revoke -- proses simpan file dari blob URL berjalan asinkron di
+  // banyak browser/WebView Android, revoke yang terlalu cepat bisa membatalkan
+  // proses simpan yang belum selesai.
+  setTimeout(()=> URL.revokeObjectURL(url), 4000);
   tampilkanPopupSuksesUnduh(fileName);
 }
 

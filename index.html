@@ -613,6 +613,7 @@
   .shiftCard .scJam{font-size:10.5px; color:var(--muted-soft); margin-bottom:6px;}
   .shiftCard .scVal{font-family:"Fraunces",serif; font-size:16px; font-weight:600; color:var(--pine-950);}
   .shiftCard .scSub{font-size:10.5px; color:var(--muted-soft); margin-top:3px;}
+  .lapCard .scSub{font-size:10.5px; color:var(--muted-soft); margin-top:3px; font-weight:600;}
   .trxRow{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line-soft); cursor:pointer;}
   .trxRow:active{background:var(--line-soft);}
   .trxItemRow{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line-soft); gap:10px;}
@@ -2642,7 +2643,7 @@ function namaTampilItem(it){
 }
 
 function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
-  const ringkasan = { total:0, jumlahTrx:transaksiArr.length, jumlahItem:0, cash:0, qris:0, transfer:0 };
+  const ringkasan = { total:0, jumlahTrx:transaksiArr.length, jumlahItem:0, cash:0, qris:0, transfer:0, cashTrx:0, qrisTrx:0, transferTrx:0 };
   const perKaryawan = {};
   const SHIFT_URUTAN = ["Pagi","Siang","Sore","Malam","Luar Jam Operasional"];
   const perShift = {}; SHIFT_URUTAN.forEach(s=> perShift[s] = { shift:s, total:0, jumlahTrx:0, jumlahItem:0 });
@@ -2651,9 +2652,9 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
   transaksiArr.forEach(t=>{
     ringkasan.total += t.total || 0;
     ringkasan.jumlahItem += t.jumlahItem || 0;
-    if(t.metode==='Cash') ringkasan.cash += t.total||0;
-    else if(t.metode==='QRIS') ringkasan.qris += t.total||0;
-    else if(t.metode==='Transfer') ringkasan.transfer += t.total||0;
+    if(t.metode==='Cash'){ ringkasan.cash += t.total||0; ringkasan.cashTrx += 1; }
+    else if(t.metode==='QRIS'){ ringkasan.qris += t.total||0; ringkasan.qrisTrx += 1; }
+    else if(t.metode==='Transfer'){ ringkasan.transfer += t.total||0; ringkasan.transferTrx += 1; }
     const k = t.karyawan || '-';
     perKaryawan[k] = (perKaryawan[k]||0) + (t.total||0);
     const shift = labelShiftDariJam(t.jam||0);
@@ -2721,8 +2722,9 @@ async function muatLaporanTanggal(tanggal, diam){
       const ringkasanGabungan = semuaKelompok.reduce((acc,l)=>{
         acc.total+=l.ringkasan.total; acc.jumlahTrx+=l.ringkasan.jumlahTrx; acc.jumlahItem+=l.ringkasan.jumlahItem;
         acc.cash+=l.ringkasan.cash; acc.qris+=l.ringkasan.qris; acc.transfer+=l.ringkasan.transfer;
+        acc.cashTrx+=l.ringkasan.cashTrx||0; acc.qrisTrx+=l.ringkasan.qrisTrx||0; acc.transferTrx+=l.ringkasan.transferTrx||0;
         return acc;
-      }, {total:0,jumlahTrx:0,jumlahItem:0,cash:0,qris:0,transfer:0});
+      }, {total:0,jumlahTrx:0,jumlahItem:0,cash:0,qris:0,transfer:0,cashTrx:0,qrisTrx:0,transferTrx:0});
       data = { status:'ok', tanggal, modeSemuaOutlet:true, ringkasanGabunganSemuaOutlet: ringkasanGabungan, perOutlet: semuaKelompok };
     } else {
       const arr = await ambilTransaksiUntukLaporan(tanggal, lapOutletAktif);
@@ -2765,6 +2767,9 @@ function renderLaporanSemuaOutlet(data){
       <div class="lapCard wide"><div class="lapLbl">Total Semua Outlet \u00b7 ${tanggalIndo(data.tanggal)}</div><div class="lapVal">${rupiah(rg.total)}</div></div>
       <div class="lapCard"><div class="lapLbl">Transaksi</div><div class="lapVal">${rg.jumlahTrx}</div></div>
       <div class="lapCard"><div class="lapLbl">Item Terjual</div><div class="lapVal">${rg.jumlahItem}</div></div>
+      <div class="lapCard"><div class="lapLbl">Cash</div><div class="lapVal" style="font-size:15px;">${rupiah(rg.cash)}</div><div class="scSub">${rg.cashTrx||0} transaksi</div></div>
+      <div class="lapCard"><div class="lapLbl">QRIS</div><div class="lapVal" style="font-size:15px;">${rupiah(rg.qris)}</div><div class="scSub">${rg.qrisTrx||0} transaksi</div></div>
+      <div class="lapCard wide"><div class="lapLbl">Transfer</div><div class="lapVal" style="font-size:15px;">${rupiah(rg.transfer)}</div><div class="scSub">${rg.transferTrx||0} transaksi</div></div>
     </div>
     <div class="empty" style="padding:0 4px 14px; text-align:left; font-size:12px;">Rincian tiap outlet TIDAK digabung. Pencet salah satu kartu outlet di bawah untuk buka laporan lengkap outlet itu.</div>`;
   if(data.perOutlet.length === 0){ html += '<div class="empty">Belum ada transaksi tanggal ini di outlet manapun.</div>'; el('lapBody').innerHTML = html; return; }
@@ -2812,9 +2817,9 @@ function renderLaporanSatuOutlet(data){
       <div class="lapCard wide"><div class="lapLbl">Total Penjualan${data.outlet ? ' \u00b7 '+data.outlet : ''} \u00b7 ${tanggalIndo(data.tanggal)}</div><div class="lapVal">${rupiah(r.total)}</div></div>
       <div class="lapCard"><div class="lapLbl">Transaksi</div><div class="lapVal">${r.jumlahTrx}</div></div>
       <div class="lapCard"><div class="lapLbl">Item Terjual</div><div class="lapVal">${r.jumlahItem}</div></div>
-      <div class="lapCard"><div class="lapLbl">Cash</div><div class="lapVal" style="font-size:15px;">${rupiah(r.cash)}</div></div>
-      <div class="lapCard"><div class="lapLbl">QRIS</div><div class="lapVal" style="font-size:15px;">${rupiah(r.qris)}</div></div>
-      <div class="lapCard wide"><div class="lapLbl">Transfer</div><div class="lapVal" style="font-size:15px;">${rupiah(r.transfer)}</div></div>
+      <div class="lapCard"><div class="lapLbl">Cash</div><div class="lapVal" style="font-size:15px;">${rupiah(r.cash)}</div><div class="scSub">${r.cashTrx||0} transaksi</div></div>
+      <div class="lapCard"><div class="lapLbl">QRIS</div><div class="lapVal" style="font-size:15px;">${rupiah(r.qris)}</div><div class="scSub">${r.qrisTrx||0} transaksi</div></div>
+      <div class="lapCard wide"><div class="lapLbl">Transfer</div><div class="lapVal" style="font-size:15px;">${rupiah(r.transfer)}</div><div class="scSub">${r.transferTrx||0} transaksi</div></div>
     </div>
     <div class="shareBtnRow">
       <button class="waB" id="shareWaBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20z"/></svg>Bagikan ke WhatsApp</button>
@@ -3005,7 +3010,7 @@ function susunTeksLaporan(data){
   let t = `*LAPORAN PENJUALAN \u2014 ES TEH MANIS DJAWA*\n`;
   t += `Tanggal: ${tanggalIndo(data.tanggal)}\n------------------------------\n`;
   t += `Total Penjualan: ${rupiah(r.total)}\nJumlah Transaksi: ${r.jumlahTrx}\nItem Terjual: ${r.jumlahItem}\n\n`;
-  t += `*Metode Bayar*\nCash: ${rupiah(r.cash)}\nQRIS: ${rupiah(r.qris)}\nTransfer: ${rupiah(r.transfer)}\n\n`;
+  t += `*Metode Bayar*\nCash: ${rupiah(r.cash)} (${r.cashTrx||0} trx)\nQRIS: ${rupiah(r.qris)} (${r.qrisTrx||0} trx)\nTransfer: ${rupiah(r.transfer)} (${r.transferTrx||0} trx)\n\n`;
   if(data.perShift && data.perShift.length){ t += `*Per Shift*\n`; data.perShift.forEach(s=>{ t += `${s.shift}: ${rupiah(s.total)} (${s.jumlahTrx} trx)\n`; }); t += `\n`; }
   if(data.perUkuranCup && data.perUkuranCup.length){ t += `*Terjual per Ukuran*\n`; data.perUkuranCup.forEach(u=>{ t += `${u.ukuran}: ${u.qty} cup\n`; }); t += `\n`; }
   if(data.perKaryawan && data.perKaryawan.length){ t += `*Per Karyawan*\n`; data.perKaryawan.forEach(k=>{ t += `${k.karyawan}: ${rupiah(k.total)}\n`; }); t += `\n`; }

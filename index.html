@@ -474,6 +474,28 @@
   @keyframes updPop{ 0%{transform:scale(.6); opacity:0;} 100%{transform:scale(1); opacity:1;} }
   @keyframes updCheckDraw{ to{ stroke-dashoffset:0; } }
 
+  /* ============ POPUP BERHASIL UNDUH ============ */
+  .dlSuccessOverlay{
+    position:fixed; inset:0; z-index:250; display:none; align-items:center; justify-content:center;
+    background:rgba(12,20,15,.55); backdrop-filter:blur(3px);
+    opacity:0; transition:opacity .25s ease;
+  }
+  .dlSuccessOverlay.show{display:flex; opacity:1;}
+  .dlSuccessBox{
+    background:var(--card); border-radius:22px; padding:28px 26px 24px; width:100%; max-width:280px; text-align:center;
+    box-shadow:var(--shadow-float); border:1px solid var(--line-soft);
+    transform:scale(.85); opacity:0; transition:transform .32s cubic-bezier(.34,1.56,.64,1), opacity .28s;
+  }
+  .dlSuccessOverlay.show .dlSuccessBox{transform:scale(1); opacity:1;}
+  .dlSuccessBox .dlCheckCircle{
+    width:56px; height:56px; border-radius:50%; margin:0 auto 14px; background:var(--pine-800);
+    display:flex; align-items:center; justify-content:center;
+    animation:updPop .42s cubic-bezier(.34,1.56,.64,1);
+  }
+  .dlSuccessBox .dlCheckCircle svg{width:28px; height:28px; color:var(--gold); stroke-dasharray:24; stroke-dashoffset:24; animation:updCheckDraw .35s ease .12s forwards;}
+  .dlSuccessBox h3{font-family:"Fraunces",serif; font-size:16.5px; margin:0 0 5px; color:var(--ink); font-weight:600;}
+  .dlSuccessBox p{font-size:12.5px; color:var(--muted); margin:0; line-height:1.5; word-break:break-word;}
+
   /* ============ ADMIN / SHEETS ============ */
   .adminOverlay{position:fixed; inset:0; background:rgba(12,20,15,.55); backdrop-filter:blur(3px); z-index:60; display:none; align-items:center; justify-content:center; padding:20px;}
   .adminOverlay.show{display:flex;}
@@ -1118,6 +1140,14 @@
   <div class="updCheckWrap"><div class="updCheckCircle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div></div>
   <div class="updInstallText" id="updInstallText">Memasang update terbaru\u2026</div>
   <div class="updInstallSub">Mohon tunggu sebentar</div>
+</div>
+
+<div class="dlSuccessOverlay" id="dlSuccessOverlay">
+  <div class="dlSuccessBox">
+    <div class="dlCheckCircle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>
+    <h3>Berhasil Diunduh</h3>
+    <p id="dlSuccessNama"></p>
+  </div>
 </div>
 
 <div class="cartOverlay" id="adminOverlay2">
@@ -2990,9 +3020,37 @@ function unduhLaporan(data){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = fileName;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast("Laporan diunduh: " + fileName);
+  // PENTING: jangan langsung revoke di baris berikutnya -- di banyak browser Android
+  // (Chrome Mobile, WebView APK Appilix), proses penyimpanan file dari blob URL
+  // berjalan ASINKRON di belakang layar. Kalau URL-nya langsung di-revoke sesaat
+  // setelah .click(), browser bisa kehilangan akses ke data blob SEBELUM sempat
+  // benar-benar menulis filenya ke folder Download -- hasilnya file gagal
+  // tersimpan sama sekali TANPA muncul error apapun (diam-diam gagal). Kasih
+  // jeda beberapa detik dulu supaya proses simpan sempat selesai.
+  setTimeout(()=> URL.revokeObjectURL(url), 4000);
+  tampilkanPopupSuksesUnduh(fileName);
 }
+
+let dlSuccessHideTimer = null;
+function tampilkanPopupSuksesUnduh(namaFile){
+  const overlay = el('dlSuccessOverlay');
+  if(!overlay) { showToast("Laporan diunduh: " + namaFile); return; }
+  if(dlSuccessHideTimer){ clearTimeout(dlSuccessHideTimer); dlSuccessHideTimer = null; }
+  el('dlSuccessNama').textContent = namaFile;
+  overlay.classList.remove('show');
+  void overlay.offsetWidth; // paksa reflow supaya animasi selalu mulai dari awal
+  overlay.style.display = 'flex';
+  requestAnimationFrame(()=> overlay.classList.add('show'));
+  dlSuccessHideTimer = setTimeout(()=>{
+    overlay.classList.remove('show');
+    setTimeout(()=>{ overlay.style.display = 'none'; }, 260);
+  }, 2200);
+}
+el('dlSuccessOverlay').addEventListener('click', ()=>{
+  if(dlSuccessHideTimer){ clearTimeout(dlSuccessHideTimer); dlSuccessHideTimer = null; }
+  el('dlSuccessOverlay').classList.remove('show');
+  setTimeout(()=>{ el('dlSuccessOverlay').style.display = 'none'; }, 260);
+});
 
 /* =====================================================================
    OUTLET (koleksi "outlet") — daftar nama outlet yang bisa dipilih Owner

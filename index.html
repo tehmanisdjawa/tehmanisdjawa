@@ -2745,6 +2745,7 @@ function rgbKeHex(r,g,b){
 function renderHalamanPengaturan(){
   const temaSekarang = Object.assign({}, TEMA_WARNA_DEFAULT, (SESI && SESI.temaWarna) || {});
   const prefNotif = ambilPrefNotifikasi();
+  const isOwnerPg = SESI && SESI.jabatan === 'Owner';
   el('pengaturanBody').innerHTML = `
     <div class="catLabelAdmin" style="margin-top:0;">Profil Akun</div>
     <div class="formField">
@@ -2757,6 +2758,13 @@ function renderHalamanPengaturan(){
       <input id="pgNamaTampilan" type="text" value="${SESI.namaTampilan}" placeholder="Nama yang tampil di transaksi & laporan">
     </div>
     <button class="saveFormBtn" id="pgSimpanNamaBtn">Simpan Nama Tampilan</button>
+    ${isOwnerPg ? `
+    <div class="catLabelAdmin">Update Sistem</div>
+    <div class="hint" style="margin-bottom:12px;">
+      Tekan tombol ini kalau kamu baru saja upload versi baru aplikasi (web atau APK Appilix). Semua perangkat yang lagi buka aplikasi -- di HP kamu sendiri maupun HP karyawan, baik lewat browser maupun APK -- akan otomatis ke-refresh dan langsung memuat kode terbaru dari server. Karyawan yang sedang input pesanan/lagi buka overlay akan ikut ter-refresh, jadi sebaiknya lakukan ini di jam sepi.
+    </div>
+    <button class="saveFormBtn" id="pgPaksaUpdateBtn" style="background:linear-gradient(160deg, var(--merah), var(--gold-dark));">Paksa Update Semua Perangkat</button>
+    ` : ''}
 
     <div class="catLabelAdmin">Notifikasi</div>
     <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
@@ -2859,6 +2867,19 @@ function renderHalamanPengaturan(){
     }catch(e){ showToast("Gagal menyimpan. Cek koneksi.", false); }
     finally{ btn.disabled = false; btn.textContent = 'Simpan Nama Tampilan'; }
   };
+
+  if(isOwnerPg){
+    el('pgPaksaUpdateBtn').onclick = async ()=>{
+      const yakin = confirm("Semua perangkat yang lagi buka aplikasi (web & APK) akan langsung ke-refresh dan mungkin kehilangan input yang belum disimpan (misal keranjang belum checkout). Lanjutkan?");
+      if(!yakin) return;
+      const btn = el('pgPaksaUpdateBtn'); btn.disabled = true; btn.textContent = 'Mengirim sinyal...';
+      try{
+        await setDoc(UPDATE_SIGNAL_REF, { waktu: Timestamp.fromDate(new Date()), oleh: SESI.namaTampilan });
+        showToast("Sinyal update terkirim \u2014 semua perangkat akan refresh otomatis");
+      }catch(e){ showToast("Gagal mengirim sinyal update. Cek koneksi.", false); }
+      finally{ btn.disabled = false; btn.textContent = 'Paksa Update Semua Perangkat'; }
+    };
+  }
 
   // --- Bagian Notifikasi (tersimpan langsung ke localStorage begitu diganti, tidak perlu tombol simpan) ---
   el('pgToggleSuara').addEventListener('change', ()=>{
@@ -3689,6 +3710,28 @@ window.addEventListener('popstate', ()=>{
 
 // Sediakan 1 state dasar di awal supaya popstate pertama selalu ke-handle.
 history.pushState({ kasirBase: true }, '');
+
+/* =====================================================================
+   PAKSA UPDATE SISTEM (khusus Owner) — dengarkan 1 dokumen sinyal di
+   Firestore secara realtime. Begitu Owner menekan tombol "Paksa Update
+   Semua Perangkat" di Pengaturan, SEMUA perangkat yang app-nya lagi
+   terbuka (web browser MAUPUN APK Appilix, karena APK itu WebView yang
+   memuat halaman yang sama) langsung hard-reload dan otomatis dapat
+   kode terbaru dari GitHub Pages -- tidak perlu Owner minta karyawan
+   tutup-buka app satu-satu.
+   Dipasang SEJAK BOOT (sebelum login) supaya layar login pun ikut kena,
+   bukan cuma yang sudah masuk ke kasir.
+   ===================================================================== */
+const UPDATE_SIGNAL_REF = doc(db, "sistem", "updateSignal");
+let updateSignalAwalDiabaikan = false; // lewati pembacaan pertama (snapshot awal saat app baru dibuka)
+onSnapshot(UPDATE_SIGNAL_REF, (snap)=>{
+  if(!updateSignalAwalDiabaikan){ updateSignalAwalDiabaikan = true; return; }
+  if(!snap.exists()) return;
+  // Hard reload: tambahkan query string acak supaya browser/WebView tidak
+  // menyajikan versi dari cache, benar-benar ambil ulang dari server.
+  const pemisah = location.href.includes('?') ? '&' : '?';
+  location.href = location.href.split('#')[0].split('?')[0] + pemisah + '_upd=' + Date.now();
+}, (err)=>{ console.error('Gagal memantau sinyal update sistem:', err); });
 
 /* =====================================================================
    BOOT

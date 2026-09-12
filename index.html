@@ -212,6 +212,12 @@
   .searchWrap input::placeholder{color:rgba(243,237,224,.42);}
   .searchWrap input:focus{outline:none; border-color:rgba(200,151,63,.55); background:rgba(243,237,224,.09);}
 
+  .updCooldownBar{
+    display:flex; align-items:center; gap:7px; margin-top:10px; padding:9px 13px; border-radius:11px;
+    background:rgba(200,151,63,.22); border:1px solid rgba(200,151,63,.45); color:var(--gold); font-size:12px; font-weight:650;
+  }
+  .updCooldownBar svg{width:14px; height:14px; flex:0 0 auto; color:var(--gold); animation:updSpinRot 1.4s linear infinite;}
+  .updCooldownBar b{font-variant-numeric:tabular-nums; color:#fff;}
   /* Mode Perlindungan Mata -- lapisan overlay kekuningan transparan di atas
      seluruh layar (mirip "night light"), meredam cahaya biru. Diterapkan lewat
      kelas di <body>, disimpan per HP (localStorage), bukan per akun Firestore. */
@@ -414,6 +420,59 @@
   .motivToast .motivLabel{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:rgba(243,237,224,.55); margin-bottom:2px;}
   .motivToast .motivText{font-family:"Fraunces",serif; font-size:13.5px; line-height:1.4; font-weight:500;}
   .motivToast .motivClose{background:none; border:none; color:rgba(243,237,224,.55); font-size:15px; cursor:pointer; padding:2px 4px; flex:0 0 auto; line-height:1;}
+
+  /* Banner "Update Tersedia" -- muncul di atas layar (di atas segalanya, termasuk
+     overlay lain) saat Owner menekan Paksa Update Semua Perangkat. */
+  .updToastWrap{position:fixed; top:12px; left:0; right:0; z-index:400; display:flex; justify-content:center; pointer-events:none; padding:0 14px;}
+  .updToast{
+    display:flex; flex-direction:column; gap:10px;
+    background:linear-gradient(165deg, var(--pine-900), var(--pine-950)); color:#f3ede0; border-radius:18px;
+    padding:15px 16px 13px; width:100%; max-width:420px; box-shadow:var(--shadow-float); border:1px solid rgba(243,237,224,.14);
+    transform:translateY(-130%); opacity:0; transition:transform .38s cubic-bezier(.2,.8,.3,1), opacity .38s;
+    pointer-events:auto;
+  }
+  .updToast.show{transform:translateY(0); opacity:1;}
+  .updToast.leaving{transform:translateY(-130%); opacity:0;}
+  .updToast .updTop{display:flex; align-items:flex-start; gap:11px;}
+  .updToast .updIcon{width:36px; height:36px; border-radius:11px; background:rgba(200,151,63,.18); display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .updToast .updIcon svg{width:19px; height:19px; color:var(--gold);}
+  .updToast .updBody{flex:1; min-width:0; padding-top:1px;}
+  .updToast .updLabel{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:rgba(243,237,224,.55); margin-bottom:3px;}
+  .updToast .updText{font-family:"Fraunces",serif; font-size:13px; line-height:1.42; font-weight:500;}
+  .updToast .updClose{background:none; border:none; color:rgba(243,237,224,.55); font-size:16px; cursor:pointer; padding:2px 4px; flex:0 0 auto; line-height:1;}
+  .updToast .updBtnRow{display:flex; align-items:center; gap:9px; padding-left:47px;}
+  .updToast .updGoBtn{
+    flex:1; background:linear-gradient(160deg, var(--gold), var(--gold-dark)); color:var(--pine-950); border:none;
+    border-radius:11px; padding:9px 12px; font-size:12.5px; font-weight:750; cursor:pointer; font-family:inherit;
+  }
+  .updToast .updCountdown{font-size:11px; color:rgba(243,237,224,.55); flex:0 0 auto; font-variant-numeric:tabular-nums;}
+  .updToast .updProgressTrack{height:3px; border-radius:99px; background:rgba(243,237,224,.14); overflow:hidden; margin-left:47px;}
+  .updToast .updProgressFill{height:100%; background:var(--gold); border-radius:99px; width:100%; transition:width 1s linear;}
+
+  /* Overlay full-screen "Memasang update..." -- muncul 3 detik dengan animasi
+     smooth saat tombol "Pasang Sekarang" dipencet, sebelum halaman reload. */
+  .updInstallOverlay{
+    position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; flex-direction:column; gap:18px;
+    background:linear-gradient(165deg, var(--pine-950), var(--pine-900)); opacity:0; transition:opacity .4s ease;
+  }
+  .updInstallOverlay.show{display:flex; opacity:1;}
+  .updInstallOverlay .updSpin{
+    width:52px; height:52px; border-radius:50%; border:3.5px solid rgba(243,237,224,.18); border-top-color:var(--gold);
+    animation:updSpinRot .85s linear infinite;
+  }
+  @keyframes updSpinRot{ to{ transform:rotate(360deg); } }
+  .updInstallOverlay .updInstallText{color:#f3ede0; font-family:"Fraunces",serif; font-size:15.5px; font-weight:600; text-align:center; padding:0 30px;}
+  .updInstallOverlay .updInstallSub{color:rgba(243,237,224,.55); font-size:12px; text-align:center;}
+  .updInstallOverlay .updCheckWrap{width:52px; height:52px; display:none; align-items:center; justify-content:center;}
+  .updInstallOverlay.done .updSpin{display:none;}
+  .updInstallOverlay.done .updCheckWrap{display:flex;}
+  .updInstallOverlay .updCheckCircle{
+    width:52px; height:52px; border-radius:50%; background:rgba(200,151,63,.16); display:flex; align-items:center; justify-content:center;
+    animation:updPop .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .updInstallOverlay .updCheckCircle svg{width:26px; height:26px; color:var(--gold); stroke-dasharray:24; stroke-dashoffset:24; animation:updCheckDraw .35s ease .1s forwards;}
+  @keyframes updPop{ 0%{transform:scale(.6); opacity:0;} 100%{transform:scale(1); opacity:1;} }
+  @keyframes updCheckDraw{ to{ stroke-dashoffset:0; } }
 
   /* ============ ADMIN / SHEETS ============ */
   .adminOverlay{position:fixed; inset:0; background:rgba(12,20,15,.55); backdrop-filter:blur(3px); z-index:60; display:none; align-items:center; justify-content:center; padding:20px;}
@@ -711,6 +770,12 @@
     transition:opacity var(--ios-med) var(--ios-ease), backdrop-filter var(--ios-med) var(--ios-ease);
   }
 
+  /* Toast / banner (update notif, dsb) -- pakai spring biar geser masuknya halus */
+  .updToast{
+    transition:transform var(--ios-med) var(--ios-spring), opacity var(--ios-med) var(--ios-ease) !important;
+    will-change:transform, opacity;
+  }
+
   /* Dropdown menu kecil -- spring pop yang lembut */
   @keyframes menuDropIn{
     from{opacity:0; transform:translateY(-6px) scale(.97);}
@@ -826,7 +891,7 @@
   /* GPU hint terarah HANYA ke elemen yg sering banget animasi/scroll,
      supaya browser siapin layer tanpa membebani elemen statis lainnya
      (kasih will-change ke semua elemen sekaligus justru bikin lag). */
-  .sheet, .cartSheet, .adminSheet, .calcSheet, .item, .adminItem{
+  .sheet, .cartSheet, .adminSheet, .calcSheet, .updToast, .item, .adminItem{
     transform:translateZ(0);
   }
 </style>
@@ -955,6 +1020,10 @@
     <svg class="sIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
     <input id="searchBox" type="text" placeholder="Cari menu...">
   </div>
+  <div class="updCooldownBar" id="updCooldownBar" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3.5-7.13"/><path d="M21 3v6h-6"/></svg>
+    <span>Update otomatis dalam <b id="updCooldownDetik">30</b> detik…</span>
+  </div>
   <div class="catTabs" id="catTabs"></div>
 </div>
 
@@ -1024,7 +1093,32 @@
   </div>
 </div>
 
+<div class="updToastWrap" id="updToastWrap">
+  <div class="updToast" id="updToast">
+    <div class="updTop">
+      <div class="updIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3.5-7.13"/><path d="M21 3v6h-6"/></svg></div>
+      <div class="updBody">
+        <div class="updLabel">Update Tersedia</div>
+        <div class="updText">Sistem menemukan versi terbaru. Halaman akan otomatis di-refresh untuk memasangnya \u2014 pastikan dulu tidak sedang ada pembeli yang lagi dilayani.</div>
+      </div>
+      <button class="updClose" id="updToastClose">✕</button>
+    </div>
+    <div class="updBtnRow">
+      <button class="updGoBtn" id="updGoBtn">Pasang Sekarang</button>
+      <div class="updCountdown" id="updCountdown">30d</div>
+    </div>
+    <div class="updProgressTrack"><div class="updProgressFill" id="updProgressFill"></div></div>
+  </div>
+</div>
+
 <div class="matanyamanOverlay" id="matanyamanOverlay"></div>
+
+<div class="updInstallOverlay" id="updInstallOverlay">
+  <div class="updSpin"></div>
+  <div class="updCheckWrap"><div class="updCheckCircle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div></div>
+  <div class="updInstallText" id="updInstallText">Memasang update terbaru\u2026</div>
+  <div class="updInstallSub">Mohon tunggu sebentar</div>
+</div>
 
 <div class="cartOverlay" id="adminOverlay2">
   <div class="adminSheet">
@@ -1520,13 +1614,11 @@ function terapkanTampilanJabatan(){
 }
 
 // Coba auto-login dari sesi tersimpan di localStorage saat halaman pertama dibuka.
-function tunggu(ms){ return new Promise((_,rej)=>setTimeout(()=>rej(new Error('Waktu tunggu habis')), ms)); }
-
 async function cobaAutoLogin(){
   const sesiLokal = ambilSesiLokal();
   if(!sesiLokal || !sesiLokal.username){ bukaLoginScreen(); return; }
   try{
-    const akun = await Promise.race([ cariAkunByUsername(sesiLokal.username), tunggu(8000) ]);
+    const akun = await cariAkunByUsername(sesiLokal.username);
     if(!akun || akun.jabatan === 'Pecat'){ hapusSesiLokal(); bukaLoginScreen(); return; }
     const cekShift = dalamJadwalShift(akun);
     if(!cekShift.ok){ hapusSesiLokal(); bukaLoginScreen(); return; }
@@ -3143,6 +3235,13 @@ function renderHalamanPengaturan(){
       <input id="pgNamaTampilan" type="text" value="${SESI.namaTampilan}" placeholder="Nama yang tampil di transaksi & laporan">
     </div>
     <button class="saveFormBtn" id="pgSimpanNamaBtn">Simpan Nama Tampilan</button>
+    ${isOwnerPg ? `
+    <div class="catLabelAdmin">Update Sistem</div>
+    <div class="hint" style="margin-bottom:12px;">
+      Tekan tombol ini kalau kamu baru saja upload versi baru aplikasi (web atau APK Appilix). Semua perangkat yang lagi buka aplikasi -- di HP kamu sendiri maupun HP karyawan, baik lewat browser maupun APK -- akan otomatis ke-refresh dan langsung memuat kode terbaru dari server. Karyawan yang sedang input pesanan/lagi buka overlay akan ikut ter-refresh, jadi sebaiknya lakukan ini di jam sepi.
+    </div>
+    <button class="saveFormBtn" id="pgPaksaUpdateBtn" style="background:linear-gradient(160deg, var(--merah), var(--gold-dark));">Paksa Update Semua Perangkat</button>
+    ` : ''}
 
     <div class="catLabelAdmin">Notifikasi</div>
     <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
@@ -3269,7 +3368,25 @@ function renderHalamanPengaturan(){
     </div>
 
     <div class="catLabelAdmin">Tentang Aplikasi</div>
+    <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div style="font-size:13.5px; font-weight:650; color:var(--ink);">Versi Aplikasi</div>
+      <div id="pgVersiAplikasi" style="font-size:13px; font-weight:700; color:var(--muted); font-family:monospace;">Memuat\u2026</div>
+    </div>
   `;
+
+  // Ambil nomor versi terkini dari Firestore supaya semua jabatan (bukan cuma
+  // Owner) bisa lihat lagi jalan di versi berapa. Kalau belum pernah ada
+  // sinyal update sama sekali, tampilkan v0.0 (versi awal).
+  (async ()=>{
+    const elVersi = el('pgVersiAplikasi');
+    if(!elVersi) return;
+    try{
+      const snap = await getDoc(UPDATE_SIGNAL_REF);
+      const versi = (snap.exists() && typeof snap.data().versi === 'number') ? snap.data().versi : 0;
+      updateVersiTerkini = versi;
+      elVersi.textContent = `v${versi}`;
+    }catch(e){ elVersi.textContent = '\u2014'; }
+  })();
 
   el('pgSimpanNamaBtn').onclick = async ()=>{
     const namaBaru = el('pgNamaTampilan').value.trim();
@@ -3284,6 +3401,21 @@ function renderHalamanPengaturan(){
     }catch(e){ showToast("Gagal menyimpan. Cek koneksi.", false); }
     finally{ btn.disabled = false; btn.textContent = 'Simpan Nama Tampilan'; }
   };
+
+  if(isOwnerPg){
+    el('pgPaksaUpdateBtn').onclick = async ()=>{
+      const yakin = confirm("Semua perangkat yang lagi buka aplikasi (web & APK) akan langsung ke-refresh dan mungkin kehilangan input yang belum disimpan (misal keranjang belum checkout). Lanjutkan?");
+      if(!yakin) return;
+      const btn = el('pgPaksaUpdateBtn'); btn.disabled = true; btn.textContent = 'Mengirim sinyal...';
+      try{
+        // Ambil versi terakhir dulu, lalu naikkan otomatis +0.1 (0.0 -> 0.1 -> ... -> 0.9 -> 1.0 -> 1.1 dst).
+        const versiBaru = await hitungVersiBerikutnya();
+        await setDoc(UPDATE_SIGNAL_REF, { waktu: Timestamp.fromDate(new Date()), oleh: SESI.namaTampilan, versi: versiBaru });
+        showToast(`Sinyal update v${versiBaru} terkirim \u2014 semua perangkat akan refresh otomatis`);
+      }catch(e){ showToast("Gagal mengirim sinyal update. Cek koneksi.", false); }
+      finally{ btn.disabled = false; btn.textContent = 'Paksa Update Semua Perangkat'; }
+    };
+  }
 
   // --- Bagian Notifikasi (tersimpan langsung ke localStorage begitu diganti, tidak perlu tombol simpan) ---
   el('pgToggleSuara').addEventListener('change', ()=>{
@@ -4121,30 +4253,311 @@ window.addEventListener('popstate', ()=>{
 // Sediakan 1 state dasar di awal supaya popstate pertama selalu ke-handle.
 history.pushState({ kasirBase: true }, '');
 
+/* =====================================================================
+   PAKSA UPDATE SISTEM (khusus Owner) — dengarkan 1 dokumen sinyal di
+   Firestore secara realtime. Begitu Owner menekan tombol "Paksa Update
+   Semua Perangkat" di Pengaturan, SEMUA perangkat yang app-nya lagi
+   terbuka (web browser MAUPUN APK Appilix, karena APK itu WebView yang
+   memuat halaman yang sama) langsung hard-reload dan otomatis dapat
+   kode terbaru dari GitHub Pages -- tidak perlu Owner minta karyawan
+   tutup-buka app satu-satu.
+   Dipasang SEJAK BOOT (sebelum login) supaya layar login pun ikut kena,
+   bukan cuma yang sudah masuk ke kasir.
+   ===================================================================== */
+const UPDATE_SIGNAL_REF = doc(db, "sistem", "updateSignal");
+let updateSignalAwalDiabaikan = false; // lewati pembacaan pertama (snapshot awal saat app baru dibuka)
+let updateSignalWaktuTerakhir = null; // waktu sinyal terakhir yang sudah diketahui, dipakai fallback polling
+let updateVersiTerkini = null; // versi terakhir yang tersimpan di Firestore, dipakai fallback polling & tampilan toast
+
+// Hitung nomor versi berikutnya secara OTOMATIS: mulai dari 0.0, tiap Owner
+// menekan "Paksa Update Semua Perangkat" naik +0.1 (0.0 -> 0.1 -> 0.2 -> ...
+// -> 0.9 -> 1.0 -> 1.1 -> dst). Pakai Math.round supaya tidak kena masalah
+// pembulatan desimal biner JS (0.1+0.2 != 0.3 kalau dihitung polos).
+async function hitungVersiBerikutnya(){
+  let versiSekarang = 0;
+  try{
+    const snap = await getDoc(UPDATE_SIGNAL_REF);
+    if(snap.exists() && typeof snap.data().versi === 'number') versiSekarang = snap.data().versi;
+  }catch(e){ /* kalau gagal baca, mulai anggap dari 0 supaya tetap bisa lanjut kirim sinyal */ }
+  return Math.round((versiSekarang + 0.1) * 10) / 10;
+}
+
+onSnapshot(UPDATE_SIGNAL_REF, async (snap)=>{
+  if(!updateSignalAwalDiabaikan){
+    updateSignalAwalDiabaikan = true;
+    if(snap.exists()){
+      updateSignalWaktuTerakhir = waktuSinyalKeMs(snap.data());
+      if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
+    }
+    return;
+  }
+  if(!snap.exists()) return;
+  if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
+  tampilkanBannerUpdate();
+}, (err)=>{ console.error('Gagal memantau sinyal update sistem (realtime):', err); });
+
+function waktuSinyalKeMs(data){
+  if(!data || !data.waktu) return null;
+  return data.waktu.toMillis ? data.waktu.toMillis() : (data.waktu.seconds ? data.waktu.seconds*1000 : null);
+}
+
+// FALLBACK POLLING -- di sebagian HP (terutama Chrome Android saat OS menghemat
+// baterai/data di background atau koneksi WebSocket realtime "nyangkut"),
+// onSnapshot bisa berhenti menerima update walau tab kelihatan masih terbuka.
+// Sebagai jaring pengaman, kita CEK ULANG manual tiap 20 detik pakai getDoc
+// biasa (request HTTP sekali jalan, jauh lebih tahan terhadap pembekuan OS
+// dibanding koneksi realtime) -- supaya HP tetap ke-refresh walau listener
+// realtime-nya diam.
+async function cekSinyalUpdateManual(){
+  try{
+    const snap = await getDoc(UPDATE_SIGNAL_REF);
+    if(!snap.exists()) return;
+    const waktuMs = waktuSinyalKeMs(snap.data());
+    if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
+    if(updateSignalWaktuTerakhir === null){ updateSignalWaktuTerakhir = waktuMs; return; }
+    if(waktuMs && waktuMs > updateSignalWaktuTerakhir){
+      updateSignalWaktuTerakhir = waktuMs;
+      tampilkanBannerUpdate();
+    }
+  }catch(e){ console.error('Gagal cek sinyal update sistem (polling):', e); }
+}
+setInterval(cekSinyalUpdateManual, 45000); // cek ulang tiap 45 detik -- cukup cepat utk kebutuhan update, tapi lebih hemat read dibanding 20 detik
+// Cek juga setiap kali tab/WebView kembali terlihat (misal HP dibuka lagi dari
+// kunci layar/background) supaya tidak perlu nunggu sampai 20 detik berikutnya.
+// Dipasang di beberapa event sekaligus karena WebView APK (Appilix) tidak selalu
+// konsisten memicu 'visibilitychange' seperti browser Chrome biasa -- 'focus'
+// dan 'pageshow' jadi cadangan supaya tetap ke-trigger di WebView.
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible') cekSinyalUpdateManual(); });
+window.addEventListener('focus', cekSinyalUpdateManual);
+window.addEventListener('pageshow', cekSinyalUpdateManual);
+
+// Beberapa WebView Android (termasuk APK hasil convert Appilix) menyimpan cache
+// HTML/JS di level native, bukan cuma cache browser biasa -- sekadar ganti query
+// string di URL ("location.href = ...?_upd=...") TIDAK CUKUP untuk memaksanya
+// mengambil ulang dari server, WebView tetap menyajikan versi lama dari cache
+// internal. Fungsi ini mencoba semua cara pembersihan cache yang tersedia di
+// halaman SEBELUM pindah ke URL baru, supaya reload-nya benar-benar "bersih".
+let updBannerSudahTampil = false; // cegah dobel banner kalau ada 2 sinyal susul-susulan / realtime+polling nembak bareng
+let updAutoUpdateTimer = null;
+let updHideNotifTimer = null;
+let updCountdownInterval = null;
+
+function tampilkanBannerUpdate(){
+  if(updBannerSudahTampil) return; // sudah ada banner jalan / update sudah diproses, jangan mulai ulang
+  updBannerSudahTampil = true;
+
+  const DETIK_AUTO_UPDATE = 30;
+  const DETIK_TAMPIL_NOTIF = 7;
+  let sisaDetik = DETIK_AUTO_UPDATE;
+
+  const wrap = el('updToastWrap');
+  const toastEl = el('updToast');
+  const countdownEl = el('updCountdown');
+  const progressEl = el('updProgressFill');
+  const cooldownBar = el('updCooldownBar');
+  const cooldownDetikEl = el('updCooldownDetik');
+
+  // Tampilkan nomor versi di label & isi teks toast, kalau tersedia.
+  const labelEl = el('updToast').querySelector('.updLabel');
+  const textEl2 = el('updToast').querySelector('.updText');
+  if(typeof updateVersiTerkini === 'number'){
+    if(labelEl) labelEl.textContent = `Update Tersedia \u2014 v${updateVersiTerkini}`;
+    if(textEl2) textEl2.textContent = `Sistem menemukan versi ${updateVersiTerkini} terbaru. Halaman akan otomatis di-refresh untuk memasangnya \u2014 pastikan dulu tidak sedang ada pembeli yang lagi dilayani.`;
+  }
+
+  wrap.style.display = 'flex';
+  requestAnimationFrame(()=> toastEl.classList.add('show'));
+  countdownEl.textContent = sisaDetik + 'd';
+  progressEl.style.width = '100%';
+
+  // Strip cooldown kecil di layar utama (di atas tab kategori) -- tetap kelihatan
+  // walau banner notifikasi di atas sudah hilang setelah 7 detik, supaya kasir
+  // masih ingat update bakal jalan otomatis.
+  if(cooldownBar){ cooldownBar.style.display = 'flex'; cooldownDetikEl.textContent = sisaDetik; }
+
+  // Progress bar & countdown angka jalan penuh 30 detik (proses auto-update tetap
+  // berjalan di background walau notifikasi visualnya sudah disembunyikan di detik ke-7).
+  updCountdownInterval = setInterval(()=>{
+    sisaDetik--;
+    if(cooldownDetikEl) cooldownDetikEl.textContent = Math.max(sisaDetik, 0);
+    if(sisaDetik <= 0){ clearInterval(updCountdownInterval); return; }
+    countdownEl.textContent = sisaDetik + 'd';
+    progressEl.style.width = (sisaDetik / DETIK_AUTO_UPDATE * 100) + '%';
+  }, 1000);
+
+  // Sembunyikan notifikasi (geser ke atas) setelah 7 detik -- TIDAK membatalkan
+  // proses auto-update, cuma menyembunyikan tampilannya dari layar.
+  updHideNotifTimer = setTimeout(()=>{ sembunyikanBannerUpdate(); }, DETIK_TAMPIL_NOTIF * 1000);
+
+  // Auto-update paksa setelah 30 detik kalau tidak ada aksi dari user.
+  updAutoUpdateTimer = setTimeout(()=>{ mulaiProsesUpdate(); }, DETIK_AUTO_UPDATE * 1000);
+
+  el('updToastClose').onclick = ()=>{
+    clearTimeout(updHideNotifTimer);
+    sembunyikanBannerUpdate();
+    // Auto-update 30 detik TETAP berjalan walau notifikasi ditutup manual.
+  };
+
+  el('updGoBtn').onclick = ()=>{
+    clearTimeout(updHideNotifTimer);
+    clearTimeout(updAutoUpdateTimer);
+    clearInterval(updCountdownInterval);
+    sembunyikanBannerUpdate();
+    mulaiProsesUpdate();
+  };
+}
+
+function sembunyikanBannerUpdate(){
+  const toastEl = el('updToast');
+  if(!toastEl) return;
+  toastEl.classList.remove('show');
+  toastEl.classList.add('leaving');
+  setTimeout(()=>{ const w = el('updToastWrap'); if(w) w.style.display = 'none'; }, 400);
+}
+
+// Animasi "Memasang update..." selama 3 detik (spinner -> centang sukses) lalu
+// reload halaman. Dipanggil baik dari tombol "Pasang Sekarang" (langsung) maupun
+// dari auto-update 30 detik (tanpa notifikasi kalau bannernya sudah ditutup duluan).
+function mulaiProsesUpdate(){
+  clearTimeout(updAutoUpdateTimer);
+  clearInterval(updCountdownInterval);
+  sembunyikanBannerUpdate();
+  const cooldownBar = el('updCooldownBar');
+  if(cooldownBar) cooldownBar.style.display = 'none';
+
+  const overlay = el('updInstallOverlay');
+  const textEl = el('updInstallText');
+  overlay.classList.remove('done');
+  textEl.textContent = typeof updateVersiTerkini === 'number'
+    ? `Memasang update v${updateVersiTerkini}\u2026`
+    : 'Memasang update terbaru\u2026';
+  overlay.classList.add('show');
+
+  setTimeout(()=>{
+    overlay.classList.add('done');
+    textEl.textContent = 'Berhasil! Memuat ulang\u2026';
+  }, 1900);
+
+  setTimeout(()=>{ paksaAmbilVersiTerbaru(); }, 3000);
+}
+
+async function paksaAmbilVersiTerbaru(){
+  try{
+    // 1) Hapus semua Cache Storage API (kalau browser/WebView mendukungnya).
+    if(window.caches && caches.keys){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){ /* abaikan kalau tidak didukung */ }
+  try{
+    // 2) Matikan service worker kalau ada (jaga-jaga, walau app ini tidak pasang sendiri).
+    if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+  }catch(e){ /* abaikan */ }
+  try{
+    // 3) "Pemanasan" fetch dengan cache:'reload' -- memaksa satu request nyata ke
+    // server (skip cache HTTP) sebelum kita pindah halaman, supaya versi terbaru
+    // sempat masuk ke cache jaringan yang akan dipakai saat reload berikutnya.
+    await fetch(location.pathname + '?_warm=' + Date.now(), { cache: 'reload' });
+  }catch(e){ /* offline atau gagal, tetap lanjut ke langkah reload di bawah */ }
+
+  const urlBersih = location.href.split('#')[0].split('?')[0];
+  const urlBaru = urlBersih + '?_upd=' + Date.now();
+  // location.replace (bukan location.href) supaya tidak menambah entry history,
+  // dan dipanggil setelah cache dibersihkan supaya WebView benar-benar fetch baru.
+  location.replace(urlBaru);
+}
 
 /* =====================================================================
    BOOT
    ===================================================================== */
 cekWaktuTutupSetiapDetik();
+cobaAutoLogin().finally(()=>{ el('bootLoading').style.display = 'none'; });
 
-// FAILSAFE: apapun yang terjadi (error tak terduga, promise nyangkut), paksa
-// sembunyikan loading awal setelah maksimal 10 detik supaya halaman TIDAK
-// PERNAH terkunci selamanya oleh overlay bootLoading (z-index:300 menutupi
-// & memblokir klik ke seluruh isi halaman di bawahnya).
-let bootSelesai = false;
-function tutupBootLoading(){
-  if(bootSelesai) return;
-  bootSelesai = true;
-  const b = el('bootLoading');
-  if(b) b.style.display = 'none';
-}
-setTimeout(tutupBootLoading, 10000);
+/* =====================================================================
+   ANIMASI KELUAR OTOMATIS UTK SEMUA OVERLAY (WAJIB ada animasi masuk & keluar)
+   Semua kode lama menutup overlay dengan classList.remove('show'), yang
+   sebelumnya langsung display:none tanpa animasi. Observer di bawah ini
+   menyadap SETIAP perubahan class 'show' pada elemen apa pun yang nama
+   class-nya mengandung "Overlay" -- begitu 'show' dicabut, kita mainkan
+   dulu animasi keluar (class .closing) selama --ios-med (280ms), baru
+   benar-benar disembunyikan. Ini otomatis berlaku ke SEMUA overlay yang
+   sudah ada maupun yang mungkin ditambah nanti, tanpa perlu ubah kode
+   buka/tutup satu-satu di tempat lain.
+   ===================================================================== */
+(function(){
+  const DURASI_KELUAR = 300; // sedikit lebih lama dari --ios-med (280ms) sbg jaga2
 
-cobaAutoLogin()
-  .catch(e=>{ console.error('cobaAutoLogin gagal total, fallback ke layar login:', e); try{ bukaLoginScreen(); }catch(_){} })
-  .finally(tutupBootLoading);
+  // Elemen yang SENGAJA dikecualikan dari animasi keluar otomatis -- ini bukan
+  // modal/sheet yg dibuka-tutup pakai class 'show', tapi lapisan efek statis.
+  const ID_DIKECUALIKAN = ['matanyamanOverlay'];
 
+  const timerPerElemen = new WeakMap();
 
+  function elemenOverlay(node){
+    if(!node || node.nodeType !== 1 || !node.classList) return false;
+    if(ID_DIKECUALIKAN.includes(node.id)) return false;
+    return Array.from(node.classList).some(c => /overlay/i.test(c));
+  }
+
+  function tanganiPerubahan(node){
+    if(!elemenOverlay(node)) return;
+    const sedangShow = node.classList.contains('show');
+    const timerLama = timerPerElemen.get(node);
+
+    if(sedangShow){
+      // Baru dibuka -- batalkan proses "closing" yg mungkin masih berjalan,
+      // dan pastikan pointer-events dikembalikan normal (bukan none).
+      if(timerLama) clearTimeout(timerLama);
+      node.classList.remove('closing');
+      node.style.pointerEvents = '';
+    } else if(node.classList.contains('closing')){
+      // Sudah dalam proses closing (dipicu kita sendiri) -- biarkan jalan.
+      return;
+    } else {
+      // Baru saja ditutup (show dicabut) & belum closing -- mainkan animasi
+      // keluar, sekaligus matikan pointer-events LANGSUNG dari JS (failsafe
+      // ganda -- tidak cuma andalkan CSS !important) supaya overlay yg lagi
+      // fade-out tidak pernah bisa menangkap klik/tap.
+      if(timerLama) clearTimeout(timerLama);
+      node.classList.add('closing');
+      node.style.pointerEvents = 'none';
+      const t = setTimeout(()=>{
+        node.classList.remove('closing');
+        node.style.pointerEvents = '';
+        timerPerElemen.delete(node);
+      }, DURASI_KELUAR);
+      timerPerElemen.set(node, t);
+    }
+  }
+
+  const observer = new MutationObserver((mutations)=>{
+    for(const m of mutations){
+      if(m.type === 'attributes' && m.attributeName === 'class'){
+        tanganiPerubahan(m.target);
+      }
+    }
+  });
+
+  observer.observe(document.body, {
+    attributes:true, attributeFilter:['class'], subtree:true
+  });
+
+  // FAILSAFE TAMBAHAN: kalau karena sebab apa pun (error JS lain, elemen
+  // dihapus dari DOM saat timer jalan, dsb) ada overlay yg nyangkut dalam
+  // keadaan 'closing' lebih dari semestinya, paksa bersihkan tiap 2 detik
+  // supaya TIDAK PERNAH ada overlay transparan yg mengunci seluruh layar.
+  setInterval(()=>{
+    document.querySelectorAll('.closing').forEach(elm=>{
+      if(!elm.classList.contains('show')){
+        elm.classList.remove('closing');
+        elm.style.pointerEvents = '';
+      }
+    });
+  }, 2000);
+})();
 </script>
 
 </body>

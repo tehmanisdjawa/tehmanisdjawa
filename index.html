@@ -1619,6 +1619,43 @@ async function ambilTransaksiUntukLaporan(tanggal, outlet){
   return rows;
 }
 
+// Standar ukuran resmi: Small=10oz, Medium=16oz, Large=18oz, Jumbo=22oz.
+// Sebagian data lama di sheet Menu kadang menulis nama varian sebagai "Reguler"
+// (bukan salah satu ukuran di atas), padahal nama MENU-nya sendiri sudah
+// menyebut ukurannya (misal menu bernama "Cup Jumbo"). Fungsi ini mencoba
+// mengenali ukuran sebenarnya dari kata kunci di nama varian ATAU nama menu,
+// supaya laporan "Terjual per Ukuran" tetap mengelompokkan dengan benar
+// walau data di sheet belum dirapikan.
+const POLA_UKURAN_CUP = [
+  { label: "Small 10oz", kata: ["small", "10oz", "10 oz"] },
+  { label: "Medium 16oz", kata: ["medium", "16oz", "16 oz"] },
+  { label: "Large 18oz", kata: ["large", "18oz", "18 oz"] },
+  { label: "Jumbo 22oz", kata: ["jumbo", "22oz", "22 oz"] },
+];
+function normalisasiUkuranCup(namaVarian, namaMenu){
+  const teksVarian = String(namaVarian || '').toLowerCase();
+  // Kalau nama varian sendiri sudah jelas menyebut ukuran standar (misal "Large 18oz"
+  // dari sheet yang sudah rapi), langsung pakai apa adanya -- tidak perlu ditebak lagi.
+  for(const pola of POLA_UKURAN_CUP){
+    if(pola.kata.some(k => teksVarian.includes(k))) return namaVarian;
+  }
+  // Kalau tidak cocok (misal variannya "Reguler"), coba tebak dari nama MENU-nya.
+  const teksMenu = String(namaMenu || '').toLowerCase();
+  for(const pola of POLA_UKURAN_CUP){
+    if(pola.kata.some(k => teksMenu.includes(k))) return pola.label;
+  }
+  // Tidak ketemu petunjuk sama sekali -- kembalikan nama varian aslinya (atau "Reguler").
+  return namaVarian || 'Reguler';
+}
+// Nama tampilan "Menu + (Varian)" -- kalau variannya cuma "Reguler" (generik, tidak
+// menambah info), jangan ditampilkan kurungnya sama sekali. Ini mencegah tampilan
+// aneh seperti "Cup Jumbo (Reguler)" padahal "Cup Jumbo" saja sudah cukup jelas.
+function namaTampilItem(it){
+  const varian = String(it.varian || '').trim();
+  if(!varian || varian.toLowerCase() === 'reguler') return it.nama;
+  return it.nama + ' (' + varian + ')';
+}
+
 function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
   const ringkasan = { total:0, jumlahTrx:transaksiArr.length, jumlahItem:0, cash:0, qris:0, transfer:0 };
   const perKaryawan = {};
@@ -1639,21 +1676,21 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
     if(!perShift[shift].items) perShift[shift].items = {};
     if(!perShift[shift].ukuran) perShift[shift].ukuran = {};
     (t.items||[]).forEach(it=>{
-      const key = it.nama + (it.varian ? ' ('+it.varian+')' : '');
+      const key = namaTampilItem(it);
       if(!perShift[shift].items[key]) perShift[shift].items[key] = { nama:key, qty:0, subtotal:0 };
       perShift[shift].items[key].qty += it.qty||0;
       perShift[shift].items[key].subtotal += it.subtotal||0;
-      const ukr = it.varian || 'Reguler';
+      const ukr = normalisasiUkuranCup(it.varian, it.nama);
       if(!perShift[shift].ukuran[ukr]) perShift[shift].ukuran[ukr] = { ukuran:ukr, qty:0, subtotal:0 };
       perShift[shift].ukuran[ukr].qty += it.qty||0;
       perShift[shift].ukuran[ukr].subtotal += it.subtotal||0;
     });
 
     (t.items||[]).forEach(it=>{
-      const key = it.nama + (it.varian ? ' ('+it.varian+')' : '');
+      const key = namaTampilItem(it);
       if(!perItem[key]) perItem[key] = { nama:key, qty:0, subtotal:0 };
       perItem[key].qty += it.qty||0; perItem[key].subtotal += it.subtotal||0;
-      const ukr = it.varian || 'Reguler';
+      const ukr = normalisasiUkuranCup(it.varian, it.nama);
       if(!perUkuran[ukr]) perUkuran[ukr] = { ukuran:ukr, qty:0, subtotal:0 };
       perUkuran[ukr].qty += it.qty||0; perUkuran[ukr].subtotal += it.subtotal||0;
     });
@@ -1881,7 +1918,7 @@ function bukaDetailTransaksi(trxId){
 
   const itemsHtml = (t.items && t.items.length) ? t.items.map(it=>`
     <div class="trxItemRow">
-      <div><div class="tin">${it.nama}${it.varian ? ' \u2014 ' + it.varian : ''}</div><div class="tiv">${it.qty} \u00d7 ${rupiah(it.harga||0)}${it.tambahan ? ' \u00b7 ' + it.tambahan : ''}</div></div>
+      <div><div class="tin">${it.nama}${(it.varian && it.varian.toLowerCase()!=='reguler') ? ' \u2014 ' + it.varian : ''}</div><div class="tiv">${it.qty} \u00d7 ${rupiah(it.harga||0)}${it.tambahan ? ' \u00b7 ' + it.tambahan : ''}</div></div>
       <div class="tiq">${rupiah(it.subtotal||0)}</div>
     </div>`).join('') : '<div class="empty" style="padding:16px 0;">Detail item tidak tersedia untuk transaksi ini.</div>';
 

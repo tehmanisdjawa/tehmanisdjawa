@@ -210,6 +210,8 @@
   .notifReqItem .nriApprove, .notifReqItem .permCupApprove{background:var(--pine-900); color:#f3ede0;}
   .notifReqItem .nriTolak, .notifReqItem .permCupTolak{background:var(--merah-light); color:var(--merah);}
   .notifReqItem .nriCabut{background:var(--merah-light); color:var(--merah);}
+  .notifReqItem .nriHapus{background:none; border:none; padding:2px; color:var(--muted-soft); cursor:pointer; display:flex; align-items:center; flex:0 0 auto;}
+  .notifReqItem .nriHapus:hover{color:var(--merah);}
 
   .menuDropdownOverlay{position:fixed; inset:0; z-index:65; display:none;}
   .menuDropdownOverlay.show{display:block;}
@@ -4362,7 +4364,12 @@ function renderPanelNotifStokCup(){
           <div class="nriNama">${r.pemohonNama || r.pemohonUsername}</div>
           <div class="nriOutlet">Outlet ${r.outlet}</div>
         </div>
-        <div class="nriWaktu">${waktuStr}</div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <div class="nriWaktu">${waktuStr}</div>
+          ${r.status !== 'menunggu' ? `<button class="nriHapus" title="Hapus notifikasi ini">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+          </button>` : ''}
+        </div>
       </div>
       <div class="nriStatus ${r.status}">${statusLabel}</div>
       ${r.status === 'menunggu' ? `<div class="nriBtns">
@@ -4380,9 +4387,11 @@ function renderPanelNotifStokCup(){
     const approveBtn = itemEl.querySelector('.nriApprove');
     const tolakBtn = itemEl.querySelector('.nriTolak');
     const cabutBtn = itemEl.querySelector('.nriCabut');
+    const hapusBtn = itemEl.querySelector('.nriHapus');
     if(approveBtn) approveBtn.onclick = ()=> putuskanPermintaanStokCup(id, 'disetujui');
     if(tolakBtn) tolakBtn.onclick = ()=> putuskanPermintaanStokCup(id, 'ditolak');
     if(cabutBtn) cabutBtn.onclick = ()=> cabutIzinStokCup(id);
+    if(hapusBtn) hapusBtn.onclick = ()=> hapusNotifStokCup(id);
   });
 }
 
@@ -4431,6 +4440,22 @@ async function cabutIzinStokCup(id){
     showToast("Izin dicabut");
     if(el('stokCupOverlay').classList.contains('show')) await muatKelolaStokCup();
   }catch(e){ showToast("Gagal mencabut izin. Cek koneksi.", false); console.error('Gagal mencabut izin stok cup:', e); }
+}
+
+// Hapus kartu notifikasi dari daftar SECARA PERMANEN (hapus dokumennya dari
+// Firestore) -- cuma boleh utk yang statusnya sudah final (disetujui/ditolak),
+// supaya panel tidak numpuk riwayat lama terus-terusan. Permintaan yang
+// masih "menunggu" tidak bisa dihapus lewat sini, harus diputuskan dulu
+// (Setujui/Tolak) baru bisa dihapus -- mencegah permintaan aktif hilang
+// tanpa sempat diproses.
+async function hapusNotifStokCup(id){
+  try{
+    const r = NOTIF_STOKCUP_LIST.find(x => x.id === id) || PERMINTAAN_CUP_OWNER_LIST.find(x => x.id === id);
+    if(r && r.status === 'menunggu'){ showToast("Putuskan (Setujui/Tolak) dulu sebelum menghapus.", false); return; }
+    await deleteDoc(doc(db, "permintaan_stok_cup", id));
+    showToast("Notifikasi dihapus");
+    if(el('stokCupOverlay').classList.contains('show')) await muatKelolaStokCup();
+  }catch(e){ showToast("Gagal menghapus notifikasi. Cek koneksi.", false); console.error('Gagal menghapus notif stok cup:', e); }
 }
 
 /* =====================================================================

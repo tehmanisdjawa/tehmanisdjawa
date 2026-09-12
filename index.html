@@ -765,21 +765,6 @@
   </div>
 </div>
 
-<div class="cartOverlay calcOverlay" id="verifOwnerOverlay">
-  <div class="calcSheet">
-    <div class="calcHead"><h2>Verifikasi Owner</h2><button id="verifOwnerClose">✕</button></div>
-    <div class="calcBody">
-      <div class="formField" style="margin-top:0;">
-        <label>Masukkan Password Kamu</label>
-        <input id="verifOwnerPassword" type="password" placeholder="Password login kamu" autocomplete="off">
-      </div>
-      <div class="loginErr" id="verifOwnerErr"></div>
-      <div class="hint" style="margin-bottom:16px;">Demi keamanan, konfirmasi password kamu dulu sebelum masuk ke Pengaturan.</div>
-      <button class="saveFormBtn" id="verifOwnerSubmit">Lanjutkan</button>
-    </div>
-  </div>
-</div>
-
 <div class="cartOverlay" id="pengaturanOverlay">
   <div class="adminSheet">
     <div class="adminHead"><h2>Pengaturan Akun</h2><button id="pengaturanClose">✕</button></div>
@@ -984,9 +969,10 @@ async function prosesLogin(){
     SESI = {
       akunId: akun.id, username: akun.username, jabatan: akun.jabatan,
       namaTampilan: akun.namaTampilan || akun.username, outlet: akun.outlet || '',
-      mulaiJam: akun.mulaiJam || '', sampaiJam: akun.sampaiJam || ''
+      mulaiJam: akun.mulaiJam || '', sampaiJam: akun.sampaiJam || '', temaWarna: akun.temaWarna || null
     };
     simpanSesiLokal(SESI);
+    terapkanTemaWarna(SESI.temaWarna);
     terapkanTampilanJabatan();
     tutupLoginScreen();
     mulaiSemuaSetelahLogin();
@@ -1098,7 +1084,7 @@ function terapkanTampilanJabatan(){
   el('adminBtn').style.display = isOwner ? 'flex' : 'none';
   el('stokBtn').style.display = isOwner ? 'flex' : 'none';
   el('akunBtn').style.display = isOwner ? 'flex' : 'none';
-  el('pengaturanBtn').style.display = isOwner ? 'flex' : 'none';
+  el('pengaturanBtn').style.display = SESI ? 'flex' : 'none';
   el('userChip').textContent = SESI ? (SESI.namaTampilan + ' \u00b7 ' + SESI.jabatan + (SESI.outlet ? ' \u00b7 ' + SESI.outlet : '')) : '';
   el('karyawanTampil').textContent = SESI ? SESI.namaTampilan : '-';
 }
@@ -1115,9 +1101,10 @@ async function cobaAutoLogin(){
     SESI = {
       akunId: akun.id, username: akun.username, jabatan: akun.jabatan,
       namaTampilan: akun.namaTampilan || akun.username, outlet: akun.outlet || '',
-      mulaiJam: akun.mulaiJam || '', sampaiJam: akun.sampaiJam || ''
+      mulaiJam: akun.mulaiJam || '', sampaiJam: akun.sampaiJam || '', temaWarna: akun.temaWarna || null
     };
     simpanSesiLokal(SESI);
+    terapkanTemaWarna(SESI.temaWarna);
     terapkanTampilanJabatan();
     tutupLoginScreen();
     mulaiSemuaSetelahLogin();
@@ -1126,6 +1113,7 @@ async function cobaAutoLogin(){
     // Gagal cek ke server (misal sedang offline) -- tetap pakai sesi lokal apa adanya
     // supaya kasir tetap bisa jalan, biar pengecekan berkala yang nanti menyusul kalau online lagi.
     SESI = sesiLokal;
+    terapkanTemaWarna(SESI.temaWarna);
     terapkanTampilanJabatan();
     tutupLoginScreen();
     mulaiSemuaSetelahLogin();
@@ -2258,51 +2246,16 @@ async function pastikanOutletTercatat(namaOutlet){
 }
 
 /* =====================================================================
-   PENGATURAN (khusus Owner) — "2 langkah" verifikasi biar yakin bener2
-   Owner yang buka:
-     Langkah 1: sebelum halaman Pengaturan kebuka, wajib ketik ulang
-                password akun yang SEDANG LOGIN (verifOwnerOverlay).
-     Langkah 2: di form Ganti Password, wajib ketik lagi password LAMA
-                sebelum password baru bisa disimpan.
-   Aplikasi ini tidak punya email/SMS, jadi verifikasi 2 langkah di sini
-   berbasis "ketik ulang password" dua kali di titik yang berbeda --
-   bukan OTP -- supaya tetap bisa jalan offline tanpa layanan tambahan.
+   PENGATURAN — terbuka langsung untuk SEMUA jabatan (Owner & Karyawan),
+   tanpa verifikasi password apapun. Isinya: Ganti Nama Tampilan, dan
+   Sesuaikan Warna Tampilan (custom color picker + pratinjau langsung).
+   Warna disimpan per-akun di Firestore (field "temaWarna") dan diterapkan
+   ke CSS custom properties setiap kali akun itu login.
    ===================================================================== */
 el('pengaturanBtn').onclick = ()=>{
-  if(!SESI || SESI.jabatan !== 'Owner') return;
-  el('verifOwnerPassword').value = '';
-  el('verifOwnerErr').style.display = 'none';
-  el('verifOwnerOverlay').classList.add('show');
-  setTimeout(()=> el('verifOwnerPassword').focus(), 60);
+  if(!SESI) return;
+  bukaHalamanPengaturan();
 };
-el('verifOwnerClose').onclick = ()=> el('verifOwnerOverlay').classList.remove('show');
-el('verifOwnerOverlay').addEventListener('click', (e)=>{ if(e.target.id==='verifOwnerOverlay') el('verifOwnerOverlay').classList.remove('show'); });
-
-async function prosesVerifikasiOwnerLangkah1(){
-  const pw = el('verifOwnerPassword').value;
-  if(!pw){ el('verifOwnerErr').textContent = 'Masukkan password kamu dulu.'; el('verifOwnerErr').style.display = 'block'; return; }
-  const btn = el('verifOwnerSubmit'); btn.disabled = true; btn.textContent = 'Memeriksa...';
-  try{
-    // Selalu cek ulang ke database (bukan cuma cocokkan ke SESI di memori) supaya kalau
-    // password baru saja diganti dari perangkat lain, verifikasi ini tetap akurat.
-    const akun = await cariAkunByUsername(SESI.username);
-    if(!akun || akun.password !== pw){
-      el('verifOwnerErr').textContent = 'Password salah.';
-      el('verifOwnerErr').style.display = 'block';
-      return;
-    }
-    el('verifOwnerOverlay').classList.remove('show');
-    await bukaHalamanPengaturan();
-  }catch(e){
-    el('verifOwnerErr').textContent = 'Gagal memeriksa. Cek koneksi internet.';
-    el('verifOwnerErr').style.display = 'block';
-  }finally{
-    btn.disabled = false; btn.textContent = 'Lanjutkan';
-  }
-}
-el('verifOwnerSubmit').onclick = prosesVerifikasiOwnerLangkah1;
-el('verifOwnerPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') prosesVerifikasiOwnerLangkah1(); });
-
 el('pengaturanClose').onclick = ()=> el('pengaturanOverlay').classList.remove('show');
 
 async function bukaHalamanPengaturan(){
@@ -2310,13 +2263,62 @@ async function bukaHalamanPengaturan(){
   el('pengaturanOverlay').classList.add('show');
 }
 
+// Warna default (persis nilai asli tema aplikasi) -- dipakai kalau akun belum
+// pernah menyimpan tema warna sendiri, dan juga sebagai tombol "Reset ke Default".
+const TEMA_WARNA_DEFAULT = {
+  pineUtama: '#12291d',   // warna gelap utama (topbar, tombol, dsb -- var(--pine-900))
+  aksenEmas: '#c8973f',   // warna aksen/highlight (var(--gold))
+  latarBelakang: '#dcd6c6' // warna latar halaman (var(--paper))
+};
+
+// Terapkan tema warna ke CSS custom properties di :root, dipanggil saat login
+// dan setiap kali warna diganti di halaman Pengaturan (untuk pratinjau langsung).
+function terapkanTemaWarna(tema){
+  const t = Object.assign({}, TEMA_WARNA_DEFAULT, tema || {});
+  const root = document.documentElement.style;
+  root.setProperty('--pine-900', t.pineUtama);
+  root.setProperty('--pine-950', gelapkanWarna(t.pineUtama, 0.18));
+  root.setProperty('--pine-800', gelapkanWarna(t.pineUtama, -0.08));
+  root.setProperty('--pine-700', gelapkanWarna(t.pineUtama, -0.18));
+  root.setProperty('--pine-600', gelapkanWarna(t.pineUtama, -0.28));
+  root.setProperty('--gold', t.aksenEmas);
+  root.setProperty('--gold-dark', gelapkanWarna(t.aksenEmas, 0.15));
+  root.setProperty('--gold-light', terangkanWarna(t.aksenEmas, 0.82));
+  root.setProperty('--paper', t.latarBelakang);
+  root.setProperty('--card', terangkanWarna(t.latarBelakang, 0.35));
+}
+
+// Helper kecil: gelapkan/terangkan warna hex sebesar persentase tertentu (0-1),
+// dipakai supaya turunan warna (--pine-950, --pine-800, dst) tetap proporsional
+// mengikuti 1 warna utama yang dipilih user, tanpa perlu color picker terpisah
+// untuk tiap variabel CSS.
+function gelapkanWarna(hex, persen){
+  const {r,g,b} = hexKeRgb(hex);
+  const f = v => Math.max(0, Math.round(v * (1 - persen)));
+  return rgbKeHex(f(r), f(g), f(b));
+}
+function terangkanWarna(hex, persen){
+  const {r,g,b} = hexKeRgb(hex);
+  const f = v => Math.min(255, Math.round(v + (255 - v) * persen));
+  return rgbKeHex(f(r), f(g), f(b));
+}
+function hexKeRgb(hex){
+  const h = hex.replace('#','');
+  const bigint = parseInt(h.length===3 ? h.split('').map(c=>c+c).join('') : h, 16);
+  return { r:(bigint>>16)&255, g:(bigint>>8)&255, b:bigint&255 };
+}
+function rgbKeHex(r,g,b){
+  return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
 function renderHalamanPengaturan(){
+  const temaSekarang = Object.assign({}, TEMA_WARNA_DEFAULT, (SESI && SESI.temaWarna) || {});
   el('pengaturanBody').innerHTML = `
     <div class="catLabelAdmin" style="margin-top:0;">Profil Akun</div>
     <div class="formField">
       <label>Username</label>
       <div class="karyawanTampil">${SESI.username}</div>
-      <div class="hint">Username tidak bisa diubah sendiri di sini. Kalau perlu ganti, hubungi Owner lain lewat Kelola Akun.</div>
+      <div class="hint">Username tidak bisa diubah sendiri di sini. Kalau perlu ganti, hubungi Owner lewat Kelola Akun.</div>
     </div>
     <div class="formField">
       <label>Nama Tampilan</label>
@@ -2324,22 +2326,49 @@ function renderHalamanPengaturan(){
     </div>
     <button class="saveFormBtn" id="pgSimpanNamaBtn">Simpan Nama Tampilan</button>
 
-    <div class="catLabelAdmin">Ganti Password</div>
-    <div class="hint" style="margin-bottom:14px;">Demi keamanan (verifikasi tahap 2), masukkan password LAMA kamu sebelum password baru bisa disimpan.</div>
+    <div class="catLabelAdmin">Sesuaikan Warna Tampilan</div>
+    <div class="hint" style="margin-bottom:14px;">Pilih warna sesukamu. Pratinjau di bawah langsung berubah begitu warna diganti -- belum tersimpan permanen sampai kamu pencet "Simpan Warna".</div>
+
     <div class="formField">
-      <label>Password Lama</label>
-      <input id="pgPasswordLama" type="password" placeholder="Password kamu saat ini" autocomplete="off">
+      <label>Warna Utama (topbar, tombol, aksen gelap)</label>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input id="pgWarnaUtama" type="color" value="${temaSekarang.pineUtama}" style="width:52px; height:42px; border-radius:10px; border:1.4px solid var(--line); padding:2px; background:var(--card); cursor:pointer;">
+        <input id="pgWarnaUtamaHex" type="text" value="${temaSekarang.pineUtama}" style="flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13px; font-family:monospace; background:var(--card); color:var(--ink);">
+      </div>
     </div>
     <div class="formField">
-      <label>Password Baru</label>
-      <input id="pgPasswordBaru" type="password" placeholder="Password baru" autocomplete="off">
+      <label>Warna Aksen (highlight, badge, tombol aktif)</label>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input id="pgWarnaAksen" type="color" value="${temaSekarang.aksenEmas}" style="width:52px; height:42px; border-radius:10px; border:1.4px solid var(--line); padding:2px; background:var(--card); cursor:pointer;">
+        <input id="pgWarnaAksenHex" type="text" value="${temaSekarang.aksenEmas}" style="flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13px; font-family:monospace; background:var(--card); color:var(--ink);">
+      </div>
     </div>
     <div class="formField">
-      <label>Ulangi Password Baru</label>
-      <input id="pgPasswordBaru2" type="password" placeholder="Ketik ulang password baru" autocomplete="off">
+      <label>Warna Latar Belakang</label>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input id="pgWarnaLatar" type="color" value="${temaSekarang.latarBelakang}" style="width:52px; height:42px; border-radius:10px; border:1.4px solid var(--line); padding:2px; background:var(--card); cursor:pointer;">
+        <input id="pgWarnaLatarHex" type="text" value="${temaSekarang.latarBelakang}" style="flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13px; font-family:monospace; background:var(--card); color:var(--ink);">
+      </div>
     </div>
-    <div class="loginErr" id="pgPasswordErr"></div>
-    <button class="saveFormBtn" id="pgSimpanPasswordBtn">Simpan Password Baru</button>
+
+    <div class="formField">
+      <label>Pratinjau</label>
+      <div id="pgPratinjauBox" style="border-radius:16px; overflow:hidden; border:1.4px solid var(--line-soft); box-shadow:var(--shadow-card);">
+        <div id="pgPratinjauTop" style="padding:14px 16px; display:flex; align-items:center; justify-content:space-between;">
+          <span style="color:#f3ede0; font-family:'Fraunces',serif; font-weight:600; font-size:14px;">Es Teh Manis Djawa</span>
+          <span id="pgPratinjauBadge" style="border-radius:999px; padding:4px 10px; font-size:11px; font-weight:800;">3</span>
+        </div>
+        <div id="pgPratinjauBody" style="padding:16px; display:flex; gap:10px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:120px; border-radius:12px; padding:12px; font-size:12.5px; font-weight:650;">Contoh Menu Item<br><span style="font-weight:700; font-size:12px;">Rp8.000</span></div>
+          <button id="pgPratinjauBtn" style="border:none; border-radius:12px; padding:12px 16px; font-size:13px; font-weight:700; color:#f3ede0; cursor:default;">Tombol Aksi</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button class="addVarBtn" id="pgResetWarnaBtn" style="margin-bottom:0;">Reset ke Default</button>
+      <button class="saveFormBtn" id="pgSimpanWarnaBtn" style="margin-top:0;">Simpan Warna</button>
+    </div>
   `;
 
   el('pgSimpanNamaBtn').onclick = async ()=>{
@@ -2356,35 +2385,55 @@ function renderHalamanPengaturan(){
     finally{ btn.disabled = false; btn.textContent = 'Simpan Nama Tampilan'; }
   };
 
-  el('pgSimpanPasswordBtn').onclick = async ()=>{
-    const pwLama = el('pgPasswordLama').value;
-    const pwBaru = el('pgPasswordBaru').value;
-    const pwBaru2 = el('pgPasswordBaru2').value;
-    const errEl = el('pgPasswordErr');
-    errEl.style.display = 'none';
+  // --- Bagian Sesuaikan Warna Tampilan ---
+  function ambilTemaDariForm(){
+    return {
+      pineUtama: el('pgWarnaUtamaHex').value.trim() || TEMA_WARNA_DEFAULT.pineUtama,
+      aksenEmas: el('pgWarnaAksenHex').value.trim() || TEMA_WARNA_DEFAULT.aksenEmas,
+      latarBelakang: el('pgWarnaLatarHex').value.trim() || TEMA_WARNA_DEFAULT.latarBelakang
+    };
+  }
+  function perbaruiPratinjau(){
+    const t = ambilTemaDariForm();
+    el('pgPratinjauTop').style.background = t.pineUtama;
+    el('pgPratinjauBadge').style.background = t.aksenEmas;
+    el('pgPratinjauBadge').style.color = t.pineUtama;
+    el('pgPratinjauBody').style.background = terangkanWarna(t.latarBelakang, 0.35);
+    document.querySelector('#pgPratinjauBody > div').style.background = t.latarBelakang;
+    document.querySelector('#pgPratinjauBody > div').style.color = t.pineUtama;
+    el('pgPratinjauBtn').style.background = t.pineUtama;
+  }
+  // Sinkronkan color picker <-> input teks hex, dan update pratinjau tiap ada perubahan.
+  function pasangSinkronWarna(idPicker, idHex){
+    el(idPicker).addEventListener('input', ()=>{ el(idHex).value = el(idPicker).value; perbaruiPratinjau(); });
+    el(idHex).addEventListener('input', ()=>{
+      const v = el(idHex).value.trim();
+      if(/^#[0-9a-fA-F]{6}$/.test(v)){ el(idPicker).value = v; perbaruiPratinjau(); }
+    });
+  }
+  pasangSinkronWarna('pgWarnaUtama', 'pgWarnaUtamaHex');
+  pasangSinkronWarna('pgWarnaAksen', 'pgWarnaAksenHex');
+  pasangSinkronWarna('pgWarnaLatar', 'pgWarnaLatarHex');
+  perbaruiPratinjau();
 
-    if(!pwLama || !pwBaru || !pwBaru2){ errEl.textContent = 'Isi semua kolom password dulu.'; errEl.style.display = 'block'; return; }
-    if(pwBaru.length < 4){ errEl.textContent = 'Password baru minimal 4 karakter.'; errEl.style.display = 'block'; return; }
-    if(pwBaru !== pwBaru2){ errEl.textContent = 'Ulangi password baru tidak cocok.'; errEl.style.display = 'block'; return; }
+  el('pgResetWarnaBtn').onclick = ()=>{
+    el('pgWarnaUtama').value = TEMA_WARNA_DEFAULT.pineUtama; el('pgWarnaUtamaHex').value = TEMA_WARNA_DEFAULT.pineUtama;
+    el('pgWarnaAksen').value = TEMA_WARNA_DEFAULT.aksenEmas; el('pgWarnaAksenHex').value = TEMA_WARNA_DEFAULT.aksenEmas;
+    el('pgWarnaLatar').value = TEMA_WARNA_DEFAULT.latarBelakang; el('pgWarnaLatarHex').value = TEMA_WARNA_DEFAULT.latarBelakang;
+    perbaruiPratinjau();
+  };
 
-    const btn = el('pgSimpanPasswordBtn'); btn.disabled = true; btn.textContent = 'Memeriksa...';
+  el('pgSimpanWarnaBtn').onclick = async ()=>{
+    const temaBaru = ambilTemaDariForm();
+    const btn = el('pgSimpanWarnaBtn'); btn.disabled = true; btn.textContent = 'Menyimpan...';
     try{
-      // Verifikasi tahap 2: cek ulang password LAMA ke database sebelum menimpa dengan yang baru.
-      const akun = await cariAkunByUsername(SESI.username);
-      if(!akun || akun.password !== pwLama){
-        errEl.textContent = 'Password lama salah.';
-        errEl.style.display = 'block';
-        return;
-      }
-      await updateDoc(doc(db, "akun", SESI.akunId), { password: pwBaru });
-      showToast("Password berhasil diganti");
-      el('pgPasswordLama').value = ''; el('pgPasswordBaru').value = ''; el('pgPasswordBaru2').value = '';
-    }catch(e){
-      errEl.textContent = 'Gagal menyimpan. Cek koneksi internet.';
-      errEl.style.display = 'block';
-    }finally{
-      btn.disabled = false; btn.textContent = 'Simpan Password Baru';
-    }
+      await updateDoc(doc(db, "akun", SESI.akunId), { temaWarna: temaBaru });
+      SESI.temaWarna = temaBaru;
+      simpanSesiLokal(SESI);
+      terapkanTemaWarna(temaBaru);
+      showToast("Warna tampilan disimpan");
+    }catch(e){ showToast("Gagal menyimpan. Cek koneksi.", false); }
+    finally{ btn.disabled = false; btn.textContent = 'Simpan Warna'; }
   };
 }
 
@@ -2624,13 +2673,13 @@ const OVERLAY_IDS_BACK = [
   'restockOverlay', 'stokOverlay', 'akunFormOverlay', 'akunOverlay',
   'lapOverlay', 'adminOverlay2', 'calcOverlay', 'cartOverlay',
   'sheetOverlay', 'trxDetailOverlay', 'menuDropdownOverlay', 'logoutWarnOverlay',
-  'verifOwnerOverlay', 'pengaturanOverlay'
+  'pengaturanOverlay'
 ];
 let sedangProsesBack = false;
 
 function overlayTerbukaSaatIni(){
   // urutan terakhir di array = prioritas ditutup duluan (overlay yang biasanya "di atas")
-  const urutanPrioritas = ['pengaturanOverlay','verifOwnerOverlay','restockOverlay','stokOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
+  const urutanPrioritas = ['pengaturanOverlay','restockOverlay','stokOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
   for(const id of urutanPrioritas){
     const elm = document.getElementById(id);
     if(elm && elm.classList.contains('show')) return id;

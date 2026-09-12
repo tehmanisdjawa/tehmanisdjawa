@@ -801,12 +801,95 @@
   }
   .pulseUpdate{animation:pulseUpdate .32s var(--ios-spring);}
 
+  /* =====================================================================
+     ANIMASI MASUK **DAN KELUAR** UTK SEMUA OVERLAY/SHEET (WAJIB, bukan cuma
+     pas dibuka). Sebelumnya overlay ditutup dgn display:none seketika lewat
+     classList.remove('show') -- jadi animasi keluar tidak sempat kelihatan.
+     Sekarang overlay dikasih class ".closing" oleh JS (lihat script di bawah)
+     selama durasi animasi keluar berjalan, BARU display:none diterapkan.
+     ===================================================================== */
+  .sheetOverlay, .cartOverlay, .adminOverlay, .adminOverlay2, .calcOverlay,
+  .matanyamanOverlay, .menuDropdownOverlay, .logoutWarnOverlay, .loginOverlay,
+  .lapOverlay, .grafikOverlay, .trxDetailOverlay, .akunOverlay, .akunFormOverlay,
+  .pengaturanOverlay, .gameOverlay, .stokOverlay, .stokCupOverlay, .restockOverlay,
+  .pecatOverlay{
+    transition:opacity var(--ios-med) var(--ios-ease) !important;
+  }
+  .sheetOverlay.closing, .cartOverlay.closing, .adminOverlay.closing, .adminOverlay2.closing,
+  .calcOverlay.closing, .matanyamanOverlay.closing, .menuDropdownOverlay.closing,
+  .logoutWarnOverlay.closing, .loginOverlay.closing, .lapOverlay.closing, .grafikOverlay.closing,
+  .trxDetailOverlay.closing, .akunOverlay.closing, .akunFormOverlay.closing,
+  .pengaturanOverlay.closing, .gameOverlay.closing, .stokOverlay.closing,
+  .stokCupOverlay.closing, .restockOverlay.closing, .pecatOverlay.closing{
+    display:flex !important; opacity:0;
+  }
+  /* Sheet/box di dalam overlay ikut meluncur turun (bukan cuma overlay-nya fade) */
+  .sheetOverlay.closing .sheet, .cartOverlay.closing .cartSheet,
+  .adminOverlay.closing .adminSheet, .adminOverlay2.closing .adminSheet,
+  .calcOverlay.closing .calcSheet, .sheetOverlay.closing [class*="Sheet"],
+  .cartOverlay.closing [class*="Sheet"], .adminOverlay2.closing [class*="Sheet"]{
+    transform:translateY(40px) !important;
+    transition:transform var(--ios-med) var(--ios-ease) !important;
+  }
+  .loginOverlay.closing .loginBox, .logoutWarnOverlay.closing .logoutWarnBox{
+    transform:scale(.94) !important; opacity:0 !important;
+    transition:transform var(--ios-med) var(--ios-ease), opacity var(--ios-med) var(--ios-ease) !important;
+  }
+
   /* Hormati preferensi user yang minta kurangi animasi (aksesibilitas) */
   @media (prefers-reduced-motion: reduce){
     *, *::before, *::after{
       animation-duration:.001ms !important;
       transition-duration:.001ms !important;
     }
+  }
+
+  /* =====================================================================
+     LAPISAN GLOBAL "SEMUA KENA" -- supaya benar-benar semua elemen
+     interaktif punya animasi halus, tanpa perlu daftar class satu-satu.
+     Sengaja HANYA transform & opacity (properti "murah", jalan di GPU,
+     tidak memicu layout/reflow) supaya tetap 60fps walau kena ke banyak
+     elemen sekaligus. TIDAK transition:all supaya tidak lag & tidak
+     "kebawa" animasi ke properti berat (width/height/top/left/dll).
+     ===================================================================== */
+  button, a, .item, .adminItem, .akunItem, .cupUkuranItem, .trxItemRow,
+  .gamePickBtn, .memCard, .satuanToggle button, .outletPickRow button,
+  .menuDropItem, [class*="Btn"], [class*="btn"], [class*="Row"], [class*="Card"],
+  [class*="Item"], [class*="Chip"], [class*="Pill"], [class*="Tab"]{
+    transition-property:transform, opacity, background-color, border-color, box-shadow, color;
+    transition-duration:var(--ios-fast);
+    transition-timing-function:var(--ios-spring);
+    -webkit-tap-highlight-color:transparent;
+  }
+  /* Efek tekan universal utk tombol yg belum punya efek :active sendiri */
+  button:not(:disabled):active{
+    transform:scale(.96);
+  }
+
+  /* Modal/sheet/overlay apa pun (nama class mengandung kata2 ini) ikut
+     fade+scale halus otomatis, walau lupa didaftar manual di atas. */
+  [class*="Sheet"], [class*="Overlay"], [class*="Modal"], [class*="Toast"],
+  [class*="Dropdown"], [class*="Popup"]{
+    transition:opacity var(--ios-med) var(--ios-ease),
+               transform var(--ios-med) var(--ios-spring);
+    will-change:transform, opacity;
+  }
+
+  /* Checkbox / radio / toggle custom -- knob & warnanya ikut halus */
+  input[type="checkbox"], input[type="radio"]{
+    transition:transform .12s var(--ios-spring);
+  }
+
+  /* Scroll di dalam sheet/list terasa lentur ala iOS, bukan kaku */
+  .sheetBody, .cartSheet, .adminSheet, .calcSheet, body{
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* GPU hint terarah HANYA ke elemen yg sering banget animasi/scroll,
+     supaya browser siapin layer tanpa membebani elemen statis lainnya
+     (kasih will-change ke semua elemen sekaligus justru bikin lag). */
+  .sheet, .cartSheet, .adminSheet, .calcSheet, .updToast, .item, .adminItem{
+    transform:translateZ(0);
   }
 </style>
 </head>
@@ -3280,7 +3363,27 @@ function renderHalamanPengaturan(){
       <button class="addVarBtn" id="pgResetWarnaBtn" style="margin-bottom:0;">Reset ke Default</button>
       <button class="saveFormBtn" id="pgSimpanWarnaBtn" style="margin-top:0;">Simpan Warna</button>
     </div>
+
+    <div class="catLabelAdmin">Tentang Aplikasi</div>
+    <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div style="font-size:13.5px; font-weight:650; color:var(--ink);">Versi Aplikasi</div>
+      <div id="pgVersiAplikasi" style="font-size:13px; font-weight:700; color:var(--muted); font-family:monospace;">Memuat\u2026</div>
+    </div>
   `;
+
+  // Ambil nomor versi terkini dari Firestore supaya semua jabatan (bukan cuma
+  // Owner) bisa lihat lagi jalan di versi berapa. Kalau belum pernah ada
+  // sinyal update sama sekali, tampilkan v0.0 (versi awal).
+  (async ()=>{
+    const elVersi = el('pgVersiAplikasi');
+    if(!elVersi) return;
+    try{
+      const snap = await getDoc(UPDATE_SIGNAL_REF);
+      const versi = (snap.exists() && typeof snap.data().versi === 'number') ? snap.data().versi : 0;
+      updateVersiTerkini = versi;
+      elVersi.textContent = `v${versi}`;
+    }catch(e){ elVersi.textContent = '\u2014'; }
+  })();
 
   el('pgSimpanNamaBtn').onclick = async ()=>{
     const namaBaru = el('pgNamaTampilan').value.trim();
@@ -3302,8 +3405,10 @@ function renderHalamanPengaturan(){
       if(!yakin) return;
       const btn = el('pgPaksaUpdateBtn'); btn.disabled = true; btn.textContent = 'Mengirim sinyal...';
       try{
-        await setDoc(UPDATE_SIGNAL_REF, { waktu: Timestamp.fromDate(new Date()), oleh: SESI.namaTampilan });
-        showToast("Sinyal update terkirim \u2014 semua perangkat akan refresh otomatis");
+        // Ambil versi terakhir dulu, lalu naikkan otomatis +0.1 (0.0 -> 0.1 -> ... -> 0.9 -> 1.0 -> 1.1 dst).
+        const versiBaru = await hitungVersiBerikutnya();
+        await setDoc(UPDATE_SIGNAL_REF, { waktu: Timestamp.fromDate(new Date()), oleh: SESI.namaTampilan, versi: versiBaru });
+        showToast(`Sinyal update v${versiBaru} terkirim \u2014 semua perangkat akan refresh otomatis`);
       }catch(e){ showToast("Gagal mengirim sinyal update. Cek koneksi.", false); }
       finally{ btn.disabled = false; btn.textContent = 'Paksa Update Semua Perangkat'; }
     };
@@ -4159,14 +4264,32 @@ history.pushState({ kasirBase: true }, '');
 const UPDATE_SIGNAL_REF = doc(db, "sistem", "updateSignal");
 let updateSignalAwalDiabaikan = false; // lewati pembacaan pertama (snapshot awal saat app baru dibuka)
 let updateSignalWaktuTerakhir = null; // waktu sinyal terakhir yang sudah diketahui, dipakai fallback polling
+let updateVersiTerkini = null; // versi terakhir yang tersimpan di Firestore, dipakai fallback polling & tampilan toast
+
+// Hitung nomor versi berikutnya secara OTOMATIS: mulai dari 0.0, tiap Owner
+// menekan "Paksa Update Semua Perangkat" naik +0.1 (0.0 -> 0.1 -> 0.2 -> ...
+// -> 0.9 -> 1.0 -> 1.1 -> dst). Pakai Math.round supaya tidak kena masalah
+// pembulatan desimal biner JS (0.1+0.2 != 0.3 kalau dihitung polos).
+async function hitungVersiBerikutnya(){
+  let versiSekarang = 0;
+  try{
+    const snap = await getDoc(UPDATE_SIGNAL_REF);
+    if(snap.exists() && typeof snap.data().versi === 'number') versiSekarang = snap.data().versi;
+  }catch(e){ /* kalau gagal baca, mulai anggap dari 0 supaya tetap bisa lanjut kirim sinyal */ }
+  return Math.round((versiSekarang + 0.1) * 10) / 10;
+}
 
 onSnapshot(UPDATE_SIGNAL_REF, async (snap)=>{
   if(!updateSignalAwalDiabaikan){
     updateSignalAwalDiabaikan = true;
-    if(snap.exists()) updateSignalWaktuTerakhir = waktuSinyalKeMs(snap.data());
+    if(snap.exists()){
+      updateSignalWaktuTerakhir = waktuSinyalKeMs(snap.data());
+      if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
+    }
     return;
   }
   if(!snap.exists()) return;
+  if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
   tampilkanBannerUpdate();
 }, (err)=>{ console.error('Gagal memantau sinyal update sistem (realtime):', err); });
 
@@ -4187,6 +4310,7 @@ async function cekSinyalUpdateManual(){
     const snap = await getDoc(UPDATE_SIGNAL_REF);
     if(!snap.exists()) return;
     const waktuMs = waktuSinyalKeMs(snap.data());
+    if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
     if(updateSignalWaktuTerakhir === null){ updateSignalWaktuTerakhir = waktuMs; return; }
     if(waktuMs && waktuMs > updateSignalWaktuTerakhir){
       updateSignalWaktuTerakhir = waktuMs;
@@ -4229,6 +4353,14 @@ function tampilkanBannerUpdate(){
   const progressEl = el('updProgressFill');
   const cooldownBar = el('updCooldownBar');
   const cooldownDetikEl = el('updCooldownDetik');
+
+  // Tampilkan nomor versi di label & isi teks toast, kalau tersedia.
+  const labelEl = el('updToast').querySelector('.updLabel');
+  const textEl2 = el('updToast').querySelector('.updText');
+  if(typeof updateVersiTerkini === 'number'){
+    if(labelEl) labelEl.textContent = `Update Tersedia \u2014 v${updateVersiTerkini}`;
+    if(textEl2) textEl2.textContent = `Sistem menemukan versi ${updateVersiTerkini} terbaru. Halaman akan otomatis di-refresh untuk memasangnya \u2014 pastikan dulu tidak sedang ada pembeli yang lagi dilayani.`;
+  }
 
   wrap.style.display = 'flex';
   requestAnimationFrame(()=> toastEl.classList.add('show'));
@@ -4293,7 +4425,9 @@ function mulaiProsesUpdate(){
   const overlay = el('updInstallOverlay');
   const textEl = el('updInstallText');
   overlay.classList.remove('done');
-  textEl.textContent = 'Memasang update terbaru\u2026';
+  textEl.textContent = typeof updateVersiTerkini === 'number'
+    ? `Memasang update v${updateVersiTerkini}\u2026`
+    : 'Memasang update terbaru\u2026';
   overlay.classList.add('show');
 
   setTimeout(()=>{
@@ -4338,6 +4472,63 @@ async function paksaAmbilVersiTerbaru(){
    ===================================================================== */
 cekWaktuTutupSetiapDetik();
 cobaAutoLogin().finally(()=>{ el('bootLoading').style.display = 'none'; });
+
+/* =====================================================================
+   ANIMASI KELUAR OTOMATIS UTK SEMUA OVERLAY (WAJIB ada animasi masuk & keluar)
+   Semua kode lama menutup overlay dengan classList.remove('show'), yang
+   sebelumnya langsung display:none tanpa animasi. Observer di bawah ini
+   menyadap SETIAP perubahan class 'show' pada elemen apa pun yang nama
+   class-nya mengandung "Overlay" -- begitu 'show' dicabut, kita mainkan
+   dulu animasi keluar (class .closing) selama --ios-med (280ms), baru
+   benar-benar disembunyikan. Ini otomatis berlaku ke SEMUA overlay yang
+   sudah ada maupun yang mungkin ditambah nanti, tanpa perlu ubah kode
+   buka/tutup satu-satu di tempat lain.
+   ===================================================================== */
+(function(){
+  const DURASI_KELUAR = 300; // sedikit lebih lama dari --ios-med (280ms) sbg jaga2
+  const timerPerElemen = new WeakMap();
+
+  function elemenOverlay(node){
+    return node && node.nodeType === 1 && node.classList &&
+      Array.from(node.classList).some(c => /overlay/i.test(c));
+  }
+
+  function tanganiPerubahan(node){
+    if(!elemenOverlay(node)) return;
+    const sedangShow = node.classList.contains('show');
+    const timerLama = timerPerElemen.get(node);
+
+    if(sedangShow){
+      // Baru dibuka -- batalkan proses "closing" yg mungkin masih berjalan.
+      if(timerLama) clearTimeout(timerLama);
+      node.classList.remove('closing');
+    } else if(node.classList.contains('closing')){
+      // Sudah dalam proses closing (dipicu kita sendiri) -- biarkan jalan.
+      return;
+    } else {
+      // Baru saja ditutup (show dicabut) & belum closing -- mainkan animasi keluar.
+      if(timerLama) clearTimeout(timerLama);
+      node.classList.add('closing');
+      const t = setTimeout(()=>{
+        node.classList.remove('closing');
+        timerPerElemen.delete(node);
+      }, DURASI_KELUAR);
+      timerPerElemen.set(node, t);
+    }
+  }
+
+  const observer = new MutationObserver((mutations)=>{
+    for(const m of mutations){
+      if(m.type === 'attributes' && m.attributeName === 'class'){
+        tanganiPerubahan(m.target);
+      }
+    }
+  });
+
+  observer.observe(document.body, {
+    attributes:true, attributeFilter:['class'], subtree:true
+  });
+})();
 </script>
 
 </body>

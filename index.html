@@ -1385,7 +1385,7 @@ function openVariantSheet(ci, ii){
   el('sheetBody').innerHTML = item.varian.map((v, vi)=>{
     const k = ci+"|"+ii+"|"+vi; const qty = cart[k]?.qty || 0;
     const ukuranTampil = normalisasiUkuran(v.nama, item.nama);
-    const namaTampil = ukuranTampil + (v.tambahan ? ` <span class="vTambahanTag">(${v.tambahan})</span>` : '');
+    const namaTampil = ukuranTampil + (v.tambahan ? ` <span class="vTambahanTag">+${v.tambahan}</span>` : '');
     if(v.habis) return `<div class="varOption habis"><div><div class="vn">${namaTampil}</div><div class="vhabis">Sedang habis</div></div></div>`;
     if(qty > 0) return `<div class="varOption" style="cursor:default;"><div><div class="vn">${namaTampil}</div><div class="vp">Rp${(v.harga||0).toLocaleString('id-ID')}</div></div><div class="qtyStepBar" data-k="${k}"><button class="minus">\u2212</button><div class="val">${qty}</div><button class="plus">+</button></div></div>`;
     return `<div class="varOption" data-k="${k}" data-add="1"><div><div class="vn">${namaTampil}</div><div class="vp">Rp${(v.harga||0).toLocaleString('id-ID')}</div></div><div class="plusBtn">+</div></div>`;
@@ -1425,7 +1425,7 @@ function renderCartBody(){
     el('cartBody').innerHTML = keys.map(k=>{
       const c = cart[k];
       const ukuranTampilCart = normalisasiUkuran(c.varian, c.nama);
-      return `<div class="cartRow" data-k="${k}"><div class="ci"><div class="cn">${c.nama}</div><div class="cv">${ukuranTampilCart}${c.tambahan?' ('+c.tambahan+')':''}</div><div class="cp">${rupiah(c.harga)}</div></div><div class="cstep"><button class="cminus">\u2212</button><div class="cval">${c.qty}</div><button class="cplus">+</button></div><button class="cdel"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button></div>`;
+      return `<div class="cartRow" data-k="${k}"><div class="ci"><div class="cn">${c.nama}</div><div class="cv">${ukuranTampilCart}${c.tambahan?' +'+c.tambahan:''}</div><div class="cp">${rupiah(c.harga)}</div></div><div class="cstep"><button class="cminus">\u2212</button><div class="cval">${c.qty}</div><button class="cplus">+</button></div><button class="cdel"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button></div>`;
     }).join('');
     el('cartBody').querySelectorAll('.cartRow').forEach(row=>{
       const k = row.dataset.k;
@@ -1514,7 +1514,7 @@ function renderAdminList(){
     html += `<div class="catLabelAdmin">${cat.kategori}</div>`;
     cat.items.forEach((item, ii)=>{
       const semuaHabis = item.varian.every(v=>v.habis);
-      const varStr = item.varian.map(v=>`${normalisasiUkuran(v.nama, item.nama)}${v.tambahan?' ('+v.tambahan+')':''}: ${rupiah(v.harga)}${v.habis?' (Habis)':''}`).join(' \u00b7 ');
+      const varStr = item.varian.map(v=>`${normalisasiUkuran(v.nama, item.nama)}${v.tambahan?' +'+v.tambahan:''}: ${rupiah(v.harga)}${v.habis?' (Habis)':''}`).join(' \u00b7 ');
       html += `<div class="adminItem" data-ci="${ci}" data-ii="${ii}">
         <div class="aiTop">
           <div class="ain">${item.nama}</div>
@@ -1723,10 +1723,11 @@ async function ambilTransaksiUntukLaporan(tanggal, outlet){
 // supaya menu utama, keranjang, Kelola Menu, dan laporan semuanya konsisten.
 function normalisasiUkuranCup(namaVarian, namaMenu){ return normalisasiUkuran(namaVarian, namaMenu); }
 
-// Nama tampilan "Menu (Ukuran)" dengan ukuran SUDAH dinormalisasi ke format oz baku.
+// Nama tampilan "Menu (Ukuran +Tambahan)" dengan ukuran SUDAH dinormalisasi ke format oz baku.
 function namaTampilItem(it){
   const ukuran = normalisasiUkuran(it.varian, it.nama);
-  return it.nama + ' (' + ukuran + ')';
+  const tambahanTxt = it.tambahan ? ' +' + it.tambahan : '';
+  return it.nama + ' (' + ukuran + tambahanTxt + ')';
 }
 
 function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
@@ -1950,7 +1951,7 @@ function renderLaporanSatuOutlet(data){
     });
     el('riwayatBarangList').innerHTML = barisBarang.length ? barisBarang.map(b=>`
       <div class="trxItemRow">
-        <div><div class="tin">${b.nama} \u2014 ${b.ukuran}${b.tambahan?' \u00b7 '+b.tambahan:''}</div><div class="tiv">${b.waktu} \u00b7 ${b.karyawan} \u00b7 ${b.qty}x</div></div>
+        <div><div class="tin">${b.nama} \u2014 ${b.ukuran}${b.tambahan?' \u00b7 +'+b.tambahan:''}</div><div class="tiv">${b.waktu} \u00b7 ${b.karyawan} \u00b7 ${b.qty}x</div></div>
         <div class="tiq">${rupiah(b.subtotal)}</div>
       </div>`).join('') : '<div class="empty" style="padding:16px 0;">Belum ada barang dibeli.</div>';
   }
@@ -2031,7 +2032,7 @@ function bukaDetailTransaksi(trxId){
 
   const itemsHtml = (t.items && t.items.length) ? t.items.map(it=>`
     <div class="trxItemRow">
-      <div><div class="tin">${it.nama} \u2014 ${normalisasiUkuran(it.varian, it.nama)}</div><div class="tiv">${it.qty} \u00d7 ${rupiah(it.harga||0)}${it.tambahan ? ' \u00b7 ' + it.tambahan : ''}</div></div>
+      <div><div class="tin">${it.nama} \u2014 ${normalisasiUkuran(it.varian, it.nama)}</div><div class="tiv">${it.qty} \u00d7 ${rupiah(it.harga||0)}${it.tambahan ? ' \u00b7 +' + it.tambahan : ''}</div></div>
       <div class="tiq">${rupiah(it.subtotal||0)}</div>
     </div>`).join('') : '<div class="empty" style="padding:16px 0;">Detail item tidak tersedia untuk transaksi ini.</div>';
 

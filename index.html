@@ -594,6 +594,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
         <span>Kelola Akun</span>
       </button>
+      <button class="menuDropItem" id="pengaturanBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>Pengaturan</span>
+      </button>
       <div class="menuDropDivider"></div>
       <button class="menuDropItem menuDropItem-danger" id="logoutBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
@@ -748,6 +752,28 @@
   </div>
 </div>
 
+<div class="cartOverlay calcOverlay" id="verifOwnerOverlay">
+  <div class="calcSheet">
+    <div class="calcHead"><h2>Verifikasi Owner</h2><button id="verifOwnerClose">✕</button></div>
+    <div class="calcBody">
+      <div class="formField" style="margin-top:0;">
+        <label>Masukkan Password Kamu</label>
+        <input id="verifOwnerPassword" type="password" placeholder="Password login kamu" autocomplete="off">
+      </div>
+      <div class="loginErr" id="verifOwnerErr"></div>
+      <div class="hint" style="margin-bottom:16px;">Demi keamanan, konfirmasi password kamu dulu sebelum masuk ke Pengaturan.</div>
+      <button class="saveFormBtn" id="verifOwnerSubmit">Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<div class="cartOverlay" id="pengaturanOverlay">
+  <div class="adminSheet">
+    <div class="adminHead"><h2>Pengaturan Akun</h2><button id="pengaturanClose">✕</button></div>
+    <div class="adminBody" id="pengaturanBody"></div>
+  </div>
+</div>
+
 <script type="module">
 /* =====================================================================
    FIREBASE INIT
@@ -829,12 +855,22 @@ const rupiah = n => "Rp" + Number(n).toLocaleString('id-ID');
 const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
+let toastHideTimer = null;
 function showToast(msg, ok=true){
   const t = el('toast');
+  // Selalu bersihkan timer & animasi toast sebelumnya dulu -- ini yang mencegah toast
+  // "nyangkut" di layar kalau showToast dipanggil dua kali berturut-turut dalam waktu
+  // singkat (misalnya sesudah membatalkan/menghapus transaksi).
+  if(toastHideTimer){ clearTimeout(toastHideTimer); toastHideTimer = null; }
+  t.classList.remove('show');
+  // Paksa reflow sebentar supaya browser benar2 mendaftarkan toast dalam keadaan
+  // tersembunyi dulu sebelum ditampilkan lagi -- kalau tidak, transisi CSS-nya bisa
+  // dianggap "tidak berubah" dan toast baru jadi tidak ke-animasi turun dengan benar.
+  void t.offsetWidth;
   t.classList.toggle('err', !ok);
   t.innerHTML = (ok ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 9v4M12 17h.01M10.3 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.7 3.86a2 2 0 00-3.4 0z"/></svg>') + '<span>'+msg+'</span>';
   t.classList.add('show');
-  setTimeout(()=> t.classList.remove('show'), 2800);
+  toastHideTimer = setTimeout(()=>{ t.classList.remove('show'); toastHideTimer = null; }, 2800);
 }
 
 /* =====================================================================
@@ -1029,6 +1065,7 @@ function terapkanTampilanJabatan(){
   el('adminBtn').style.display = isOwner ? 'flex' : 'none';
   el('stokBtn').style.display = isOwner ? 'flex' : 'none';
   el('akunBtn').style.display = isOwner ? 'flex' : 'none';
+  el('pengaturanBtn').style.display = isOwner ? 'flex' : 'none';
   el('userChip').textContent = SESI ? (SESI.namaTampilan + ' \u00b7 ' + SESI.jabatan + (SESI.outlet ? ' \u00b7 ' + SESI.outlet : '')) : '';
   el('karyawanTampil').textContent = SESI ? SESI.namaTampilan : '-';
 }
@@ -1074,7 +1111,7 @@ function mulaiSemuaSetelahLogin(){
    ===================================================================== */
 el('menuBtn').onclick = (e)=>{ e.stopPropagation(); el('menuDropdownOverlay').classList.add('show'); };
 el('menuDropdownOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'menuDropdownOverlay') el('menuDropdownOverlay').classList.remove('show'); });
-['calcBtn','laporanBtn','adminBtn','stokBtn','akunBtn','logoutBtn'].forEach(id=>{
+['calcBtn','laporanBtn','adminBtn','stokBtn','akunBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
   el(id).addEventListener('click', ()=> el('menuDropdownOverlay').classList.remove('show'));
 });
 
@@ -2177,6 +2214,137 @@ async function pastikanOutletTercatat(namaOutlet){
 }
 
 /* =====================================================================
+   PENGATURAN (khusus Owner) — "2 langkah" verifikasi biar yakin bener2
+   Owner yang buka:
+     Langkah 1: sebelum halaman Pengaturan kebuka, wajib ketik ulang
+                password akun yang SEDANG LOGIN (verifOwnerOverlay).
+     Langkah 2: di form Ganti Password, wajib ketik lagi password LAMA
+                sebelum password baru bisa disimpan.
+   Aplikasi ini tidak punya email/SMS, jadi verifikasi 2 langkah di sini
+   berbasis "ketik ulang password" dua kali di titik yang berbeda --
+   bukan OTP -- supaya tetap bisa jalan offline tanpa layanan tambahan.
+   ===================================================================== */
+el('pengaturanBtn').onclick = ()=>{
+  if(!SESI || SESI.jabatan !== 'Owner') return;
+  el('verifOwnerPassword').value = '';
+  el('verifOwnerErr').style.display = 'none';
+  el('verifOwnerOverlay').classList.add('show');
+  setTimeout(()=> el('verifOwnerPassword').focus(), 60);
+};
+el('verifOwnerClose').onclick = ()=> el('verifOwnerOverlay').classList.remove('show');
+el('verifOwnerOverlay').addEventListener('click', (e)=>{ if(e.target.id==='verifOwnerOverlay') el('verifOwnerOverlay').classList.remove('show'); });
+
+async function prosesVerifikasiOwnerLangkah1(){
+  const pw = el('verifOwnerPassword').value;
+  if(!pw){ el('verifOwnerErr').textContent = 'Masukkan password kamu dulu.'; el('verifOwnerErr').style.display = 'block'; return; }
+  const btn = el('verifOwnerSubmit'); btn.disabled = true; btn.textContent = 'Memeriksa...';
+  try{
+    // Selalu cek ulang ke database (bukan cuma cocokkan ke SESI di memori) supaya kalau
+    // password baru saja diganti dari perangkat lain, verifikasi ini tetap akurat.
+    const akun = await cariAkunByUsername(SESI.username);
+    if(!akun || akun.password !== pw){
+      el('verifOwnerErr').textContent = 'Password salah.';
+      el('verifOwnerErr').style.display = 'block';
+      return;
+    }
+    el('verifOwnerOverlay').classList.remove('show');
+    await bukaHalamanPengaturan();
+  }catch(e){
+    el('verifOwnerErr').textContent = 'Gagal memeriksa. Cek koneksi internet.';
+    el('verifOwnerErr').style.display = 'block';
+  }finally{
+    btn.disabled = false; btn.textContent = 'Lanjutkan';
+  }
+}
+el('verifOwnerSubmit').onclick = prosesVerifikasiOwnerLangkah1;
+el('verifOwnerPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') prosesVerifikasiOwnerLangkah1(); });
+
+el('pengaturanClose').onclick = ()=> el('pengaturanOverlay').classList.remove('show');
+
+async function bukaHalamanPengaturan(){
+  renderHalamanPengaturan();
+  el('pengaturanOverlay').classList.add('show');
+}
+
+function renderHalamanPengaturan(){
+  el('pengaturanBody').innerHTML = `
+    <div class="catLabelAdmin" style="margin-top:0;">Profil Akun</div>
+    <div class="formField">
+      <label>Username</label>
+      <div class="karyawanTampil">${SESI.username}</div>
+      <div class="hint">Username tidak bisa diubah sendiri di sini. Kalau perlu ganti, hubungi Owner lain lewat Kelola Akun.</div>
+    </div>
+    <div class="formField">
+      <label>Nama Tampilan</label>
+      <input id="pgNamaTampilan" type="text" value="${SESI.namaTampilan}" placeholder="Nama yang tampil di transaksi & laporan">
+    </div>
+    <button class="saveFormBtn" id="pgSimpanNamaBtn">Simpan Nama Tampilan</button>
+
+    <div class="catLabelAdmin">Ganti Password</div>
+    <div class="hint" style="margin-bottom:14px;">Demi keamanan (verifikasi tahap 2), masukkan password LAMA kamu sebelum password baru bisa disimpan.</div>
+    <div class="formField">
+      <label>Password Lama</label>
+      <input id="pgPasswordLama" type="password" placeholder="Password kamu saat ini" autocomplete="off">
+    </div>
+    <div class="formField">
+      <label>Password Baru</label>
+      <input id="pgPasswordBaru" type="password" placeholder="Password baru" autocomplete="off">
+    </div>
+    <div class="formField">
+      <label>Ulangi Password Baru</label>
+      <input id="pgPasswordBaru2" type="password" placeholder="Ketik ulang password baru" autocomplete="off">
+    </div>
+    <div class="loginErr" id="pgPasswordErr"></div>
+    <button class="saveFormBtn" id="pgSimpanPasswordBtn">Simpan Password Baru</button>
+  `;
+
+  el('pgSimpanNamaBtn').onclick = async ()=>{
+    const namaBaru = el('pgNamaTampilan').value.trim();
+    if(!namaBaru){ showToast("Nama tampilan tidak boleh kosong", false); return; }
+    const btn = el('pgSimpanNamaBtn'); btn.disabled = true; btn.textContent = 'Menyimpan...';
+    try{
+      await updateDoc(doc(db, "akun", SESI.akunId), { namaTampilan: namaBaru });
+      SESI.namaTampilan = namaBaru;
+      simpanSesiLokal(SESI);
+      terapkanTampilanJabatan();
+      showToast("Nama tampilan diperbarui");
+    }catch(e){ showToast("Gagal menyimpan. Cek koneksi.", false); }
+    finally{ btn.disabled = false; btn.textContent = 'Simpan Nama Tampilan'; }
+  };
+
+  el('pgSimpanPasswordBtn').onclick = async ()=>{
+    const pwLama = el('pgPasswordLama').value;
+    const pwBaru = el('pgPasswordBaru').value;
+    const pwBaru2 = el('pgPasswordBaru2').value;
+    const errEl = el('pgPasswordErr');
+    errEl.style.display = 'none';
+
+    if(!pwLama || !pwBaru || !pwBaru2){ errEl.textContent = 'Isi semua kolom password dulu.'; errEl.style.display = 'block'; return; }
+    if(pwBaru.length < 4){ errEl.textContent = 'Password baru minimal 4 karakter.'; errEl.style.display = 'block'; return; }
+    if(pwBaru !== pwBaru2){ errEl.textContent = 'Ulangi password baru tidak cocok.'; errEl.style.display = 'block'; return; }
+
+    const btn = el('pgSimpanPasswordBtn'); btn.disabled = true; btn.textContent = 'Memeriksa...';
+    try{
+      // Verifikasi tahap 2: cek ulang password LAMA ke database sebelum menimpa dengan yang baru.
+      const akun = await cariAkunByUsername(SESI.username);
+      if(!akun || akun.password !== pwLama){
+        errEl.textContent = 'Password lama salah.';
+        errEl.style.display = 'block';
+        return;
+      }
+      await updateDoc(doc(db, "akun", SESI.akunId), { password: pwBaru });
+      showToast("Password berhasil diganti");
+      el('pgPasswordLama').value = ''; el('pgPasswordBaru').value = ''; el('pgPasswordBaru2').value = '';
+    }catch(e){
+      errEl.textContent = 'Gagal menyimpan. Cek koneksi internet.';
+      errEl.style.display = 'block';
+    }finally{
+      btn.disabled = false; btn.textContent = 'Simpan Password Baru';
+    }
+  };
+}
+
+/* =====================================================================
    KELOLA STOK (khusus Owner) — SEKARANG BISA SEMUA OUTLET, Owner pilih
    outlet mana yang mau dikelola dari daftar tombol di atas.
    Dokumen stok id-nya deterministik: outlet_kategori_nama_ukuran (disanitasi)
@@ -2411,13 +2579,14 @@ async function bukaRiwayatRestock(){
 const OVERLAY_IDS_BACK = [
   'restockOverlay', 'stokOverlay', 'akunFormOverlay', 'akunOverlay',
   'lapOverlay', 'adminOverlay2', 'calcOverlay', 'cartOverlay',
-  'sheetOverlay', 'trxDetailOverlay', 'menuDropdownOverlay', 'logoutWarnOverlay'
+  'sheetOverlay', 'trxDetailOverlay', 'menuDropdownOverlay', 'logoutWarnOverlay',
+  'verifOwnerOverlay', 'pengaturanOverlay'
 ];
 let sedangProsesBack = false;
 
 function overlayTerbukaSaatIni(){
   // urutan terakhir di array = prioritas ditutup duluan (overlay yang biasanya "di atas")
-  const urutanPrioritas = ['restockOverlay','stokOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
+  const urutanPrioritas = ['pengaturanOverlay','verifOwnerOverlay','restockOverlay','stokOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
   for(const id of urutanPrioritas){
     const elm = document.getElementById(id);
     if(elm && elm.classList.contains('show')) return id;

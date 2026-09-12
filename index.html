@@ -875,7 +875,7 @@
   .menuDropdownOverlay, .logoutWarnOverlay, .loginOverlay,
   .lapOverlay, .grafikOverlay, .trxDetailOverlay, .akunOverlay, .akunFormOverlay,
   .pengaturanOverlay, .gameOverlay, .stokOverlay, .stokCupOverlay, .restockOverlay,
-  .pecatOverlay{
+  .pecatOverlay, .notifPanelOverlay{
     transition:opacity var(--ios-med) var(--ios-ease) !important;
   }
   .sheetOverlay.closing, .cartOverlay.closing, .adminOverlay.closing, .adminOverlay2.closing,
@@ -883,14 +883,16 @@
   .logoutWarnOverlay.closing, .loginOverlay.closing, .lapOverlay.closing, .grafikOverlay.closing,
   .trxDetailOverlay.closing, .akunOverlay.closing, .akunFormOverlay.closing,
   .pengaturanOverlay.closing, .gameOverlay.closing, .stokOverlay.closing,
-  .stokCupOverlay.closing, .restockOverlay.closing, .pecatOverlay.closing{
-    display:flex !important; opacity:0; pointer-events:none !important;
+  .stokCupOverlay.closing, .restockOverlay.closing, .pecatOverlay.closing,
+  .notifPanelOverlay.closing{
+    display:block !important; opacity:0; pointer-events:none !important;
   }
   /* Sheet/box di dalam overlay ikut meluncur turun (bukan cuma overlay-nya fade) */
   .sheetOverlay.closing .sheet, .cartOverlay.closing .cartSheet,
   .adminOverlay.closing .adminSheet, .adminOverlay2.closing .adminSheet,
   .calcOverlay.closing .calcSheet, .sheetOverlay.closing [class*="Sheet"],
-  .cartOverlay.closing [class*="Sheet"], .adminOverlay2.closing [class*="Sheet"]{
+  .cartOverlay.closing [class*="Sheet"], .adminOverlay2.closing [class*="Sheet"],
+  .notifPanelOverlay.closing .notifPanel{
     transform:translateY(40px) !important;
     transition:transform var(--ios-med) var(--ios-ease) !important;
   }
@@ -1027,6 +1029,10 @@
         <button class="iconBtn" id="notifBtn" aria-label="Notifikasi" title="Notifikasi" style="display:none;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
           <span class="notifDot" id="notifDot">0</span>
+        </button>
+        <button class="iconBtn" id="notifKaryawanBtn" aria-label="Status Izin Stok Cup" title="Status Izin Stok Cup" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <span class="notifDot" id="notifKaryawanDot">0</span>
         </button>
         <button class="iconBtn" id="menuBtn" aria-label="Menu" title="Menu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
@@ -1253,6 +1259,14 @@
   <div class="notifPanel">
     <div class="notifPanelHead"><span>Permintaan Akses Stok Cup</span><button id="notifPanelClose">✕</button></div>
     <div class="notifPanelBody" id="notifPanelBody"></div>
+  </div>
+</div>
+
+<div class="notifPanelOverlay" id="notifKaryawanPanelOverlay">
+  <div class="notifPanelBackdrop" id="notifKaryawanPanelBackdrop"></div>
+  <div class="notifPanel" id="notifKaryawanPanel">
+    <div class="notifPanelHead"><span>Status Izin Stok Cup</span><button id="notifKaryawanPanelClose">✕</button></div>
+    <div class="notifPanelBody" id="notifKaryawanPanelBody"></div>
   </div>
 </div>
 
@@ -1719,6 +1733,10 @@ function terapkanTampilanJabatan(){
   el('pengaturanBtn').style.display = SESI ? 'flex' : 'none';
   el('notifBtn').style.display = isOwner ? 'flex' : 'none';
   if(isOwner) mulaiPantauNotifPermintaanStokCup(); else hentikanPantauNotifPermintaanStokCup();
+  // Tombol status izin milik karyawan sendiri -- Owner tidak butuh ini karena
+  // sudah punya panel approve/tolak lewat notifBtn di atas.
+  el('notifKaryawanBtn').style.display = (SESI && !isOwner && SESI.outlet) ? 'flex' : 'none';
+  if(SESI && !isOwner && SESI.outlet) mulaiPantauNotifKaryawanStokCup(); else hentikanPantauNotifKaryawanStokCup();
   el('userChip').textContent = SESI ? (SESI.namaTampilan + ' \u00b7 ' + SESI.jabatan + (SESI.outlet ? ' \u00b7 ' + SESI.outlet : '')) : '';
   el('karyawanTampil').textContent = SESI ? SESI.namaTampilan : '-';
 }
@@ -4274,8 +4292,8 @@ el('notifBtn').onclick = async (e)=>{
     try{ await updateDoc(doc(db, "permintaan_stok_cup", r.id), { dibacaOwner: true }); }catch(err){ console.error('Gagal tandai notif dibaca:', err); }
   }
 };
-el('notifPanelClose').onclick = ()=> el('notifPanelOverlay').classList.remove('show');
-el('notifPanelBackdrop').onclick = ()=> el('notifPanelOverlay').classList.remove('show');
+el('notifPanelClose').onclick = ()=> tutupOverlaySmooth(el('notifPanelOverlay'));
+el('notifPanelBackdrop').onclick = ()=> tutupOverlaySmooth(el('notifPanelOverlay'));
 
 function renderPanelNotifStokCup(){
   if(NOTIF_STOKCUP_LIST.length === 0){
@@ -4325,6 +4343,99 @@ async function putuskanPermintaanStokCup(id, statusBaru){
     }
     showToast(statusBaru === 'disetujui' ? "Permintaan disetujui" : "Permintaan ditolak");
   }catch(e){ showToast("Gagal memproses permintaan. Cek koneksi.", false); console.error('Gagal memutuskan permintaan stok cup:', e); }
+}
+
+/* =====================================================================
+   NOTIFIKASI STATUS IZIN STOK CUP — khusus KARYAWAN (bukan Owner).
+   Beda dari panel Owner di atas (yang isinya SEMUA permintaan dari semua
+   karyawan, untuk disetujui/ditolak): panel ini cuma menampilkan riwayat
+   permintaan izin milik KARYAWAN YANG SEDANG LOGIN sendiri, read-only,
+   supaya dia tahu apakah permintaannya sudah diizinkan Owner atau belum
+   tanpa perlu buka Kelola Stok Cup dulu. Dipantau realtime lewat
+   onSnapshot yang di-filter by pemohonUsername, supaya badge merah
+   langsung muncul begitu Owner memutuskan (setuju/tolak).
+   ===================================================================== */
+let unsubNotifKaryawanStokCup = null;
+let NOTIF_KARYAWAN_STOKCUP_LIST = [];
+let notifKaryawanStokCupTerlihat = {}; // id permintaan -> true kalau statusnya sudah pernah dilihat karyawan (disimpan di localStorage)
+
+function kunciNotifKaryawanTerlihat(){
+  return SESI ? ('notifCupTerlihat_' + SESI.username) : null;
+}
+function muatNotifKaryawanTerlihat(){
+  notifKaryawanStokCupTerlihat = {};
+  const k = kunciNotifKaryawanTerlihat();
+  if(!k) return;
+  try{ notifKaryawanStokCupTerlihat = JSON.parse(localStorage.getItem(k)) || {}; }catch(e){ notifKaryawanStokCupTerlihat = {}; }
+}
+function simpanNotifKaryawanTerlihat(){
+  const k = kunciNotifKaryawanTerlihat();
+  if(!k) return;
+  try{ localStorage.setItem(k, JSON.stringify(notifKaryawanStokCupTerlihat)); }catch(e){ /* abaikan kalau storage penuh/diblokir */ }
+}
+
+function mulaiPantauNotifKaryawanStokCup(){
+  if(unsubNotifKaryawanStokCup) return; // sudah jalan, jangan pasang dobel
+  if(!SESI || !SESI.username) return;
+  muatNotifKaryawanTerlihat();
+  try{
+    const qy = query(collection(db, "permintaan_stok_cup"), where("pemohonUsername","==", SESI.username));
+    unsubNotifKaryawanStokCup = onSnapshot(qy, (snap)=>{
+      NOTIF_KARYAWAN_STOKCUP_LIST = snap.docs.map(d=>({id:d.id, ...d.data()}))
+        .sort((a,b)=>{ const ta=a.waktu&&a.waktu.toDate?a.waktu.toDate().getTime():0; const tb=b.waktu&&b.waktu.toDate?b.waktu.toDate().getTime():0; return tb-ta; });
+      perbaruiBadgeNotifKaryawanStokCup();
+      if(el('notifKaryawanPanelOverlay').classList.contains('show')) renderPanelNotifKaryawanStokCup();
+    }, (err)=> console.error('Gagal memantau status izin stok cup karyawan:', err));
+  }catch(e){ console.error('Gagal memulai pemantauan notif karyawan stok cup:', e); }
+}
+function hentikanPantauNotifKaryawanStokCup(){
+  if(unsubNotifKaryawanStokCup){ unsubNotifKaryawanStokCup(); unsubNotifKaryawanStokCup = null; }
+  NOTIF_KARYAWAN_STOKCUP_LIST = [];
+}
+
+// Badge merah nyala kalau ada permintaan yang statusnya "disetujui"/"ditolak"
+// TAPI belum pernah dilihat karyawan lewat panel ini (status "menunggu" tidak
+// perlu bikin badge nyala lagi karena karyawan sendiri yang barusan ngirim).
+function perbaruiBadgeNotifKaryawanStokCup(){
+  const belumDilihat = NOTIF_KARYAWAN_STOKCUP_LIST.filter(r => r.status !== 'menunggu' && !notifKaryawanStokCupTerlihat[r.id]).length;
+  const dot = el('notifKaryawanDot');
+  if(belumDilihat > 0){ dot.textContent = belumDilihat > 99 ? '99+' : String(belumDilihat); dot.classList.add('show'); }
+  else { dot.classList.remove('show'); }
+}
+
+el('notifKaryawanBtn').onclick = (e)=>{
+  e.stopPropagation();
+  if(!SESI || SESI.jabatan === 'Owner') return;
+  el('notifKaryawanPanelOverlay').classList.add('show');
+  renderPanelNotifKaryawanStokCup();
+  // Tandai semua yang kelihatan sebagai sudah dilihat, supaya badge merah
+  // hilang begitu karyawan membuka panel status miliknya.
+  NOTIF_KARYAWAN_STOKCUP_LIST.forEach(r=> notifKaryawanStokCupTerlihat[r.id] = true);
+  simpanNotifKaryawanTerlihat();
+  perbaruiBadgeNotifKaryawanStokCup();
+};
+el('notifKaryawanPanelClose').onclick = ()=> tutupOverlaySmooth(el('notifKaryawanPanelOverlay'));
+el('notifKaryawanPanelBackdrop').onclick = ()=> tutupOverlaySmooth(el('notifKaryawanPanelOverlay'));
+
+function renderPanelNotifKaryawanStokCup(){
+  if(NOTIF_KARYAWAN_STOKCUP_LIST.length === 0){
+    el('notifKaryawanPanelBody').innerHTML = '<div class="empty" style="padding:20px 8px;">Kamu belum pernah mengirim permintaan izin akses stok cup.</div>';
+    return;
+  }
+  el('notifKaryawanPanelBody').innerHTML = NOTIF_KARYAWAN_STOKCUP_LIST.map(r=>{
+    const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
+    const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
+    const statusLabel = r.status === 'menunggu' ? 'Menunggu Owner' : (r.status === 'disetujui' ? (r.dipakai ? 'Disetujui \u00b7 sudah dipakai' : 'Disetujui \u00b7 siap dipakai') : 'Ditolak Owner');
+    return `<div class="notifReqItem">
+      <div class="nriTop">
+        <div>
+          <div class="nriNama">Outlet ${r.outlet}</div>
+        </div>
+        <div class="nriWaktu">${waktuStr}</div>
+      </div>
+      <div class="nriStatus ${r.status}">${statusLabel}</div>
+    </div>`;
+  }).join('');
 }
 
 function stokDocId(outlet, kategori, nama, ukuran){
@@ -4544,13 +4655,13 @@ const OVERLAY_IDS_BACK = [
   'restockOverlay', 'stokOverlay', 'stokCupOverlay', 'akunFormOverlay', 'akunOverlay',
   'lapOverlay', 'grafikOverlay', 'adminOverlay2', 'calcOverlay', 'cartOverlay',
   'sheetOverlay', 'trxDetailOverlay', 'menuDropdownOverlay', 'logoutWarnOverlay',
-  'pengaturanOverlay', 'notifPanelOverlay'
+  'pengaturanOverlay', 'notifPanelOverlay', 'notifKaryawanPanelOverlay'
 ];
 let sedangProsesBack = false;
 
 function overlayTerbukaSaatIni(){
   // urutan terakhir di array = prioritas ditutup duluan (overlay yang biasanya "di atas")
-  const urutanPrioritas = ['notifPanelOverlay','pengaturanOverlay','restockOverlay','stokOverlay','stokCupOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','grafikOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
+  const urutanPrioritas = ['notifKaryawanPanelOverlay','notifPanelOverlay','pengaturanOverlay','restockOverlay','stokOverlay','stokCupOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','grafikOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
   for(const id of urutanPrioritas){
     const elm = document.getElementById(id);
     if(elm && elm.classList.contains('show')) return id;

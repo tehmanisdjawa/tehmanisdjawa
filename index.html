@@ -1386,6 +1386,30 @@ function normalisasiUkuran(namaUkuran, namaMenu){
 }
 const DEFAULT_ISI_ROLL = 50; // default 1 roll = 50 cup, bisa diubah manual saat restock
 
+// URL Web App Google Apps Script -- dipakai HANYA untuk mencatat riwayat
+// permintaan izin akses Stok Cup ke sheet "Riwayat Izin Stok Cup" sebagai LOG
+// cadangan (Firestore tetap sumber data utama & realtime, ini sekadar salinan
+// riwayat yang bisa dibuka Owner di luar app). Ganti URL ini kalau deployment
+// Apps Script-nya di-redeploy ulang (URL /exec baru).
+const GAS_URL_LOG_IZIN_STOKCUP = "https://script.google.com/macros/s/AKfycbzE_d3TTkBf5q87SJH6Jmh1N4NZH3NwrjEDWIerkzHs_XQFTiiK-E8UmizVeoxrtOWH/exec";
+
+// Kirim 1 baris log ke Google Sheets lewat Apps Script Web App di atas.
+// Sengaja "fire-and-forget" (tidak di-await pemanggilnya, tidak melempar
+// error ke atas) -- kalau internet lambat/Apps Script sedang gangguan,
+// JANGAN sampai memblokir atau menggagalkan alur utama aplikasi (kirim
+// permintaan, approve/tolak, restock) yang jalan di Firestore. Sheets di
+// sini murni cadangan riwayat, bukan sumber data yang diandalkan real-time.
+function catatKeSheetRiwayatIzinCup(payload){
+  try{
+    fetch(GAS_URL_LOG_IZIN_STOKCUP, {
+      method: 'POST',
+      mode: 'no-cors', // Apps Script Web App tidak selalu set header CORS -- no-cors cukup krn kita tidak butuh baca responsnya
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // hindari preflight OPTIONS yg sering bikin Apps Script 405
+      body: JSON.stringify({ action: 'logIzinStokCup', ...payload })
+    }).catch(e=> console.error('Gagal mencatat log izin stok cup ke Sheets:', e));
+  }catch(e){ console.error('Gagal mencatat log izin stok cup ke Sheets:', e); }
+}
+
 const el = id => document.getElementById(id);
 const rupiah = n => "Rp" + Number(n).toLocaleString('id-ID');
 const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -4078,6 +4102,10 @@ async function kirimPermintaanStokCup(){
       outlet: SESI.outlet, pemohonUsername: SESI.username, pemohonNama: SESI.namaTampilan,
       status: 'menunggu', dibacaOwner: false, dipakai: false, waktu: Timestamp.fromDate(new Date())
     });
+    catatKeSheetRiwayatIzinCup({
+      outlet: SESI.outlet, pemohonUsername: SESI.username, pemohonNama: SESI.namaTampilan,
+      status: 'Menunggu', keterangan: 'Permintaan izin restock stok cup dikirim'
+    });
     showToast("Permintaan izin dikirim ke Owner. Tunggu persetujuan ya.");
     await muatKelolaStokCup();
   }catch(e){ showToast("Gagal mengirim permintaan. Cek koneksi.", false); console.error('Gagal kirim permintaan stok cup:', e); }
@@ -4164,6 +4192,10 @@ function bukaFormRestockCup(ukuran){
       // minta izin baru ke Owner.
       if(!isOwner && stokCupIzinAktif){
         try{ await updateDoc(doc(db, "permintaan_stok_cup", stokCupIzinAktif.id), { dipakai: true }); }catch(e){ console.error('Gagal menandai izin stok cup terpakai:', e); }
+        catatKeSheetRiwayatIzinCup({
+          outlet: STOKCUP_OUTLET_AKTIF, pemohonUsername: SESI.username, pemohonNama: SESI.namaTampilan,
+          status: 'Dipakai', keterangan: `Izin dipakai untuk restock ${ukuran} (+${catatanSatuan}, stok jadi ${stokSesudah} cup)`
+        });
         stokCupIzinAktif = null;
       }
       showToast(`Restock cup berhasil \u2014 +${catatanSatuan}, stok sekarang ${stokSesudah} cup`);
@@ -4282,6 +4314,15 @@ function renderPanelNotifStokCup(){
 async function putuskanPermintaanStokCup(id, statusBaru){
   try{
     await updateDoc(doc(db, "permintaan_stok_cup", id), { status: statusBaru, dibacaOwner: true });
+    const r = NOTIF_STOKCUP_LIST.find(x => x.id === id);
+    if(r){
+      catatKeSheetRiwayatIzinCup({
+        outlet: r.outlet, pemohonUsername: r.pemohonUsername, pemohonNama: r.pemohonNama,
+        status: statusBaru === 'disetujui' ? 'Disetujui' : 'Ditolak',
+        keterangan: (statusBaru === 'disetujui' ? 'Owner menyetujui' : 'Owner menolak') + ' permintaan restock stok cup',
+        diprosesOleh: SESI ? SESI.namaTampilan : ''
+      });
+    }
     showToast(statusBaru === 'disetujui' ? "Permintaan disetujui" : "Permintaan ditolak");
   }catch(e){ showToast("Gagal memproses permintaan. Cek koneksi.", false); console.error('Gagal memutuskan permintaan stok cup:', e); }
 }

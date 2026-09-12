@@ -4228,11 +4228,22 @@ function dorongStateOverlay(){
 function pasangPelacakOverlay(id){
   const elm = document.getElementById(id);
   if(!elm) return;
-  // pantau setiap kali class "show" ditambahkan ke overlay ini
+  // Simpan status "show" sebelumnya supaya kita hanya push state saat
+  // TERJADI TRANSISI dari tertutup -> terbuka (edge), bukan setiap kali
+  // MutationObserver kebetulan terpanggil (misalnya gara-gara class lain
+  // seperti "closing" ikut berubah). Tanpa penjagaan ini, overlay yang
+  // toggle class-nya berkali-kali dalam waktu singkat (mis. dipicu observer
+  // animasi keluar di bagian akhir file) bisa memicu history.pushState()
+  // berulang-ulang dalam sekejap -> Chrome mendeteksinya sebagai spam
+  // navigasi dan MENAHAN/THROTTLE seluruh navigasi halaman, yang membuat
+  // app terasa freeze total saat tombol apa pun ditekan.
+  let sedangShowSebelumnya = elm.classList.contains('show');
   const observer = new MutationObserver(()=>{
-    if(elm.classList.contains('show')){
+    const sedangShowSekarang = elm.classList.contains('show');
+    if(sedangShowSekarang && !sedangShowSebelumnya){
       dorongStateOverlay();
     }
+    sedangShowSebelumnya = sedangShowSekarang;
   });
   observer.observe(elm, { attributes:true, attributeFilter:['class'] });
 }

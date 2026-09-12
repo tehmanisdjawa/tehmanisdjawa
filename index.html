@@ -251,6 +251,20 @@
     background:var(--pine-800); color:#f3ede0; border-radius:999px; font-size:11px; font-weight:700;
     display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(12,31,22,.25);
   }
+  /* Ikon pensil/hapus di kartu menu -- hanya tampil saat Mode Edit Menu aktif (Owner). */
+  .item.mode-edit-aktif{cursor:default;}
+  .item.mode-edit-aktif:active{transform:none;}
+  .item .editQuickBtns{
+    position:absolute; top:8px; right:8px; display:flex; gap:5px; z-index:2;
+  }
+  .item .editQuickBtns button{
+    width:26px; height:26px; border-radius:8px; border:1px solid rgba(255,255,255,.5);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;
+    box-shadow:0 2px 6px rgba(12,31,22,.3);
+  }
+  .item .editQuickBtns button svg{width:13px; height:13px;}
+  .item .editQuickBtns .editQuickPensil{background:var(--gold); color:var(--pine-950);}
+  .item .editQuickBtns .editQuickHapus{background:var(--merah); color:#fff;}
 
   .empty{padding:60px 20px; text-align:center; color:var(--muted); font-size:14px;}
   .loadingBox{padding:70px 20px; text-align:center; color:var(--muted); font-size:13.5px;}
@@ -599,6 +613,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         <span>Kelola Menu</span>
       </button>
+      <button class="menuDropItem" id="modeEditMenuBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>
+        <span id="modeEditMenuLabel">Mode Edit Menu: Off</span>
+      </button>
       <button class="menuDropItem" id="stokBtn" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8V21H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
         <span>Kelola Stok</span>
@@ -803,6 +821,7 @@ const db = getFirestore(fbApp);
 let MENU = [];              // [{id, kategori, nama, varian:[{ukuran, harga}]}]
 let activeCat = "Semua";
 let cart = {};
+let modeEditMenuAktif = false; // Owner: mode edit cepat menu langsung dari layar utama
 let payMethod = "Cash";
 let SESI = null;             // { token, jabatan, namaTampilan, username, outlet }
 let KARYAWAN_LIST = [];
@@ -1082,6 +1101,7 @@ function terapkanTampilanJabatan(){
   const isOwner = SESI && SESI.jabatan === 'Owner';
   el('laporanBtn').style.display = SESI ? 'flex' : 'none';
   el('adminBtn').style.display = isOwner ? 'flex' : 'none';
+  el('modeEditMenuBtn').style.display = isOwner ? 'flex' : 'none';
   el('stokBtn').style.display = isOwner ? 'flex' : 'none';
   el('akunBtn').style.display = isOwner ? 'flex' : 'none';
   el('pengaturanBtn').style.display = SESI ? 'flex' : 'none';
@@ -1132,9 +1152,18 @@ function mulaiSemuaSetelahLogin(){
    ===================================================================== */
 el('menuBtn').onclick = (e)=>{ e.stopPropagation(); el('menuDropdownOverlay').classList.add('show'); };
 el('menuDropdownOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'menuDropdownOverlay') el('menuDropdownOverlay').classList.remove('show'); });
-['calcBtn','laporanBtn','adminBtn','stokBtn','akunBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
+['calcBtn','laporanBtn','adminBtn','modeEditMenuBtn','stokBtn','akunBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
   el(id).addEventListener('click', ()=> el('menuDropdownOverlay').classList.remove('show'));
 });
+
+// Toggle Mode Edit Menu: saat aktif, kartu menu di layar utama menampilkan ikon
+// pensil (edit langsung) dan ikon hapus, menggantikan badge jumlah keranjang.
+el('modeEditMenuBtn').onclick = ()=>{
+  modeEditMenuAktif = !modeEditMenuAktif;
+  el('modeEditMenuLabel').textContent = 'Mode Edit Menu: ' + (modeEditMenuAktif ? 'On' : 'Off');
+  renderMenu();
+  showToast(modeEditMenuAktif ? "Mode Edit Menu aktif \u2014 pencet ikon pensil di kartu menu" : "Mode Edit Menu dimatikan");
+};
 
 /* =====================================================================
    KALKULATOR (parser manual, anti-error)
@@ -1343,6 +1372,8 @@ function itemCartQty(ci, ii){
 function renderMenu(){
   if(MENU.length === 0){ el('menuArea').innerHTML = '<div class="empty">Belum ada menu. Tambahkan lewat tombol Kelola Menu.</div>'; return; }
   const q = el('searchBox').value.trim().toLowerCase();
+  const isOwner = SESI && SESI.jabatan === 'Owner';
+  const editAktif = isOwner && modeEditMenuAktif;
   let html = '';
   MENU.forEach((cat, ci)=>{
     if(activeCat !== "Semua" && cat.kategori !== activeCat) return;
@@ -1355,8 +1386,13 @@ function renderMenu(){
       const priceLabel = it.varian.length>1
         ? `Rp${Math.min(...it.varian.map(v=>v.harga||0)).toLocaleString('id-ID')}+`
         : `Rp${(it.varian[0]?.harga||0).toLocaleString('id-ID')}`;
-      html += `<div class="item ${qty>0?'has-qty':''} ${semuaHabis?'is-habis':''}" data-ci="${ci}" data-ii="${ii}">
-        ${qty>0 ? `<div class="qtyDot">${qty}</div>` : ''}
+      html += `<div class="item ${qty>0?'has-qty':''} ${semuaHabis?'is-habis':''} ${editAktif?'mode-edit-aktif':''}" data-ci="${ci}" data-ii="${ii}">
+        ${editAktif ? `
+          <div class="editQuickBtns">
+            <button class="editQuickPensil" data-act="editquick" title="Edit menu ini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></button>
+            <button class="editQuickHapus" data-act="hapusquick" title="Hapus menu ini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button>
+          </div>
+        ` : (qty>0 ? `<div class="qtyDot">${qty}</div>` : '')}
         <div class="name">${it.nama}</div>
         ${semuaHabis ? `<div class="habisTag">Habis</div>` : (it.varian.length>1 ? `<div class="varCount">${it.varian.length} pilihan</div>` : '')}
         <div class="price">${priceLabel}</div>
@@ -1365,7 +1401,27 @@ function renderMenu(){
     html += `</div>`;
   });
   el('menuArea').innerHTML = html || '<div class="empty">Menu tidak ditemukan.</div>';
-  el('menuArea').querySelectorAll('.item').forEach(card=>{ card.onclick = ()=> openVariantSheet(+card.dataset.ci, +card.dataset.ii); });
+  el('menuArea').querySelectorAll('.item').forEach(card=>{
+    const ci = +card.dataset.ci, ii = +card.dataset.ii;
+    if(editAktif){
+      // Saat mode edit aktif, klik badan kartu tidak membuka pilih varian (biar tidak
+      // ketuker sama alur belanja) -- hanya ikon pensil/hapus yang aktif.
+      const btnEdit = card.querySelector('[data-act="editquick"]');
+      const btnHapus = card.querySelector('[data-act="hapusquick"]');
+      if(btnEdit) btnEdit.onclick = (e)=>{ e.stopPropagation(); bukaEditMenuLangsung(ci, ii); };
+      if(btnHapus) btnHapus.onclick = (e)=>{ e.stopPropagation(); confirmDelete(ci, ii); };
+    } else {
+      card.onclick = ()=> openVariantSheet(ci, ii);
+    }
+  });
+}
+
+// Buka form edit menu LANGSUNG dari layar utama (ikon pensil), pakai form yang sama
+// dengan Kelola Menu (openAdminForm), tapi ditampilkan lewat overlay adminOverlay2
+// dan begitu selesai/batal, overlay ditutup balik ke layar utama (bukan ke daftar Kelola Menu).
+function bukaEditMenuLangsung(ci, ii){
+  el('adminOverlay2').classList.add('show');
+  openAdminForm({ci, ii}, true);
 }
 function openVariantSheet(ci, ii){
   const cat = MENU[ci]; const item = cat.items[ii];
@@ -1540,7 +1596,7 @@ async function toggleHabisItem(ci, ii){
   }catch(e){ showToast("Gagal mengubah status. Cek koneksi.", false); }
 }
 
-function openAdminForm(target){
+function openAdminForm(target, dariLuar){
   const cat = target ? MENU[target.ci] : null;
   const item = target ? cat.items[target.ii] : null;
   const kategoriVal = item ? cat.kategori : '';
@@ -1548,14 +1604,17 @@ function openAdminForm(target){
   // varianList sekarang: { nama, harga, tambahan }. nama bisa dari UKURAN_OZ ATAU hasil ketik bebas.
   const varianList = item ? item.varian.map(v=>({nama:normalisasiUkuran(v.nama, item.nama), harga:v.harga, tambahan:v.tambahan||''})) : [{nama:'', harga:0, tambahan:''}];
 
-  let html = `<button class="backLink" id="backToList"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>Kembali</button>
+  let html = `<button class="backLink" id="backToList"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>${dariLuar ? 'Tutup' : 'Kembali'}</button>
     <div class="formField"><label>Kategori</label><input id="fKategori" type="text" value="${kategoriVal}" placeholder="Ketik kategori sendiri, contoh: Es Teh Manis"><div class="hint">Ketik bebas \u2014 boleh kategori baru atau yang sudah ada.</div></div>
     <div class="formField"><label>Nama Menu</label><input id="fNama" type="text" value="${namaVal}" placeholder="Ketik nama menu sendiri, contoh: Es Teh Lemon"><div class="hint">Ketik bebas sesuai nama menu yang kamu mau.</div></div>
     <div class="formField"><label>Ukuran, Harga & Tambahan</label><div id="varList"></div><button class="addVarBtn" id="addVarBtn">+ Tambah ukuran</button></div>
     <button class="saveFormBtn" id="saveFormBtn">${target ? 'Simpan Perubahan' : 'Tambah Menu'}</button>`;
 
   el('adminBody').innerHTML = html;
-  el('backToList').onclick = ()=> renderAdminList();
+  el('backToList').onclick = ()=>{
+    if(dariLuar){ el('adminOverlay2').classList.remove('show'); }
+    else { renderAdminList(); }
+  };
 
   const NILAI_KETIK_SENDIRI = "__custom__";
 
@@ -1622,7 +1681,8 @@ function openAdminForm(target){
         await addDoc(collection(db, "menu"), payload);
         showToast("Menu ditambahkan");
       }
-      renderAdminList();
+      if(dariLuar){ el('adminOverlay2').classList.remove('show'); }
+      else { renderAdminList(); }
     }catch(e){
       showToast("Gagal menyimpan. Cek koneksi.", false);
       btn.disabled = false; btn.textContent = target?'Simpan Perubahan':'Tambah Menu';

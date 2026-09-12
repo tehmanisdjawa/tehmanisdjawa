@@ -1267,9 +1267,6 @@ import {
   deleteDoc, query, where, orderBy, onSnapshot, runTransaction, serverTimestamp,
   Timestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-import {
-  getStorage, ref as storageRef, uploadString, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-storage.js";
 
 // ======= GANTI BAGIAN INI DENGAN CONFIG FIREBASE KAMU SENDIRI =======
 const firebaseConfig = {
@@ -1284,7 +1281,6 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
-const fbStorage = getStorage(fbApp);
 
 /* =====================================================================
    STATE GLOBAL
@@ -3018,55 +3014,21 @@ async function bagikanLaporanWA(data){
   const teks = susunTeksLaporan(data);
   window.open("https://wa.me/?text=" + encodeURIComponent(teks), '_blank');
 }
-async function unduhLaporan(data){
+function unduhLaporan(data){
   const teks = susunTeksLaporan(data);
   const fileName = `Laporan-EsTehManisDjawa-${data.tanggal}.txt`;
-
-  // STRATEGI BARU (setelah blob-download & data:URI terbukti tidak jalan di WebView
-  // Android APK Appilix): upload teks laporan ke FIREBASE STORAGE dulu, lalu buka
-  // URL publik hasil upload itu lewat window.open(). Karena ini URL http(s) BENERAN
-  // (bukan blob:/data: lokal), WebView meneruskannya sebagai navigasi biasa/Intent
-  // Android, yang jauh lebih konsisten ditangani dibanding blob atau data URI.
-  //
-  // Tab baru dibuka LEBIH DULU secara sinkron (sebelum upload async selesai) supaya
-  // tidak diblokir popup-blocker WebView -- popup blocker biasanya cuma mengizinkan
-  // window.open() yang dipanggil LANGSUNG dari klik pengguna, bukan yang dipanggil
-  // belakangan setelah proses async (seperti upload) selesai.
-  const tabBaru = window.open('', '_blank');
-  if(tabBaru){
-    try{
-      tabBaru.document.write(
-        '<body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#0c1f16;color:#f3ede0;font-family:sans-serif;">'+
-        '<div>Menyiapkan laporan\u2026</div></body>'
-      );
-    }catch(e){ /* abaikan kalau gagal, tidak fatal */ }
-  }
-
-  try{
-    const path = `laporan/${fileName}`;
-    const ref = storageRef(fbStorage, path);
-    await uploadString(ref, teks, 'raw', { contentType: 'text/plain; charset=utf-8' });
-    const publicUrl = await getDownloadURL(ref);
-    if(tabBaru){ tabBaru.location.href = publicUrl; }
-    else { window.open(publicUrl, '_blank'); }
-    tampilkanPopupSuksesUnduh(fileName);
-  }catch(e){
-    console.error('Gagal upload laporan ke Storage, coba fallback blob:', e);
-    if(tabBaru) tabBaru.close();
-    // Fallback terakhir: cara blob lama. Tidak dijamin tersimpan di semua WebView,
-    // tapi lebih baik daripada tidak ada jalan sama sekali kalau Storage gagal
-    // (misal sedang offline atau Storage belum diaktifkan di project Firebase).
-    try{
-      const blob = new Blob([teks], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = fileName;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(()=> URL.revokeObjectURL(url), 4000);
-      tampilkanPopupSuksesUnduh(fileName);
-    }catch(e2){
-      showToast("Gagal menyiapkan laporan. Cek koneksi, atau gunakan tombol Bagikan WA.", false);
-    }
-  }
+  // CATATAN: sempat dicoba upload ke Firebase Storage supaya dapat URL http(s) asli
+  // (biar WebView Android lebih konsisten menanganinya), tapi Storage butuh paket
+  // berbayar (Blaze) yang project ini tidak pakai. Jadi dipakai cara Blob +
+  // <a download> standar -- ini jalan normal di browser desktop/Chrome Android
+  // biasa, tapi TIDAK terjamin tersimpan di semua WebView APK (lihat tombol
+  // "Bagikan WA" sebagai jalur cadangan kalau file tidak muncul di folder Download).
+  const blob = new Blob([teks], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = fileName;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=> URL.revokeObjectURL(url), 4000);
+  tampilkanPopupSuksesUnduh(fileName);
 }
 
 let dlSuccessHideTimer = null;

@@ -207,8 +207,8 @@
   .notifReqItem .nriStatus.ditolak{background:var(--merah-light); color:var(--merah);}
   .notifReqItem .nriBtns{display:flex; gap:8px; margin-top:10px;}
   .notifReqItem .nriBtns button{flex:1; padding:8px; border-radius:9px; border:none; font-size:12px; font-weight:700; cursor:pointer;}
-  .notifReqItem .nriApprove{background:var(--pine-900); color:#f3ede0;}
-  .notifReqItem .nriTolak{background:var(--merah-light); color:var(--merah);}
+  .notifReqItem .nriApprove, .notifReqItem .permCupApprove{background:var(--pine-900); color:#f3ede0;}
+  .notifReqItem .nriTolak, .notifReqItem .permCupTolak{background:var(--merah-light); color:var(--merah);}
 
   .menuDropdownOverlay{position:fixed; inset:0; z-index:65; display:none;}
   .menuDropdownOverlay.show{display:block;}
@@ -1026,10 +1026,6 @@
         <div class="userChip" id="userChip"></div>
       </div>
       <div class="headBtns" style="position:relative;">
-        <button class="iconBtn" id="notifBtn" aria-label="Notifikasi" title="Notifikasi" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-          <span class="notifDot" id="notifDot">0</span>
-        </button>
         <button class="iconBtn" id="notifKaryawanBtn" aria-label="Status Izin Stok Cup" title="Status Izin Stok Cup" style="display:none;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
           <span class="notifDot" id="notifKaryawanDot">0</span>
@@ -1251,14 +1247,6 @@
   <div class="adminSheet">
     <div class="adminHead"><h2>Kelola Stok Cup</h2><button id="stokCupClose">✕</button></div>
     <div class="adminBody" id="stokCupBody"></div>
-  </div>
-</div>
-
-<div class="notifPanelOverlay" id="notifPanelOverlay">
-  <div class="notifPanelBackdrop" id="notifPanelBackdrop"></div>
-  <div class="notifPanel">
-    <div class="notifPanelHead"><span>Permintaan Akses Stok Cup</span><button id="notifPanelClose">✕</button></div>
-    <div class="notifPanelBody" id="notifPanelBody"></div>
   </div>
 </div>
 
@@ -1731,10 +1719,8 @@ function terapkanTampilanJabatan(){
   el('stokCupBtn').style.display = SESI ? 'flex' : 'none';
   el('akunBtn').style.display = isOwner ? 'flex' : 'none';
   el('pengaturanBtn').style.display = SESI ? 'flex' : 'none';
-  el('notifBtn').style.display = isOwner ? 'flex' : 'none';
-  if(isOwner) mulaiPantauNotifPermintaanStokCup(); else hentikanPantauNotifPermintaanStokCup();
   // Tombol status izin milik karyawan sendiri -- Owner tidak butuh ini karena
-  // sudah punya panel approve/tolak lewat notifBtn di atas.
+  // sudah bisa lihat & approve/tolak permintaan langsung dari dalam Kelola Stok Cup.
   el('notifKaryawanBtn').style.display = (SESI && !isOwner && SESI.outlet) ? 'flex' : 'none';
   if(SESI && !isOwner && SESI.outlet) mulaiPantauNotifKaryawanStokCup(); else hentikanPantauNotifKaryawanStokCup();
   el('userChip').textContent = SESI ? (SESI.namaTampilan + ' \u00b7 ' + SESI.jabatan + (SESI.outlet ? ' \u00b7 ' + SESI.outlet : '')) : '';
@@ -3955,6 +3941,7 @@ el('stokClose').onclick = ()=> tutupOverlaySmooth(el('stokOverlay'));
    ===================================================================== */
 let STOKCUP_OUTLET_AKTIF = '';
 let STOKCUP_LIST = [];
+let PERMINTAAN_CUP_OWNER_LIST = []; // daftar permintaan "menunggu" utk outlet aktif -- dimuat khusus Owner
 let stokCupIzinAktif = null; // dokumen izin (permintaan_stok_cup) yang disetujui & belum dipakai, milik karyawan yang login
 
 el('stokCupBtn').onclick = async ()=>{
@@ -4021,11 +4008,26 @@ async function muatKelolaStokCup(){
   try{
     const isOwner = SESI && SESI.jabatan === 'Owner';
     if(!isOwner) await cekIzinStokCupKaryawan();
+    else await muatPermintaanCupOwner();
     const qy = query(collection(db, "stok_cup_ukuran"), where("outlet","==", STOKCUP_OUTLET_AKTIF));
     const snap = await getDocs(qy);
     STOKCUP_LIST = snap.docs.map(d=>({id:d.id, ...d.data()}));
     renderKelolaStokCup();
   }catch(e){ el('stokCupBody').innerHTML = `<div class="empty">Gagal memuat stok cup.<br><span style="font-size:11px; color:var(--muted-soft);">${e && e.message ? e.message : e}</span></div>`; console.error('Gagal memuat stok cup:', e); }
+}
+
+// Muat permintaan izin restock berstatus "menunggu" khusus utk outlet yang
+// sedang dibuka Owner -- ditampilkan di atas daftar stok cup, gantinya
+// popup notifikasi bell yang sudah dihapus.
+async function muatPermintaanCupOwner(){
+  PERMINTAAN_CUP_OWNER_LIST = [];
+  try{
+    const qy = query(collection(db, "permintaan_stok_cup"),
+      where("outlet","==", STOKCUP_OUTLET_AKTIF), where("status","==","menunggu"));
+    const snap = await getDocs(qy);
+    PERMINTAAN_CUP_OWNER_LIST = snap.docs.map(d=>({id:d.id, ...d.data()}))
+      .sort((a,b)=>{ const ta=a.waktu&&a.waktu.toDate?a.waktu.toDate().getTime():0; const tb=b.waktu&&b.waktu.toDate?b.waktu.toDate().getTime():0; return ta-tb; });
+  }catch(e){ console.error('Gagal memuat permintaan izin stok cup:', e); }
 }
 function cariStokCup(ukuran){
   return STOKCUP_LIST.find(s => s.ukuran===ukuran) || null;
@@ -4045,6 +4047,29 @@ function renderKelolaStokCup(){
   }
 
   let html = `<div class="empty" style="padding:6px 4px 16px; text-align:left; font-size:12px;">${keteranganAkses}</div>`;
+
+  // Daftar permintaan izin "menunggu" utk outlet ini -- cuma Owner yang lihat,
+  // langsung ada tombol Setujui/Tolak di sini (gantinya popup notifikasi lama).
+  if(isOwner && PERMINTAAN_CUP_OWNER_LIST.length){
+    html += `<div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin:4px 0 8px;">Permintaan Izin Menunggu (${PERMINTAAN_CUP_OWNER_LIST.length})</div>`;
+    html += PERMINTAAN_CUP_OWNER_LIST.map(r=>{
+      const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
+      const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
+      return `<div class="notifReqItem" data-id="${r.id}" style="margin-bottom:10px;">
+        <div class="nriTop">
+          <div>
+            <div class="nriNama">${r.pemohonNama || r.pemohonUsername}</div>
+            <div class="nriOutlet">Outlet ${r.outlet}</div>
+          </div>
+          <div class="nriWaktu">${waktuStr}</div>
+        </div>
+        <div class="nriBtns">
+          <button class="permCupApprove">Setujui</button>
+          <button class="permCupTolak">Tolak</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
 
   if(isOwner){
     html += `<button class="addBtn" id="riwayatRestockCupBtn" style="border-style:solid; background:var(--pine-50);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>Lihat Riwayat Restock Cup</button>`;
@@ -4081,6 +4106,16 @@ function renderKelolaStokCup(){
   if(isOwner) el('riwayatRestockCupBtn').onclick = ()=> bukaRiwayatRestockCup();
   const mintaIzinBtn = document.getElementById('mintaIzinStokCupBtn');
   if(mintaIzinBtn) mintaIzinBtn.onclick = ()=> kirimPermintaanStokCup();
+
+  if(isOwner){
+    el('stokCupBody').querySelectorAll('.notifReqItem').forEach(itemEl=>{
+      const id = itemEl.dataset.id;
+      const approveBtn = itemEl.querySelector('.permCupApprove');
+      const tolakBtn = itemEl.querySelector('.permCupTolak');
+      if(approveBtn) approveBtn.onclick = ()=> putuskanPermintaanStokCup(id, 'disetujui');
+      if(tolakBtn) tolakBtn.onclick = ()=> putuskanPermintaanStokCup(id, 'ditolak');
+    });
+  }
 
   el('stokCupBody').querySelectorAll('.cupUkuranItem').forEach(rowEl=>{
     const ukuran = rowEl.dataset.ukuran;
@@ -4247,92 +4282,16 @@ async function bukaRiwayatRestockCup(){
 }
 
 /* =====================================================================
-   NOTIFIKASI PERMINTAAN IZIN AKSES STOK CUP — khusus Owner.
-   Bell di topbar (kiri dari tombol menu/garis-3) menampilkan angka merah
-   sebanyak permintaan berstatus "menunggu" yang BELUM dibaca Owner
-   (dibacaOwner=false), dipantau realtime lewat onSnapshot supaya badge
-   langsung update begitu ada karyawan kirim permintaan baru, dari
-   outlet manapun.
+   PERSETUJUAN IZIN AKSES STOK CUP -- khusus Owner, dilakukan langsung di
+   dalam Kelola Stok Cup (bukan lewat popup notifikasi terpisah lagi).
+   Owner buka Kelola Stok Cup > outlet yang bersangkutan, lalu daftar
+   permintaan "menunggu" untuk outlet itu muncul di bagian atas beserta
+   tombol Setujui/Tolak (lihat renderKelolaStokCup & muatPermintaanCupOwner).
    ===================================================================== */
-let unsubNotifStokCup = null;
-let NOTIF_STOKCUP_LIST = [];
-
-function mulaiPantauNotifPermintaanStokCup(){
-  if(unsubNotifStokCup) return; // sudah jalan, jangan pasang dobel
-  try{
-    unsubNotifStokCup = onSnapshot(collection(db, "permintaan_stok_cup"), (snap)=>{
-      NOTIF_STOKCUP_LIST = snap.docs.map(d=>({id:d.id, ...d.data()}))
-        .sort((a,b)=>{ const ta=a.waktu&&a.waktu.toDate?a.waktu.toDate().getTime():0; const tb=b.waktu&&b.waktu.toDate?b.waktu.toDate().getTime():0; return tb-ta; });
-      perbaruiBadgeNotifStokCup();
-      if(el('notifPanelOverlay').classList.contains('show')) renderPanelNotifStokCup();
-    }, (err)=> console.error('Gagal memantau permintaan stok cup:', err));
-  }catch(e){ console.error('Gagal memulai pemantauan notif stok cup:', e); }
-}
-function hentikanPantauNotifPermintaanStokCup(){
-  if(unsubNotifStokCup){ unsubNotifStokCup(); unsubNotifStokCup = null; }
-  NOTIF_STOKCUP_LIST = [];
-}
-
-function perbaruiBadgeNotifStokCup(){
-  const belumDibaca = NOTIF_STOKCUP_LIST.filter(r => r.status === 'menunggu' && !r.dibacaOwner).length;
-  const dot = el('notifDot');
-  if(belumDibaca > 0){ dot.textContent = belumDibaca > 99 ? '99+' : String(belumDibaca); dot.classList.add('show'); }
-  else { dot.classList.remove('show'); }
-}
-
-el('notifBtn').onclick = async (e)=>{
-  e.stopPropagation();
-  if(!SESI || SESI.jabatan !== 'Owner') return;
-  el('notifPanelOverlay').classList.add('show');
-  renderPanelNotifStokCup();
-  // Tandai semua permintaan "menunggu" yang kelihatan sebagai sudah dibaca,
-  // supaya badge merah hilang begitu Owner membuka panel notifikasinya.
-  const belumDibaca = NOTIF_STOKCUP_LIST.filter(r => r.status === 'menunggu' && !r.dibacaOwner);
-  for(const r of belumDibaca){
-    try{ await updateDoc(doc(db, "permintaan_stok_cup", r.id), { dibacaOwner: true }); }catch(err){ console.error('Gagal tandai notif dibaca:', err); }
-  }
-};
-el('notifPanelClose').onclick = ()=> tutupOverlaySmooth(el('notifPanelOverlay'));
-el('notifPanelBackdrop').onclick = ()=> tutupOverlaySmooth(el('notifPanelOverlay'));
-
-function renderPanelNotifStokCup(){
-  if(NOTIF_STOKCUP_LIST.length === 0){
-    el('notifPanelBody').innerHTML = '<div class="empty" style="padding:20px 8px;">Belum ada permintaan akses stok cup.</div>';
-    return;
-  }
-  el('notifPanelBody').innerHTML = NOTIF_STOKCUP_LIST.map(r=>{
-    const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
-    const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
-    const statusLabel = r.status === 'menunggu' ? 'Menunggu' : (r.status === 'disetujui' ? (r.dipakai ? 'Disetujui \u00b7 terpakai' : 'Disetujui \u00b7 aktif') : 'Ditolak');
-    return `<div class="notifReqItem" data-id="${r.id}">
-      <div class="nriTop">
-        <div>
-          <div class="nriNama">${r.pemohonNama || r.pemohonUsername}</div>
-          <div class="nriOutlet">Outlet ${r.outlet}</div>
-        </div>
-        <div class="nriWaktu">${waktuStr}</div>
-      </div>
-      <div class="nriStatus ${r.status}">${statusLabel}</div>
-      ${r.status === 'menunggu' ? `<div class="nriBtns">
-        <button class="nriApprove">Setujui</button>
-        <button class="nriTolak">Tolak</button>
-      </div>` : ''}
-    </div>`;
-  }).join('');
-
-  el('notifPanelBody').querySelectorAll('.notifReqItem').forEach(itemEl=>{
-    const id = itemEl.dataset.id;
-    const approveBtn = itemEl.querySelector('.nriApprove');
-    const tolakBtn = itemEl.querySelector('.nriTolak');
-    if(approveBtn) approveBtn.onclick = ()=> putuskanPermintaanStokCup(id, 'disetujui');
-    if(tolakBtn) tolakBtn.onclick = ()=> putuskanPermintaanStokCup(id, 'ditolak');
-  });
-}
-
 async function putuskanPermintaanStokCup(id, statusBaru){
   try{
+    const r = PERMINTAAN_CUP_OWNER_LIST.find(x => x.id === id);
     await updateDoc(doc(db, "permintaan_stok_cup", id), { status: statusBaru, dibacaOwner: true });
-    const r = NOTIF_STOKCUP_LIST.find(x => x.id === id);
     if(r){
       catatKeSheetRiwayatIzinCup({
         outlet: r.outlet, pemohonUsername: r.pemohonUsername, pemohonNama: r.pemohonNama,
@@ -4342,6 +4301,7 @@ async function putuskanPermintaanStokCup(id, statusBaru){
       });
     }
     showToast(statusBaru === 'disetujui' ? "Permintaan disetujui" : "Permintaan ditolak");
+    await muatKelolaStokCup();
   }catch(e){ showToast("Gagal memproses permintaan. Cek koneksi.", false); console.error('Gagal memutuskan permintaan stok cup:', e); }
 }
 
@@ -4655,13 +4615,13 @@ const OVERLAY_IDS_BACK = [
   'restockOverlay', 'stokOverlay', 'stokCupOverlay', 'akunFormOverlay', 'akunOverlay',
   'lapOverlay', 'grafikOverlay', 'adminOverlay2', 'calcOverlay', 'cartOverlay',
   'sheetOverlay', 'trxDetailOverlay', 'menuDropdownOverlay', 'logoutWarnOverlay',
-  'pengaturanOverlay', 'notifPanelOverlay', 'notifKaryawanPanelOverlay'
+  'pengaturanOverlay', 'notifKaryawanPanelOverlay'
 ];
 let sedangProsesBack = false;
 
 function overlayTerbukaSaatIni(){
   // urutan terakhir di array = prioritas ditutup duluan (overlay yang biasanya "di atas")
-  const urutanPrioritas = ['notifKaryawanPanelOverlay','notifPanelOverlay','pengaturanOverlay','restockOverlay','stokOverlay','stokCupOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','grafikOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
+  const urutanPrioritas = ['notifKaryawanPanelOverlay','pengaturanOverlay','restockOverlay','stokOverlay','stokCupOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','grafikOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
   for(const id of urutanPrioritas){
     const elm = document.getElementById(id);
     if(elm && elm.classList.contains('show')) return id;

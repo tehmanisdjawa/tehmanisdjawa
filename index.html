@@ -477,6 +477,27 @@
   .cupUkuranItem .cuiName{font-family:"Fraunces",serif; font-size:15px; font-weight:600; color:var(--pine-950);}
   .cupUkuranItem .cuiStokBadge{font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; background:var(--pine-50); color:var(--pine-700);}
   .cupUkuranItem .cuiStokBadge.habis{background:var(--merah-light); color:var(--merah);}
+  .cupUkuranItem .cuiStokBadge.menipis{background:var(--gold-light); color:var(--gold-dark);}
+  .aiStokBadge{font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; background:var(--pine-50); color:var(--pine-700); white-space:nowrap;}
+  .aiStokBadge.habis{background:var(--merah-light); color:var(--merah);}
+  .aiStokBadge.menipis{background:var(--gold-light); color:var(--gold-dark);}
+
+  /* ============ GRAFIK PENJUALAN ============ */
+  .grafikRingkasan{display:flex; gap:10px; flex-wrap:wrap; padding:2px 4px 16px;}
+  .grafikStat{flex:1; min-width:120px; background:var(--pine-50); border-radius:14px; padding:12px 14px;}
+  .grafikStat .gsLabel{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-weight:700;}
+  .grafikStat .gsVal{font-family:"Fraunces",serif; font-size:18px; font-weight:600; color:var(--pine-800); margin-top:3px;}
+  .grafikChartWrap{background:var(--card); border:1px solid var(--line-soft); border-radius:16px; padding:14px 10px 8px; margin:0 4px 16px;}
+  .grafikChartWrap svg{width:100%; height:auto; display:block; overflow:visible;}
+  .grafikChartWrap .gLine{fill:none; stroke:var(--pine-600); stroke-width:2.2; stroke-linejoin:round; stroke-linecap:round;}
+  .grafikChartWrap .gArea{fill:url(#grafikAreaFill); opacity:.5;}
+  .grafikChartWrap .gDot{fill:var(--pine-700); stroke:var(--card); stroke-width:1.6;}
+  .grafikChartWrap .gDot:hover, .grafikChartWrap .gDot.aktif{fill:var(--gold-dark); r:5;}
+  .grafikChartWrap .gAxisLabel{font-size:9.5px; fill:var(--muted); font-family:"Inter",sans-serif;}
+  .grafikChartWrap .gGrid{stroke:var(--line-soft); stroke-width:1;}
+  .grafikTooltip{position:absolute; pointer-events:none; background:var(--pine-950); color:#f3ede0; font-size:11px; padding:6px 10px; border-radius:9px; white-space:nowrap; transform:translate(-50%,-115%); box-shadow:var(--shadow-float); opacity:0; transition:opacity .1s; z-index:5;}
+  .grafikTooltip.show{opacity:1;}
+  .grafikTooltip b{color:var(--gold-light);}
   .shiftGrid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
   .shiftCard{background:var(--card); border:1px solid var(--line-soft); border-radius:13px; padding:12px 13px; box-shadow:var(--shadow-card);}
   .shiftCard .scLbl{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-weight:700; margin-bottom:5px; display:flex; align-items:center; gap:5px;}
@@ -654,6 +675,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
         <span>Laporan Hari Ini</span>
       </button>
+      <button class="menuDropItem" id="grafikBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.1-3-3L5 15.6"/></svg>
+        <span>Grafik Penjualan</span>
+      </button>
       <button class="menuDropItem" id="adminBtn" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         <span>Kelola Menu</span>
@@ -781,6 +806,17 @@
   </div>
 </div>
 
+<div class="cartOverlay" id="grafikOverlay">
+  <div class="adminSheet">
+    <div class="adminHead"><h2>Grafik Penjualan</h2><button id="grafikClose">✕</button></div>
+    <div class="lapDateBar" id="grafikOutletBar">
+      <select id="grafikOutletFilter" style="flex:1; padding:10px 12px; border-radius:11px; border:1.4px solid var(--line); background:var(--card); font-size:13px; color:var(--ink); font-family:inherit;">
+      </select>
+    </div>
+    <div class="adminBody" id="grafikBody"><div class="lapLoading"><div class="spinner"></div>Memuat grafik...</div></div>
+  </div>
+</div>
+
 <div class="cartOverlay" id="akunOverlay">
   <div class="adminSheet">
     <div class="adminHead"><h2>Kelola Akun</h2><button id="akunClose">✕</button></div>
@@ -894,6 +930,7 @@ let motivIdx = 0, motivTimer = null, motivHideTimer = null, sudahUcapkanSelamatI
 let cekSesiTimer = null, logoutCountdownTimer = null;
 let OUTLET_LIST = [];        // daftar semua outlet (dari sheet akun / koleksi outlet)
 let unsubMenu = null;        // listener realtime menu
+const BATAS_STOK_MENIPIS = 20; // ambang "stok menipis" -- sama untuk semua ukuran/menu (lihat Kelola Stok & Kelola Stok Cup)
 
 // Ukuran oz baku — SATU daftar global dipakai semua menu (menu utama, Kelola Menu,
 // keranjang, dan laporan). Format ini yang dipakai di SELURUH aplikasi.
@@ -1195,6 +1232,7 @@ function cekWaktuTutupSetiapDetik(){
 function terapkanTampilanJabatan(){
   const isOwner = SESI && SESI.jabatan === 'Owner';
   el('laporanBtn').style.display = SESI ? 'flex' : 'none';
+  el('grafikBtn').style.display = isOwner ? 'flex' : 'none';
   el('adminBtn').style.display = isOwner ? 'flex' : 'none';
   el('modeEditMenuBtn').style.display = isOwner ? 'flex' : 'none';
   el('stokBtn').style.display = isOwner ? 'flex' : 'none';
@@ -1241,6 +1279,48 @@ function mulaiSemuaSetelahLogin(){
   loadMenuRealtime();
   loadKaryawanList();
   loadMotivasiPool().then(mulaiSiklusMotivasi);
+  if(SESI && SESI.jabatan === 'Owner') mulaiPengecekanStokMenipis();
+}
+
+/* =====================================================================
+   NOTIFIKASI STOK MENIPIS (khusus Owner) — cek semua outlet, dua koleksi
+   stok ("stok" per menu & "stok_cup_ukuran" per ukuran fisik). Kalau ada
+   yang stoknya <= BATAS_STOK_MENIPIS (termasuk yang sudah 0/Habis), Owner
+   dapat toast peringatan sesaat setelah login, lalu dicek ulang tiap 10 menit
+   selama sesi aktif supaya Owner sempat restock sebelum benar-benar kehabisan.
+   ===================================================================== */
+let stokMenipisTimer = null;
+async function cekStokMenipisSemuaOutlet(){
+  try{
+    const [snapStok, snapStokCup] = await Promise.all([
+      getDocs(collection(db, "stok")),
+      getDocs(collection(db, "stok_cup_ukuran"))
+    ]);
+    const menipisList = [];
+    const habisList = [];
+    snapStok.docs.forEach(d=>{
+      const s = d.data();
+      const jumlah = Number(s.jumlah)||0;
+      if(jumlah <= 0) habisList.push(`${s.nama} (${normalisasiUkuran(s.ukuran, s.nama)}) \u2014 ${s.outlet}`);
+      else if(jumlah <= BATAS_STOK_MENIPIS) menipisList.push(`${s.nama} (${normalisasiUkuran(s.ukuran, s.nama)}) \u2014 ${s.outlet}: sisa ${jumlah}`);
+    });
+    snapStokCup.docs.forEach(d=>{
+      const s = d.data();
+      const jumlah = Number(s.jumlah)||0;
+      if(jumlah <= 0) habisList.push(`Cup ${s.ukuran} \u2014 ${s.outlet}`);
+      else if(jumlah <= BATAS_STOK_MENIPIS) menipisList.push(`Cup ${s.ukuran} \u2014 ${s.outlet}: sisa ${jumlah}`);
+    });
+    if(habisList.length>0){
+      showToast(`\u26a0\ufe0f ${habisList.length} stok sudah HABIS: ${habisList.slice(0,3).join(', ')}${habisList.length>3?', dll':''}`, false);
+    } else if(menipisList.length>0){
+      showToast(`\u26a0\ufe0f Stok menipis (\u2264${BATAS_STOK_MENIPIS}): ${menipisList.slice(0,3).join(', ')}${menipisList.length>3?', dll':''}`, false);
+    }
+  }catch(e){ /* diam-diam gagal, jangan ganggu kasir kalau cek notifikasi ini error */ console.error('Gagal cek stok menipis:', e); }
+}
+function mulaiPengecekanStokMenipis(){
+  if(stokMenipisTimer) clearInterval(stokMenipisTimer);
+  setTimeout(cekStokMenipisSemuaOutlet, 2500); // beri jeda sedikit supaya tidak numpuk toast dgn proses login
+  stokMenipisTimer = setInterval(cekStokMenipisSemuaOutlet, 10*60*1000); // cek ulang tiap 10 menit
 }
 
 /* =====================================================================
@@ -1248,7 +1328,7 @@ function mulaiSemuaSetelahLogin(){
    ===================================================================== */
 el('menuBtn').onclick = (e)=>{ e.stopPropagation(); el('menuDropdownOverlay').classList.add('show'); };
 el('menuDropdownOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'menuDropdownOverlay') el('menuDropdownOverlay').classList.remove('show'); });
-['calcBtn','laporanBtn','adminBtn','modeEditMenuBtn','stokBtn','stokCupBtn','akunBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
+['calcBtn','laporanBtn','grafikBtn','adminBtn','modeEditMenuBtn','stokBtn','stokCupBtn','akunBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
   el(id).addEventListener('click', ()=> el('menuDropdownOverlay').classList.remove('show'));
 });
 
@@ -1872,6 +1952,163 @@ async function muatDaftarOutletLaporan(){
   }catch(e){}
 }
 el('lapOutletFilter').addEventListener('change', ()=>{ lapOutletAktif = el('lapOutletFilter').value; muatLaporanTanggal(lapTanggalAktif); });
+
+/* =====================================================================
+   GRAFIK PENJUALAN (khusus Owner) — line chart tren penjualan harian
+   per outlet, 30 hari terakhir. Query "transaksi" cuma difilter di sisi
+   client (comparison string tanggal "YYYY-MM-DD" aman diurutkan leksikal)
+   biar konsisten dengan pola Laporan di atas, tanpa perlu index gabungan.
+   ===================================================================== */
+let grafikOutletAktif = '';
+
+el('grafikBtn').onclick = ()=>{ if(!SESI || SESI.jabatan !== 'Owner') return; openGrafikPenjualan(); };
+el('grafikClose').onclick = ()=> el('grafikOverlay').classList.remove('show');
+
+async function openGrafikPenjualan(){
+  el('grafikOverlay').classList.add('show');
+  el('grafikBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat grafik...</div>';
+  try{
+    await muatDaftarOutlet();
+    const sel = el('grafikOutletFilter');
+    if(!grafikOutletAktif || !OUTLET_LIST.includes(grafikOutletAktif)) grafikOutletAktif = OUTLET_LIST[0] || '';
+    sel.innerHTML = OUTLET_LIST.map(o=>`<option value="${o}" ${o===grafikOutletAktif?'selected':''}>${o}</option>`).join('');
+  }catch(e){}
+  await muatGrafikPenjualan();
+}
+el('grafikOutletFilter').addEventListener('change', ()=>{ grafikOutletAktif = el('grafikOutletFilter').value; muatGrafikPenjualan(); });
+
+function tanggalMinusHari(n){
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function muatGrafikPenjualan(){
+  if(!grafikOutletAktif){ el('grafikBody').innerHTML = '<div class="empty">Belum ada outlet terdaftar.</div>'; return; }
+  el('grafikBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat grafik...</div>';
+  try{
+    const tanggalMulai = tanggalMinusHari(29); // 30 hari terakhir termasuk hari ini
+    const tanggalAkhir = tanggalHariIniStr();
+    // Filter tanggal (range) + outlet dilakukan di sisi client, sama seperti Laporan,
+    // supaya tidak butuh composite index Firestore.
+    const qy = query(collection(db, "transaksi"), where("outlet","==", grafikOutletAktif));
+    const snap = await getDocs(qy);
+    const rows = snap.docs.map(d=>d.data()).filter(t => t.tanggal >= tanggalMulai && t.tanggal <= tanggalAkhir);
+
+    // Susun map tanggal -> total, isi 0 untuk hari tanpa transaksi supaya polanya kelihatan utuh.
+    const perTanggal = {};
+    for(let i=29;i>=0;i--){ perTanggal[tanggalMinusHari(i)] = 0; }
+    rows.forEach(t=>{ if(perTanggal[t.tanggal]!==undefined) perTanggal[t.tanggal] += (t.total||0); });
+    const tanggalList = Object.keys(perTanggal); // sudah terurut naik dari loop di atas
+    const nilaiList = tanggalList.map(t=>perTanggal[t]);
+
+    const totalPeriode = nilaiList.reduce((a,b)=>a+b,0);
+    const rataRata = Math.round(totalPeriode / tanggalList.length);
+    const tertinggiIdx = nilaiList.reduce((best,v,i)=> v>nilaiList[best]?i:best, 0);
+
+    el('grafikBody').innerHTML = `
+      <div class="grafikRingkasan">
+        <div class="grafikStat"><div class="gsLabel">Total 30 Hari</div><div class="gsVal">${rupiah(totalPeriode)}</div></div>
+        <div class="grafikStat"><div class="gsLabel">Rata-rata / Hari</div><div class="gsVal">${rupiah(rataRata)}</div></div>
+        <div class="grafikStat"><div class="gsLabel">Hari Tertinggi</div><div class="gsVal">${formatTanggalPendek(tanggalList[tertinggiIdx])}</div></div>
+      </div>
+      <div class="grafikChartWrap" id="grafikChartWrap" style="position:relative;"></div>
+      <div class="empty" style="padding:0 8px 4px; text-align:left; font-size:11.5px;">Menampilkan tren penjualan harian outlet <b>${grafikOutletAktif}</b> selama 30 hari terakhir (${formatTanggalPendek(tanggalList[0])} \u2013 ${formatTanggalPendek(tanggalList[tanggalList.length-1])}).</div>
+    `;
+    gambarGrafikLine(tanggalList, nilaiList);
+  }catch(e){
+    const pesanAsli = (e && e.message) ? e.message : String(e);
+    el('grafikBody').innerHTML = `<div class="empty">Gagal memuat grafik.<br><span style="font-size:11px; color:var(--muted-soft);">${pesanAsli}</span></div>`;
+    console.error('Gagal memuat grafik penjualan:', e);
+  }
+}
+
+function formatTanggalPendek(tgl){
+  if(!tgl) return '-';
+  const [y,m,d] = tgl.split('-').map(Number);
+  return `${d} ${BULAN[m-1].slice(0,3)}`;
+}
+
+function gambarGrafikLine(tanggalList, nilaiList){
+  const wrap = el('grafikChartWrap');
+  if(!wrap) return;
+  const W = 700, H = 260, padL = 44, padR = 14, padT = 16, padB = 28;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxVal = Math.max(...nilaiList, 1);
+  const niceMax = maxVal <= 0 ? 10 : Math.ceil(maxVal / Math.pow(10, Math.floor(Math.log10(maxVal))||0)) * Math.pow(10, Math.floor(Math.log10(maxVal))||0);
+  const n = nilaiList.length;
+  const xAt = i => padL + (n<=1 ? 0 : (plotW * i / (n-1)));
+  const yAt = v => padT + plotH - (niceMax>0 ? (v/niceMax)*plotH : 0);
+
+  const pathD = nilaiList.map((v,i)=> (i===0?'M':'L') + xAt(i).toFixed(1) + ',' + yAt(v).toFixed(1)).join(' ');
+  const areaD = pathD + ` L${xAt(n-1).toFixed(1)},${(padT+plotH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT+plotH).toFixed(1)} Z`;
+
+  // Grid horizontal 4 garis + label sumbu Y (nilai rupiah disingkat).
+  const jumlahGrid = 4;
+  let gridSvg = '', labelYSvg = '';
+  for(let g=0; g<=jumlahGrid; g++){
+    const v = niceMax * g / jumlahGrid;
+    const y = yAt(v);
+    gridSvg += `<line class="gGrid" x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}"/>`;
+    labelYSvg += `<text class="gAxisLabel" x="${padL-6}" y="${(y+3).toFixed(1)}" text-anchor="end">${singkatRupiah(v)}</text>`;
+  }
+
+  // Label sumbu X: tampilkan setiap ~5 hari saja supaya tidak numpuk.
+  let labelXSvg = '';
+  const step = Math.max(1, Math.round(n/6));
+  for(let i=0;i<n;i+=step){
+    labelXSvg += `<text class="gAxisLabel" x="${xAt(i).toFixed(1)}" y="${H-8}" text-anchor="middle">${formatTanggalPendek(tanggalList[i])}</text>`;
+  }
+
+  const dotsSvg = nilaiList.map((v,i)=> `<circle class="gDot" data-i="${i}" cx="${xAt(i).toFixed(1)}" cy="${yAt(v).toFixed(1)}" r="3.2"></circle>`).join('');
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="grafikAreaFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--pine-600)" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="var(--pine-600)" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      ${gridSvg}
+      <path class="gArea" d="${areaD}"></path>
+      <path class="gLine" d="${pathD}"></path>
+      ${dotsSvg}
+      ${labelYSvg}
+      ${labelXSvg}
+    </svg>
+    <div class="grafikTooltip" id="grafikTooltip"></div>
+  `;
+
+  const tooltip = el('grafikTooltip');
+  wrap.querySelectorAll('.gDot').forEach(dot=>{
+    const i = +dot.dataset.i;
+    dot.addEventListener('mouseenter', ()=> tampilkanTooltipGrafik(dot, i, tanggalList, nilaiList, wrap, tooltip));
+    dot.addEventListener('click', ()=> tampilkanTooltipGrafik(dot, i, tanggalList, nilaiList, wrap, tooltip));
+    dot.addEventListener('mouseleave', ()=> tooltip.classList.remove('show'));
+  });
+}
+
+function tampilkanTooltipGrafik(dot, i, tanggalList, nilaiList, wrap, tooltip){
+  wrap.querySelectorAll('.gDot').forEach(d=>d.classList.remove('aktif'));
+  dot.classList.add('aktif');
+  const svg = wrap.querySelector('svg');
+  const pt = svg.createSVGPoint();
+  pt.x = +dot.getAttribute('cx'); pt.y = +dot.getAttribute('cy');
+  const ctm = svg.getScreenCTM();
+  const screenPt = pt.matrixTransform(ctm);
+  const wrapRect = wrap.getBoundingClientRect();
+  tooltip.style.left = (screenPt.x - wrapRect.left) + 'px';
+  tooltip.style.top = (screenPt.y - wrapRect.top) + 'px';
+  tooltip.innerHTML = `${formatTanggalPendek(tanggalList[i])}<br><b>${rupiah(nilaiList[i])}</b>`;
+  tooltip.classList.add('show');
+}
+
+function singkatRupiah(v){
+  if(v>=1000000) return 'Rp' + (v/1000000).toFixed(v%1000000===0?0:1) + 'jt';
+  if(v>=1000) return 'Rp' + Math.round(v/1000) + 'rb';
+  return 'Rp' + Math.round(v);
+}
 
 const SHIFT_JAM = {
   "Pagi": "09:00\u201312:00",
@@ -3041,10 +3278,13 @@ function renderKelolaStokCup(){
     const info = cariStokCup(u.value);
     const stokSekarang = info ? info.jumlah : 0;
     const habis = stokSekarang <= 0;
+    const menipis = !habis && stokSekarang <= BATAS_STOK_MENIPIS;
+    const badgeCupTxt = habis ? 'Habis' : (menipis ? 'Menipis \u2014 ' + stokSekarang + ' cup' : stokSekarang+' cup');
+    const badgeCupCls = habis ? 'habis' : (menipis ? 'menipis' : '');
     html += `<div class="cupUkuranItem" data-ukuran="${u.value}">
       <div class="cuiTop">
         <div class="cuiName">${u.label}</div>
-        <div class="cuiStokBadge ${habis?'habis':''}">${habis ? 'Habis' : stokSekarang+' cup'}</div>
+        <div class="cuiStokBadge ${badgeCupCls}">${badgeCupTxt}</div>
       </div>
       <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
         <input type="number" class="stokCupInput" value="${stokSekarang}" min="0" style="flex:1; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
@@ -3223,10 +3463,14 @@ function renderKelolaStok(){
       item.varian.forEach(v=>{
         const info = cariStok(cat.kategori, item.nama, v.nama);
         const stokSekarang = info ? info.jumlah : 0;
+        const habis = stokSekarang <= 0;
+        const menipis = !habis && stokSekarang <= BATAS_STOK_MENIPIS;
+        const badgeTxt = habis ? 'Habis' : (menipis ? 'Menipis \u2014 ' + stokSekarang + ' cup' : stokSekarang + ' cup');
+        const badgeCls = habis ? 'habis' : (menipis ? 'menipis' : '');
         html += `<div class="adminItem" data-kategori="${cat.kategori}" data-nama="${item.nama}" data-ukuran="${v.nama}">
           <div class="aiTop">
             <div><div class="ain">${item.nama}</div><div class="aiv" style="margin-top:3px;">${normalisasiUkuran(v.nama, item.nama)}</div></div>
-            <div class="aiBtns"><button class="restockOpenB" title="Restock (tambah stok)" style="background:var(--pine-50); color:var(--pine-700);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div>
+            <div class="aiBtns" style="align-items:center;"><div class="aiStokBadge ${badgeCls}">${badgeTxt}</div><button class="restockOpenB" title="Restock (tambah stok)" style="background:var(--pine-50); color:var(--pine-700);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div>
           </div>
           <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
             <input type="number" class="stokInput" value="${stokSekarang}" min="0" style="flex:1; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
@@ -3392,7 +3636,7 @@ async function bukaRiwayatRestock(){
    ===================================================================== */
 const OVERLAY_IDS_BACK = [
   'restockOverlay', 'stokOverlay', 'stokCupOverlay', 'akunFormOverlay', 'akunOverlay',
-  'lapOverlay', 'adminOverlay2', 'calcOverlay', 'cartOverlay',
+  'lapOverlay', 'grafikOverlay', 'adminOverlay2', 'calcOverlay', 'cartOverlay',
   'sheetOverlay', 'trxDetailOverlay', 'menuDropdownOverlay', 'logoutWarnOverlay',
   'pengaturanOverlay'
 ];
@@ -3400,7 +3644,7 @@ let sedangProsesBack = false;
 
 function overlayTerbukaSaatIni(){
   // urutan terakhir di array = prioritas ditutup duluan (overlay yang biasanya "di atas")
-  const urutanPrioritas = ['pengaturanOverlay','restockOverlay','stokOverlay','stokCupOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
+  const urutanPrioritas = ['pengaturanOverlay','restockOverlay','stokOverlay','stokCupOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','grafikOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
   for(const id of urutanPrioritas){
     const elm = document.getElementById(id);
     if(elm && elm.classList.contains('show')) return id;

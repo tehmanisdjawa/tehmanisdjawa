@@ -1857,6 +1857,9 @@ function renderLaporanSatuOutlet(data){
     data.perKaryawan.forEach(k=>{ html += `<div class="lapRow"><div class="lrn">${k.karyawan}</div><div class="lrv">${rupiah(k.total)}</div></div>`; });
     html += `</div>`;
   }
+  if(data.transaksi && data.transaksi.length){
+    html += `<div class="lapSection"><h4>Riwayat Barang Dibeli</h4><div id="riwayatBarangList"></div></div>`;
+  }
   if(data.itemTerlaris && data.itemTerlaris.length){
     html += `<div class="lapSection"><h4>Menu Terlaris</h4>`;
     data.itemTerlaris.slice(0,10).forEach(it=>{ html += `<div class="lapRow"><div><div class="lrn">${it.nama}</div><div class="lrq">${it.qty} terjual</div></div><div class="lrv">${rupiah(it.subtotal)}</div></div>`; });
@@ -1864,6 +1867,23 @@ function renderLaporanSatuOutlet(data){
   }
   html += `<div class="lapSection"><h4>Riwayat Transaksi (${data.transaksi.length})</h4><div id="trxList"></div></div>`;
   el('lapBody').innerHTML = html;
+
+  // Riwayat Barang Dibeli: baris per ITEM (bukan per transaksi), urut waktu terbaru dulu,
+  // menampilkan jam beli, nama barang + ukuran, qty, dan siapa yang jual -- supaya kelihatan
+  // persis barang apa saja yang laku sepanjang hari, bukan cuma rekap total per menu.
+  if(data.transaksi && data.transaksi.length){
+    const barisBarang = [];
+    data.transaksi.forEach(t=>{
+      (t.items||[]).forEach(it=>{
+        barisBarang.push({ waktu: t.waktu, karyawan: t.karyawan, nama: it.nama, ukuran: normalisasiUkuran(it.varian, it.nama), tambahan: it.tambahan||'', qty: it.qty||0, subtotal: it.subtotal||0 });
+      });
+    });
+    el('riwayatBarangList').innerHTML = barisBarang.length ? barisBarang.map(b=>`
+      <div class="trxItemRow">
+        <div><div class="tin">${b.nama} \u2014 ${b.ukuran}${b.tambahan?' \u00b7 '+b.tambahan:''}</div><div class="tiv">${b.waktu} \u00b7 ${b.karyawan} \u00b7 ${b.qty}x</div></div>
+        <div class="tiq">${rupiah(b.subtotal)}</div>
+      </div>`).join('') : '<div class="empty" style="padding:16px 0;">Belum ada barang dibeli.</div>';
+  }
 
   // Karyawan boleh lihat laporan tapi TIDAK BISA menghapus transaksi -- tombol void
   // dihilangkan total dari tampilan, tidak cuma disembunyikan, supaya tidak ada jalan sama sekali.

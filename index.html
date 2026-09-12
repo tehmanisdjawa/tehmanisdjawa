@@ -212,63 +212,44 @@
   .searchWrap input::placeholder{color:rgba(243,237,224,.42);}
   .searchWrap input:focus{outline:none; border-color:rgba(200,151,63,.55); background:rgba(243,237,224,.09);}
 
-  .updCooldownBar{
-    display:flex; align-items:center; gap:7px; margin-top:10px; padding:9px 13px; border-radius:11px;
-    background:rgba(200,151,63,.22); border:1px solid rgba(200,151,63,.45); color:var(--gold); font-size:12px; font-weight:650;
-  }
-  .updCooldownBar svg{width:14px; height:14px; flex:0 0 auto; color:var(--gold); animation:updSpinRot 1.4s linear infinite;}
-  .updCooldownBar b{font-variant-numeric:tabular-nums; color:#fff;}
-  /* Mode Perlindungan Mata -- lapisan overlay kekuningan transparan di atas
-     seluruh layar (mirip "night light"), meredam cahaya biru. Diterapkan lewat
-     kelas di <body>, disimpan per HP (localStorage), bukan per akun Firestore. */
-  .matanyamanOverlay{
-    position:fixed; inset:0; z-index:9999; pointer-events:none; display:none;
-    background:rgba(255,172,61,.12); mix-blend-mode:multiply;
-  }
-  body.matanyaman-aktif .matanyamanOverlay{display:block;}
-  .catTabs{display:flex; gap:8px; overflow-x:auto; padding:14px 0 4px; scrollbar-width:none;}
+  .catTabs{display:flex; gap:7px; overflow-x:auto; padding:13px 0 2px; scrollbar-width:none;}
   .catTabs::-webkit-scrollbar{display:none;}
   .catTabs button{
-    flex:0 0 auto; padding:8px 16px; border-radius:999px; border:1px solid rgba(243,237,224,.18);
-    background:rgba(243,237,224,.05); font-size:12.5px; font-weight:600; color:rgba(243,237,224,.75); cursor:pointer; white-space:nowrap;
-    letter-spacing:.1px; transition:background .15s, border-color .15s, color .15s, transform .12s, box-shadow .15s;
+    flex:0 0 auto; padding:7px 14px; border-radius:999px; border:1px solid rgba(243,237,224,.16);
+    background:transparent; font-size:12.5px; font-weight:600; color:rgba(243,237,224,.72); cursor:pointer; white-space:nowrap;
+    letter-spacing:.1px; transition:all .15s;
   }
-  .catTabs button:active{transform:scale(.95);}
-  .catTabs button.active{background:var(--gold); border-color:var(--gold); color:var(--pine-950); font-weight:700; box-shadow:0 4px 14px rgba(200,151,63,.35);}
+  .catTabs button.active{background:var(--gold); border-color:var(--gold); color:var(--pine-950); font-weight:700;}
 
   /* ============ MENU LIST ============ */
   .content{padding:0 18px;}
-  .catLabelRow{display:flex; align-items:center; gap:10px; margin:26px 2px 13px;}
-  .catLabel{font-family:"Fraunces",serif; font-size:15.5px; font-weight:600; color:var(--pine-900); white-space:nowrap;}
+  .catLabelRow{display:flex; align-items:center; gap:10px; margin:22px 2px 11px;}
+  .catLabel{font-family:"Fraunces",serif; font-size:15px; font-weight:600; color:var(--pine-900); white-space:nowrap;}
   .catRule{flex:1; height:1px; background:linear-gradient(90deg, var(--line), transparent);}
 
-  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:13px;}
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:11px;}
   .item{
-    background:var(--card); border:1px solid var(--line-soft); border-radius:16px;
-    padding:15px; cursor:pointer; transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
-    display:flex; flex-direction:column; gap:8px; position:relative; min-height:104px;
-    box-shadow:0 1px 2px rgba(34,31,25,.04), 0 3px 10px rgba(34,31,25,.05);
+    background:var(--card); border:1px solid var(--line-soft); border-radius:var(--radius-md);
+    padding:14px; cursor:pointer; transition:transform .12s, box-shadow .12s, border-color .12s;
+    display:flex; flex-direction:column; gap:7px; position:relative; min-height:98px;
+    box-shadow:var(--shadow-card);
   }
-  .item:hover{border-color:var(--line); box-shadow:0 4px 16px rgba(34,31,25,.09); transform:translateY(-1px);}
   .item:active{transform:scale(.965); box-shadow:none;}
   .item::before{
-    content:""; position:absolute; left:0; top:15px; bottom:15px; width:3px; border-radius:0 3px 3px 0;
+    content:""; position:absolute; left:0; top:14px; bottom:14px; width:3px; border-radius:0 3px 3px 0;
     background:var(--pine-600); opacity:0; transition:opacity .15s;
   }
-  .item.has-qty{border-color:var(--pine-500); box-shadow:0 4px 14px rgba(58,107,71,.14);}
   .item.has-qty::before{opacity:1;}
   .item.is-habis{opacity:.5; cursor:not-allowed;}
-  .item.is-habis:hover{transform:none; box-shadow:0 1px 2px rgba(34,31,25,.04), 0 3px 10px rgba(34,31,25,.05); border-color:var(--line-soft);}
   .item.is-habis:active{transform:none;}
-  .item .name{font-size:13.5px; font-weight:650; line-height:1.34; color:var(--ink);}
-  .item .price{font-size:12.5px; color:var(--pine-700); margin-top:auto; font-weight:700;}
+  .item .name{font-size:13.5px; font-weight:650; line-height:1.32; color:var(--ink);}
+  .item .price{font-size:12.5px; color:var(--pine-700); margin-top:auto; font-weight:650;}
   .item .varCount{font-size:10px; color:var(--muted); font-weight:600; letter-spacing:.2px;}
   .item .habisTag{font-size:10px; color:var(--merah); font-weight:700; letter-spacing:.2px; text-transform:uppercase;}
   .item .qtyDot{
-    position:absolute; top:-8px; right:-8px; min-width:23px; height:23px; padding:0 6px;
-    background:var(--pine-800); color:#f3ede0; border-radius:999px; font-size:11.5px; font-weight:700;
-    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(12,31,22,.3);
-    border:2px solid var(--card);
+    position:absolute; top:9px; right:9px; min-width:21px; height:21px; padding:0 6px;
+    background:var(--pine-800); color:#f3ede0; border-radius:999px; font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(12,31,22,.25);
   }
   /* Ikon pensil/hapus di kartu menu -- hanya tampil saat Mode Edit Menu aktif (Owner). */
   .item.mode-edit-aktif{cursor:default;}
@@ -318,13 +299,8 @@
   }
 
   .qtyStepBar{display:flex; align-items:center; border:1px solid var(--pine-800); border-radius:11px; overflow:hidden; flex:0 0 auto; background:var(--pine-950);}
-  .qtyStepBar button{width:32px; height:32px; border:none; background:transparent; font-size:17px; font-weight:700; color:#f3ede0; cursor:pointer; transition:background .12s;}
-  .qtyStepBar button:active{background:rgba(243,237,224,.14);}
+  .qtyStepBar button{width:32px; height:32px; border:none; background:transparent; font-size:17px; font-weight:700; color:#f3ede0; cursor:pointer;}
   .qtyStepBar .val{width:28px; text-align:center; font-size:13.5px; font-weight:700; color:#f3ede0;}
-
-  /* ---- Tombol bundar kecil (close/back di header sheet, cart, admin, dll) ---- */
-  .sheetHead button, .cartHead button, .adminHead button, .calcHead button{transition:background .12s, transform .12s;}
-  .sheetHead button:active, .cartHead button:active, .adminHead button:active{background:var(--line); transform:scale(.92);}
 
   /* ============ CART ============ */
   .cartOverlay{position:fixed; inset:0; background:rgba(12,20,15,.5); backdrop-filter:blur(2px); z-index:55; display:none; align-items:flex-end; justify-content:center;}
@@ -421,59 +397,6 @@
   .motivToast .motivText{font-family:"Fraunces",serif; font-size:13.5px; line-height:1.4; font-weight:500;}
   .motivToast .motivClose{background:none; border:none; color:rgba(243,237,224,.55); font-size:15px; cursor:pointer; padding:2px 4px; flex:0 0 auto; line-height:1;}
 
-  /* Banner "Update Tersedia" -- muncul di atas layar (di atas segalanya, termasuk
-     overlay lain) saat Owner menekan Paksa Update Semua Perangkat. */
-  .updToastWrap{position:fixed; top:12px; left:0; right:0; z-index:400; display:flex; justify-content:center; pointer-events:none; padding:0 14px;}
-  .updToast{
-    display:flex; flex-direction:column; gap:10px;
-    background:linear-gradient(165deg, var(--pine-900), var(--pine-950)); color:#f3ede0; border-radius:18px;
-    padding:15px 16px 13px; width:100%; max-width:420px; box-shadow:var(--shadow-float); border:1px solid rgba(243,237,224,.14);
-    transform:translateY(-130%); opacity:0; transition:transform .38s cubic-bezier(.2,.8,.3,1), opacity .38s;
-    pointer-events:auto;
-  }
-  .updToast.show{transform:translateY(0); opacity:1;}
-  .updToast.leaving{transform:translateY(-130%); opacity:0;}
-  .updToast .updTop{display:flex; align-items:flex-start; gap:11px;}
-  .updToast .updIcon{width:36px; height:36px; border-radius:11px; background:rgba(200,151,63,.18); display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
-  .updToast .updIcon svg{width:19px; height:19px; color:var(--gold);}
-  .updToast .updBody{flex:1; min-width:0; padding-top:1px;}
-  .updToast .updLabel{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:rgba(243,237,224,.55); margin-bottom:3px;}
-  .updToast .updText{font-family:"Fraunces",serif; font-size:13px; line-height:1.42; font-weight:500;}
-  .updToast .updClose{background:none; border:none; color:rgba(243,237,224,.55); font-size:16px; cursor:pointer; padding:2px 4px; flex:0 0 auto; line-height:1;}
-  .updToast .updBtnRow{display:flex; align-items:center; gap:9px; padding-left:47px;}
-  .updToast .updGoBtn{
-    flex:1; background:linear-gradient(160deg, var(--gold), var(--gold-dark)); color:var(--pine-950); border:none;
-    border-radius:11px; padding:9px 12px; font-size:12.5px; font-weight:750; cursor:pointer; font-family:inherit;
-  }
-  .updToast .updCountdown{font-size:11px; color:rgba(243,237,224,.55); flex:0 0 auto; font-variant-numeric:tabular-nums;}
-  .updToast .updProgressTrack{height:3px; border-radius:99px; background:rgba(243,237,224,.14); overflow:hidden; margin-left:47px;}
-  .updToast .updProgressFill{height:100%; background:var(--gold); border-radius:99px; width:100%; transition:width 1s linear;}
-
-  /* Overlay full-screen "Memasang update..." -- muncul 3 detik dengan animasi
-     smooth saat tombol "Pasang Sekarang" dipencet, sebelum halaman reload. */
-  .updInstallOverlay{
-    position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; flex-direction:column; gap:18px;
-    background:linear-gradient(165deg, var(--pine-950), var(--pine-900)); opacity:0; transition:opacity .4s ease;
-  }
-  .updInstallOverlay.show{display:flex; opacity:1;}
-  .updInstallOverlay .updSpin{
-    width:52px; height:52px; border-radius:50%; border:3.5px solid rgba(243,237,224,.18); border-top-color:var(--gold);
-    animation:updSpinRot .85s linear infinite;
-  }
-  @keyframes updSpinRot{ to{ transform:rotate(360deg); } }
-  .updInstallOverlay .updInstallText{color:#f3ede0; font-family:"Fraunces",serif; font-size:15.5px; font-weight:600; text-align:center; padding:0 30px;}
-  .updInstallOverlay .updInstallSub{color:rgba(243,237,224,.55); font-size:12px; text-align:center;}
-  .updInstallOverlay .updCheckWrap{width:52px; height:52px; display:none; align-items:center; justify-content:center;}
-  .updInstallOverlay.done .updSpin{display:none;}
-  .updInstallOverlay.done .updCheckWrap{display:flex;}
-  .updInstallOverlay .updCheckCircle{
-    width:52px; height:52px; border-radius:50%; background:rgba(200,151,63,.16); display:flex; align-items:center; justify-content:center;
-    animation:updPop .4s cubic-bezier(.34,1.56,.64,1);
-  }
-  .updInstallOverlay .updCheckCircle svg{width:26px; height:26px; color:var(--gold); stroke-dasharray:24; stroke-dashoffset:24; animation:updCheckDraw .35s ease .1s forwards;}
-  @keyframes updPop{ 0%{transform:scale(.6); opacity:0;} 100%{transform:scale(1); opacity:1;} }
-  @keyframes updCheckDraw{ to{ stroke-dashoffset:0; } }
-
   /* ============ ADMIN / SHEETS ============ */
   .adminOverlay{position:fixed; inset:0; background:rgba(12,20,15,.55); backdrop-filter:blur(3px); z-index:60; display:none; align-items:center; justify-content:center; padding:20px;}
   .adminOverlay.show{display:flex;}
@@ -549,7 +472,7 @@
   .lapRow .lrv{font-weight:650; color:var(--pine-700);}
 
   /* ============ KELOLA STOK CUP (per ukuran, bukan per menu) ============ */
-  .cupUkuranItem{border:1px solid var(--line-soft); border-radius:14px; padding:14px; margin-bottom:12px; background:var(--card); box-shadow:var(--shadow-card); overflow:hidden;}
+  .cupUkuranItem{border:1px solid var(--line-soft); border-radius:14px; padding:14px; margin-bottom:12px; background:var(--card); box-shadow:var(--shadow-card);}
   .cupUkuranItem .cuiTop{display:flex; align-items:center; justify-content:space-between; gap:8px;}
   .cupUkuranItem .cuiName{font-family:"Fraunces",serif; font-size:15px; font-weight:600; color:var(--pine-950);}
   .cupUkuranItem .cuiStokBadge{font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; background:var(--pine-50); color:var(--pine-700);}
@@ -631,8 +554,8 @@
   .calcExpr{color:rgba(243,237,224,.55); font-size:12.5px; min-height:16px; word-break:break-all;}
   .calcResult{color:#f3ede0; font-family:"Fraunces",serif; font-size:28px; font-weight:600; word-break:break-all;}
   .calcGrid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
-  .calcGrid button{padding:16px 0; border-radius:12px; border:1px solid var(--line-soft); background:var(--card); color:var(--ink); font-size:16px; font-weight:650; cursor:pointer; font-family:inherit; box-shadow:var(--shadow-card); transition:transform .1s, box-shadow .1s;}
-  .calcGrid button:active{transform:scale(.95); box-shadow:none;}
+  .calcGrid button{padding:16px 0; border-radius:12px; border:1px solid var(--line-soft); background:var(--card); color:var(--ink); font-size:16px; font-weight:650; cursor:pointer; font-family:inherit; box-shadow:var(--shadow-card);}
+  .calcGrid button:active{transform:scale(.95);}
   .calcGrid button.op{background:var(--pine-100); color:var(--pine-800);}
   .calcGrid button.eq{background:var(--pine-950); color:#f3ede0; grid-row:span 1;}
   .calcGrid button.clr{background:var(--merah-light); color:var(--merah);}
@@ -640,15 +563,13 @@
 
   /* ============ OUTLET PICKER (Stok) ============ */
   .outletPickRow{display:flex; gap:8px; flex-wrap:wrap; padding:0 0 16px;}
-  .outletPickRow button{padding:9px 15px; border-radius:11px; border:1.4px solid var(--line); background:var(--card); font-size:12.5px; font-weight:650; color:var(--muted); cursor:pointer; transition:background .13s, border-color .13s, color .13s, transform .1s;}
-  .outletPickRow button:active{transform:scale(.95);}
-  .outletPickRow button.active{background:var(--pine-900); border-color:var(--pine-900); color:#f3ede0; box-shadow:0 3px 10px rgba(12,41,29,.25);}
+  .outletPickRow button{padding:9px 15px; border-radius:11px; border:1.4px solid var(--line); background:var(--card); font-size:12.5px; font-weight:650; color:var(--muted); cursor:pointer;}
+  .outletPickRow button.active{background:var(--pine-900); border-color:var(--pine-900); color:#f3ede0;}
 
   /* ============ RESTOCK SATUAN TOGGLE ============ */
   .satuanToggle{display:flex; gap:7px; margin-bottom:14px;}
-  .satuanToggle button{flex:1; padding:11px; border-radius:11px; border:1.4px solid var(--line); background:var(--card); font-size:12.5px; font-weight:650; color:var(--muted); cursor:pointer; transition:background .13s, border-color .13s, color .13s, transform .1s;}
-  .satuanToggle button:active{transform:scale(.96);}
-  .satuanToggle button.active{background:var(--pine-900); border-color:var(--pine-900); color:#f3ede0; box-shadow:0 3px 10px rgba(12,41,29,.22);}
+  .satuanToggle button{flex:1; padding:11px; border-radius:11px; border:1.4px solid var(--line); background:var(--card); font-size:12.5px; font-weight:650; color:var(--muted); cursor:pointer;}
+  .satuanToggle button.active{background:var(--pine-900); border-color:var(--pine-900); color:#f3ede0;}
 
   /* ============ TOGGLE SWITCH (Pengaturan Notifikasi) ============ */
   .prefToggle{position:relative; display:inline-block; width:46px; height:27px; flex:0 0 auto;}
@@ -686,214 +607,6 @@
 
   .gameScoreBar{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; font-size:13px; font-weight:650; color:var(--muted);}
   .gameScoreBar b{color:var(--pine-800); font-size:16px;}
-
-  /* ============ POLISH UMUM TOMBOL (rapi & konsisten di seluruh app) ============ */
-  .sheetHead button, .cartHead button, .adminHead button, .calcHead button,
-  .item .editQuickBtns button, .adminItem .aiBtns button, .cartRow .cstep button,
-  .lapDateBar button, .shareBtnRow button, .gamePickBtn{
-    transition:background .13s ease, border-color .13s ease, color .13s ease, transform .1s ease, box-shadow .13s ease;
-  }
-  .sheetHead button:active, .cartHead button:active, .adminHead button:active, .calcHead button:active{
-    background:var(--line); transform:scale(.92);
-  }
-  .item .editQuickBtns button:active, .adminItem .aiBtns button:active{transform:scale(.9);}
-  .adminItem .aiBtns button:hover{border-color:var(--pine-600); background:var(--pine-100);}
-  .cartRow .cstep button:active{background:var(--pine-100); transform:scale(.94);}
-  .lapDateBar button:active{transform:scale(.96); background:var(--pine-100);}
-  .shareBtnRow button:active{transform:scale(.97);}
-  .gamePickBtn:hover{border-color:var(--pine-500); box-shadow:0 4px 14px rgba(34,31,25,.09);}
-
-  /* Tombol utama full-width (login, checkout, dsb.) -- efek tekan halus */
-  .loginBtn, .checkoutBtn{transition:transform .1s ease, box-shadow .1s ease, opacity .13s ease;}
-  .loginBtn:active, .checkoutBtn:active{transform:scale(.98);}
-
-  /* =====================================================================
-     ANIMASI HALUS ALA iOS (60fps) -- lapisan global
-     Prinsip: pakai easing "spring-like" cubic-bezier (bukan ease/linear polos),
-     animasikan cuma transform & opacity (murah utk GPU, tidak memicu reflow),
-     kasih will-change biar browser siapin layer-nya dari awal.
-     ===================================================================== */
-  :root{
-    --ios-ease:cubic-bezier(.25,.1,.25,1);       /* easing standar utk transisi umum */
-    --ios-spring:cubic-bezier(.34,1.32,.64,1);    /* easing "mantul" halus (ala iOS sheet/pop) */
-    --ios-fast:.16s;
-    --ios-med:.28s;
-    --ios-slow:.42s;
-  }
-
-  /* Semua elemen interaktif ikut easing seragam kecuali sudah didefinisikan
-     lebih spesifik di atas (aturan lebih spesifik tetap menang). */
-  button, .btn, a, input, select, textarea{
-    transition-timing-function:var(--ios-ease);
-  }
-
-  /* Kartu produk / list item -- efek tekan lembut + shadow melayang saat disentuh */
-  .item, .adminItem, .akunItem, .cupUkuranItem, .trxItemRow, .gamePickBtn{
-    transition:transform var(--ios-fast) var(--ios-spring),
-               box-shadow var(--ios-med) var(--ios-ease),
-               background var(--ios-fast) var(--ios-ease);
-    will-change:transform;
-    -webkit-tap-highlight-color:transparent;
-  }
-  .item:active, .adminItem:active{
-    transform:scale(.97);
-    box-shadow:0 2px 8px rgba(34,31,25,.08);
-  }
-
-  /* Semua tombol bulat/ikon -- tekan halus dgn spring, bukan langsung "loncat" */
-  button{
-    -webkit-tap-highlight-color:transparent;
-  }
-  button:active{
-    transition:transform .1s var(--ios-spring);
-  }
-
-  /* Sheet/modal (bottom sheet) -- ganti easing jadi spring iOS + sedikit lebih lambat
-     supaya berasa "meluncur", bukan "muncul tiba-tiba". Override durasi lama (.22s ease
-     bawaan) dengan versi spring. */
-  .sheet, .cartSheet, .adminSheet, .calcSheet{
-    animation-duration:.32s !important;
-    animation-timing-function:var(--ios-spring) !important;
-    will-change:transform, opacity;
-  }
-  @keyframes slideUp{
-    from{transform:translateY(48px); opacity:0;}
-    to{transform:translateY(0); opacity:1;}
-  }
-
-  /* Overlay backdrop (belakang modal) -- fade halus, bukan langsung on/off.
-     CATATAN: .matanyamanOverlay SENGAJA tidak dimasukkan -- itu bukan modal,
-     tapi lapisan efek warna transparan permanen (mode mata nyaman) yang WAJIB
-     selalu pointer-events:none, jangan disamakan perlakuannya dgn overlay modal. */
-  .sheetOverlay, .cartOverlay, .adminOverlay, .calcOverlay,
-  .menuDropdownOverlay, .logoutWarnOverlay, .loginOverlay{
-    transition:opacity var(--ios-med) var(--ios-ease), backdrop-filter var(--ios-med) var(--ios-ease);
-  }
-
-  /* Toast / banner (update notif, dsb) -- pakai spring biar geser masuknya halus */
-  .updToast{
-    transition:transform var(--ios-med) var(--ios-spring), opacity var(--ios-med) var(--ios-ease) !important;
-    will-change:transform, opacity;
-  }
-
-  /* Dropdown menu kecil -- spring pop yang lembut */
-  @keyframes menuDropIn{
-    from{opacity:0; transform:translateY(-6px) scale(.97);}
-    to{opacity:1; transform:translateY(0) scale(1);}
-  }
-
-  /* Toggle switch (preferensi) -- geser knob lebih smooth pakai easing custom */
-  .prefToggleSlider, .prefToggleSlider::before{
-    transition:all var(--ios-med) var(--ios-spring) !important;
-  }
-
-  /* Tab kategori / pill selector -- transisi warna & posisi halus saat ganti tab */
-  .outletPickRow button, .satuanToggle button, .menuDropItem{
-    transition:background var(--ios-fast) var(--ios-ease),
-               border-color var(--ios-fast) var(--ios-ease),
-               color var(--ios-fast) var(--ios-ease),
-               transform .1s var(--ios-spring) !important;
-  }
-
-  /* Angka total / harga yang berubah -- sedikit "pop" halus tiap update, dibantu JS
-     lewat class .pulseUpdate (opsional, aman kalau tidak dipakai). */
-  @keyframes pulseUpdate{
-    0%{transform:scale(1);}
-    35%{transform:scale(1.045);}
-    100%{transform:scale(1);}
-  }
-  .pulseUpdate{animation:pulseUpdate .32s var(--ios-spring);}
-
-  /* =====================================================================
-     ANIMASI MASUK **DAN KELUAR** UTK SEMUA OVERLAY/SHEET (WAJIB, bukan cuma
-     pas dibuka). Sebelumnya overlay ditutup dgn display:none seketika lewat
-     classList.remove('show') -- jadi animasi keluar tidak sempat kelihatan.
-     Sekarang overlay dikasih class ".closing" oleh JS (lihat script di bawah)
-     selama durasi animasi keluar berjalan, BARU display:none diterapkan.
-     ===================================================================== */
-  .sheetOverlay, .cartOverlay, .adminOverlay, .adminOverlay2, .calcOverlay,
-  .menuDropdownOverlay, .logoutWarnOverlay, .loginOverlay,
-  .lapOverlay, .grafikOverlay, .trxDetailOverlay, .akunOverlay, .akunFormOverlay,
-  .pengaturanOverlay, .gameOverlay, .stokOverlay, .stokCupOverlay, .restockOverlay,
-  .pecatOverlay{
-    transition:opacity var(--ios-med) var(--ios-ease) !important;
-  }
-  .sheetOverlay.closing, .cartOverlay.closing, .adminOverlay.closing, .adminOverlay2.closing,
-  .calcOverlay.closing, .menuDropdownOverlay.closing,
-  .logoutWarnOverlay.closing, .loginOverlay.closing, .lapOverlay.closing, .grafikOverlay.closing,
-  .trxDetailOverlay.closing, .akunOverlay.closing, .akunFormOverlay.closing,
-  .pengaturanOverlay.closing, .gameOverlay.closing, .stokOverlay.closing,
-  .stokCupOverlay.closing, .restockOverlay.closing, .pecatOverlay.closing{
-    display:flex !important; opacity:0; pointer-events:none !important;
-  }
-  /* Sheet/box di dalam overlay ikut meluncur turun (bukan cuma overlay-nya fade) */
-  .sheetOverlay.closing .sheet, .cartOverlay.closing .cartSheet,
-  .adminOverlay.closing .adminSheet, .adminOverlay2.closing .adminSheet,
-  .calcOverlay.closing .calcSheet, .sheetOverlay.closing [class*="Sheet"],
-  .cartOverlay.closing [class*="Sheet"], .adminOverlay2.closing [class*="Sheet"]{
-    transform:translateY(40px) !important;
-    transition:transform var(--ios-med) var(--ios-ease) !important;
-  }
-  .loginOverlay.closing .loginBox, .logoutWarnOverlay.closing .logoutWarnBox{
-    transform:scale(.94) !important; opacity:0 !important;
-    transition:transform var(--ios-med) var(--ios-ease), opacity var(--ios-med) var(--ios-ease) !important;
-  }
-
-  /* Hormati preferensi user yang minta kurangi animasi (aksesibilitas) */
-  @media (prefers-reduced-motion: reduce){
-    *, *::before, *::after{
-      animation-duration:.001ms !important;
-      transition-duration:.001ms !important;
-    }
-  }
-
-  /* =====================================================================
-     LAPISAN GLOBAL "SEMUA KENA" -- supaya benar-benar semua elemen
-     interaktif punya animasi halus, tanpa perlu daftar class satu-satu.
-     Sengaja HANYA transform & opacity (properti "murah", jalan di GPU,
-     tidak memicu layout/reflow) supaya tetap 60fps walau kena ke banyak
-     elemen sekaligus. TIDAK transition:all supaya tidak lag & tidak
-     "kebawa" animasi ke properti berat (width/height/top/left/dll).
-     ===================================================================== */
-  button, a, .item, .adminItem, .akunItem, .cupUkuranItem, .trxItemRow,
-  .gamePickBtn, .memCard, .satuanToggle button, .outletPickRow button,
-  .menuDropItem, [class*="Btn"], [class*="btn"], [class*="Row"], [class*="Card"],
-  [class*="Item"], [class*="Chip"], [class*="Pill"], [class*="Tab"]{
-    transition-property:transform, opacity, background-color, border-color, box-shadow, color;
-    transition-duration:var(--ios-fast);
-    transition-timing-function:var(--ios-spring);
-    -webkit-tap-highlight-color:transparent;
-  }
-  /* Efek tekan universal utk tombol yg belum punya efek :active sendiri */
-  button:not(:disabled):active{
-    transform:scale(.96);
-  }
-
-  /* Modal/sheet/overlay apa pun (nama class mengandung kata2 ini) ikut
-     fade+scale halus otomatis, walau lupa didaftar manual di atas. */
-  [class*="Sheet"], [class*="Overlay"], [class*="Modal"], [class*="Toast"],
-  [class*="Dropdown"], [class*="Popup"]{
-    transition:opacity var(--ios-med) var(--ios-ease),
-               transform var(--ios-med) var(--ios-spring);
-    will-change:transform, opacity;
-  }
-
-  /* Checkbox / radio / toggle custom -- knob & warnanya ikut halus */
-  input[type="checkbox"], input[type="radio"]{
-    transition:transform .12s var(--ios-spring);
-  }
-
-  /* Scroll di dalam sheet/list terasa lentur ala iOS, bukan kaku */
-  .sheetBody, .cartSheet, .adminSheet, .calcSheet, body{
-    -webkit-overflow-scrolling:touch;
-  }
-
-  /* GPU hint terarah HANYA ke elemen yg sering banget animasi/scroll,
-     supaya browser siapin layer tanpa membebani elemen statis lainnya
-     (kasih will-change ke semua elemen sekaligus justru bikin lag). */
-  .sheet, .cartSheet, .adminSheet, .calcSheet, .updToast, .item, .adminItem{
-    transform:translateZ(0);
-  }
 </style>
 </head>
 
@@ -1020,10 +733,6 @@
     <svg class="sIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
     <input id="searchBox" type="text" placeholder="Cari menu...">
   </div>
-  <div class="updCooldownBar" id="updCooldownBar" style="display:none;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3.5-7.13"/><path d="M21 3v6h-6"/></svg>
-    <span>Update otomatis dalam <b id="updCooldownDetik">30</b> detik…</span>
-  </div>
   <div class="catTabs" id="catTabs"></div>
 </div>
 
@@ -1091,33 +800,6 @@
     <div class="motivBody"><div class="motivLabel">Semangat!</div><div class="motivText" id="motivText">Semangat!</div></div>
     <button class="motivClose" id="motivClose">✕</button>
   </div>
-</div>
-
-<div class="updToastWrap" id="updToastWrap">
-  <div class="updToast" id="updToast">
-    <div class="updTop">
-      <div class="updIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3.5-7.13"/><path d="M21 3v6h-6"/></svg></div>
-      <div class="updBody">
-        <div class="updLabel">Update Tersedia</div>
-        <div class="updText">Sistem menemukan versi terbaru. Halaman akan otomatis di-refresh untuk memasangnya \u2014 pastikan dulu tidak sedang ada pembeli yang lagi dilayani.</div>
-      </div>
-      <button class="updClose" id="updToastClose">✕</button>
-    </div>
-    <div class="updBtnRow">
-      <button class="updGoBtn" id="updGoBtn">Pasang Sekarang</button>
-      <div class="updCountdown" id="updCountdown">30d</div>
-    </div>
-    <div class="updProgressTrack"><div class="updProgressFill" id="updProgressFill"></div></div>
-  </div>
-</div>
-
-<div class="matanyamanOverlay" id="matanyamanOverlay"></div>
-
-<div class="updInstallOverlay" id="updInstallOverlay">
-  <div class="updSpin"></div>
-  <div class="updCheckWrap"><div class="updCheckCircle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div></div>
-  <div class="updInstallText" id="updInstallText">Memasang update terbaru\u2026</div>
-  <div class="updInstallSub">Mohon tunggu sebentar</div>
 </div>
 
 <div class="cartOverlay" id="adminOverlay2">
@@ -1324,22 +1006,6 @@ function ambilPrefNotifikasi(){
 function simpanPrefNotifikasi(pref){
   try{ localStorage.setItem('etd_prefNotif', JSON.stringify(pref)); }catch(e){}
 }
-
-/* =====================================================================
-   MODE PERLINDUNGAN MATA -- filter overlay kekuningan (kurangi cahaya biru),
-   tersimpan per HP (localStorage), tersedia untuk SEMUA jabatan.
-   ===================================================================== */
-function ambilPrefMataNyaman(){
-  try{ return localStorage.getItem('etd_matanyaman') === '1'; }catch(e){ return false; }
-}
-function simpanPrefMataNyaman(aktif){
-  try{ localStorage.setItem('etd_matanyaman', aktif ? '1' : '0'); }catch(e){}
-}
-function terapkanModeMataNyaman(aktif){
-  document.body.classList.toggle('matanyaman-aktif', aktif);
-}
-terapkanModeMataNyaman(ambilPrefMataNyaman()); // terapkan langsung sejak boot, sebelum login pun
-
 // Bunyikan "ting" pendek pakai Web Audio API (tidak butuh file suara eksternal).
 function mainkanSuaraCheckout(){
   if(!ambilPrefNotifikasi().suaraCheckout) return;
@@ -3155,23 +2821,8 @@ async function bukaHalamanPengaturan(){
 const TEMA_WARNA_DEFAULT = {
   pineUtama: '#12291d',   // warna gelap utama (topbar, tombol, dsb -- var(--pine-900))
   aksenEmas: '#c8973f',   // warna aksen/highlight (var(--gold))
-  latarBelakang: '#dcd6c6', // warna latar halaman (var(--paper))
-  merah: '#a8452f',        // warna status/peringatan (habis, hapus, error -- var(--merah))
-  teks: '#221f19'          // warna teks utama di atas latar terang (var(--ink))
+  latarBelakang: '#dcd6c6' // warna latar halaman (var(--paper))
 };
-
-// Preset palet cepat -- kombinasi warna siap pakai supaya user tidak perlu
-// utak-atik hex satu-satu kalau cuma mau ganti nuansa/tema keseluruhan.
-const TEMA_PRESET_LIST = [
-  { nama:'Hijau Djawa',  pineUtama:'#12291d', aksenEmas:'#c8973f', latarBelakang:'#dcd6c6', merah:'#a8452f', teks:'#221f19' },
-  { nama:'Biru Malam',   pineUtama:'#12233d', aksenEmas:'#5b9bd5', latarBelakang:'#d9dfe6', merah:'#b0463a', teks:'#1a2233' },
-  { nama:'Coklat Kopi',  pineUtama:'#3a2418', aksenEmas:'#d1a054', latarBelakang:'#e6dcce', merah:'#a8452f', teks:'#2a1c12' },
-  { nama:'Merah Bata',   pineUtama:'#3d1414', aksenEmas:'#e0a458', latarBelakang:'#e8ddd2', merah:'#c0392b', teks:'#2a1414' },
-  { nama:'Ungu Senja',   pineUtama:'#2a1b3d', aksenEmas:'#c9a0e0', latarBelakang:'#e2dbe8', merah:'#a8452f', teks:'#221a2e' },
-  { nama:'Abu Modern',   pineUtama:'#26292b', aksenEmas:'#8fa3ad', latarBelakang:'#e2e4e2', merah:'#a8452f', teks:'#1f2224' },
-  { nama:'Teal Segar',   pineUtama:'#0d3330', aksenEmas:'#5fc7b8', latarBelakang:'#dbe6e3', merah:'#a8452f', teks:'#0f2422' },
-  { nama:'Gelap Elegan', pineUtama:'#1a1a1a', aksenEmas:'#c8973f', latarBelakang:'#c9c9c9', merah:'#c0392b', teks:'#141414' }
-];
 
 // Terapkan tema warna ke CSS custom properties di :root, dipanggil saat login
 // dan setiap kali warna diganti di halaman Pengaturan (untuk pratinjau langsung).
@@ -3183,17 +2834,11 @@ function terapkanTemaWarna(tema){
   root.setProperty('--pine-800', gelapkanWarna(t.pineUtama, -0.08));
   root.setProperty('--pine-700', gelapkanWarna(t.pineUtama, -0.18));
   root.setProperty('--pine-600', gelapkanWarna(t.pineUtama, -0.28));
-  root.setProperty('--pine-500', gelapkanWarna(t.pineUtama, -0.40));
-  root.setProperty('--pine-100', terangkanWarna(t.pineUtama, 0.88));
-  root.setProperty('--pine-50', terangkanWarna(t.pineUtama, 0.94));
   root.setProperty('--gold', t.aksenEmas);
   root.setProperty('--gold-dark', gelapkanWarna(t.aksenEmas, 0.15));
   root.setProperty('--gold-light', terangkanWarna(t.aksenEmas, 0.82));
   root.setProperty('--paper', t.latarBelakang);
   root.setProperty('--card', terangkanWarna(t.latarBelakang, 0.35));
-  root.setProperty('--merah', t.merah);
-  root.setProperty('--merah-light', terangkanWarna(t.merah, 0.85));
-  root.setProperty('--ink', t.teks);
 }
 
 // Helper kecil: gelapkan/terangkan warna hex sebesar persentase tertentu (0-1),
@@ -3264,16 +2909,6 @@ function renderHalamanPengaturan(){
         <span class="prefToggleSlider"></span>
       </label>
     </div>
-    <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-      <div>
-        <div style="font-size:13.5px; font-weight:650; color:var(--ink);">Mode Perlindungan Mata</div>
-        <div class="hint" style="margin-top:2px;">Lapisan warna hangat kekuningan di layar untuk mengurangi cahaya biru, cocok dipakai malam hari. Hanya berlaku di HP ini.</div>
-      </div>
-      <label class="prefToggle">
-        <input type="checkbox" id="pgToggleMataNyaman" ${ambilPrefMataNyaman() ? 'checked' : ''}>
-        <span class="prefToggleSlider"></span>
-      </label>
-    </div>
 
     <div class="catLabelAdmin">Santai Sebentar</div>
     <div class="hint" style="margin-bottom:12px;">Lagi nunggu pembeli? Main game kecil dulu, yuk.</div>
@@ -3297,19 +2932,7 @@ function renderHalamanPengaturan(){
     </div>
 
     <div class="catLabelAdmin">Sesuaikan Warna Tampilan</div>
-    <div class="hint" style="margin-bottom:14px;">Pilih warna sesukamu, atau langsung pakai salah satu palet cepat di bawah. Pratinjau langsung berubah -- belum tersimpan permanen sampai kamu pencet "Simpan Warna".</div>
-
-    <div class="formField">
-      <label>Palet Cepat</label>
-      <div id="pgPaletRow" style="display:flex; gap:10px; overflow-x:auto; padding:2px 2px 8px; scrollbar-width:none;">
-        ${TEMA_PRESET_LIST.map((p,i)=>`
-          <button type="button" class="pgPaletBtn" data-preset="${i}" title="${p.nama}" style="flex:0 0 auto; width:52px; height:52px; border-radius:14px; border:1.4px solid var(--line-soft); cursor:pointer; padding:5px; display:flex; flex-direction:column; gap:2px; background:${p.latarBelakang};">
-            <span style="display:block; flex:1; border-radius:5px; background:${p.pineUtama};"></span>
-            <span style="display:block; height:7px; border-radius:5px; background:${p.aksenEmas};"></span>
-          </button>
-        `).join('')}
-      </div>
-    </div>
+    <div class="hint" style="margin-bottom:14px;">Pilih warna sesukamu. Pratinjau di bawah langsung berubah begitu warna diganti -- belum tersimpan permanen sampai kamu pencet "Simpan Warna".</div>
 
     <div class="formField">
       <label>Warna Utama (topbar, tombol, aksen gelap)</label>
@@ -3332,20 +2955,6 @@ function renderHalamanPengaturan(){
         <input id="pgWarnaLatarHex" type="text" value="${temaSekarang.latarBelakang}" style="flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13px; font-family:monospace; background:var(--card); color:var(--ink);">
       </div>
     </div>
-    <div class="formField">
-      <label>Warna Teks</label>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <input id="pgWarnaTeks" type="color" value="${temaSekarang.teks}" style="width:52px; height:42px; border-radius:10px; border:1.4px solid var(--line); padding:2px; background:var(--card); cursor:pointer;">
-        <input id="pgWarnaTeksHex" type="text" value="${temaSekarang.teks}" style="flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13px; font-family:monospace; background:var(--card); color:var(--ink);">
-      </div>
-    </div>
-    <div class="formField">
-      <label>Warna Status/Peringatan (habis, hapus, error)</label>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <input id="pgWarnaMerah" type="color" value="${temaSekarang.merah}" style="width:52px; height:42px; border-radius:10px; border:1.4px solid var(--line); padding:2px; background:var(--card); cursor:pointer;">
-        <input id="pgWarnaMerahHex" type="text" value="${temaSekarang.merah}" style="flex:1; padding:11px 13px; border-radius:11px; border:1.4px solid var(--line); font-size:13px; font-family:monospace; background:var(--card); color:var(--ink);">
-      </div>
-    </div>
 
     <div class="formField">
       <label>Pratinjau</label>
@@ -3358,7 +2967,6 @@ function renderHalamanPengaturan(){
           <div style="flex:1; min-width:120px; border-radius:12px; padding:12px; font-size:12.5px; font-weight:650;">Contoh Menu Item<br><span style="font-weight:700; font-size:12px;">Rp8.000</span></div>
           <button id="pgPratinjauBtn" style="border:none; border-radius:12px; padding:12px 16px; font-size:13px; font-weight:700; color:#f3ede0; cursor:default;">Tombol Aksi</button>
         </div>
-        <div id="pgPratinjauHabis" style="padding:0 16px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.2px;">Contoh Habis</div>
       </div>
     </div>
 
@@ -3366,27 +2974,7 @@ function renderHalamanPengaturan(){
       <button class="addVarBtn" id="pgResetWarnaBtn" style="margin-bottom:0;">Reset ke Default</button>
       <button class="saveFormBtn" id="pgSimpanWarnaBtn" style="margin-top:0;">Simpan Warna</button>
     </div>
-
-    <div class="catLabelAdmin">Tentang Aplikasi</div>
-    <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-      <div style="font-size:13.5px; font-weight:650; color:var(--ink);">Versi Aplikasi</div>
-      <div id="pgVersiAplikasi" style="font-size:13px; font-weight:700; color:var(--muted); font-family:monospace;">Memuat\u2026</div>
-    </div>
   `;
-
-  // Ambil nomor versi terkini dari Firestore supaya semua jabatan (bukan cuma
-  // Owner) bisa lihat lagi jalan di versi berapa. Kalau belum pernah ada
-  // sinyal update sama sekali, tampilkan v0.0 (versi awal).
-  (async ()=>{
-    const elVersi = el('pgVersiAplikasi');
-    if(!elVersi) return;
-    try{
-      const snap = await getDoc(UPDATE_SIGNAL_REF);
-      const versi = (snap.exists() && typeof snap.data().versi === 'number') ? snap.data().versi : 0;
-      updateVersiTerkini = versi;
-      elVersi.textContent = `v${versi}`;
-    }catch(e){ elVersi.textContent = '\u2014'; }
-  })();
 
   el('pgSimpanNamaBtn').onclick = async ()=>{
     const namaBaru = el('pgNamaTampilan').value.trim();
@@ -3408,10 +2996,8 @@ function renderHalamanPengaturan(){
       if(!yakin) return;
       const btn = el('pgPaksaUpdateBtn'); btn.disabled = true; btn.textContent = 'Mengirim sinyal...';
       try{
-        // Ambil versi terakhir dulu, lalu naikkan otomatis +0.1 (0.0 -> 0.1 -> ... -> 0.9 -> 1.0 -> 1.1 dst).
-        const versiBaru = await hitungVersiBerikutnya();
-        await setDoc(UPDATE_SIGNAL_REF, { waktu: Timestamp.fromDate(new Date()), oleh: SESI.namaTampilan, versi: versiBaru });
-        showToast(`Sinyal update v${versiBaru} terkirim \u2014 semua perangkat akan refresh otomatis`);
+        await setDoc(UPDATE_SIGNAL_REF, { waktu: Timestamp.fromDate(new Date()), oleh: SESI.namaTampilan });
+        showToast("Sinyal update terkirim \u2014 semua perangkat akan refresh otomatis");
       }catch(e){ showToast("Gagal mengirim sinyal update. Cek koneksi.", false); }
       finally{ btn.disabled = false; btn.textContent = 'Paksa Update Semua Perangkat'; }
     };
@@ -3429,12 +3015,6 @@ function renderHalamanPengaturan(){
     pref.motivasiAktif = el('pgToggleMotivasi').checked;
     simpanPrefNotifikasi(pref);
     showToast(pref.motivasiAktif ? "Notifikasi motivasi diaktifkan" : "Notifikasi motivasi dimatikan");
-  });
-  el('pgToggleMataNyaman').addEventListener('change', ()=>{
-    const aktif = el('pgToggleMataNyaman').checked;
-    simpanPrefMataNyaman(aktif);
-    terapkanModeMataNyaman(aktif);
-    showToast(aktif ? "Mode Perlindungan Mata diaktifkan" : "Mode Perlindungan Mata dimatikan");
   });
 
   // --- Bagian Santai Sebentar (game) ---
@@ -3849,10 +3429,10 @@ function renderKelolaStokCup(){
         <div class="cuiName">${u.label}</div>
         <div class="cuiStokBadge ${badgeCupCls}">${badgeCupTxt}</div>
       </div>
-      <div style="display:flex; align-items:center; gap:8px; margin-top:10px; width:100%;">
-        <input type="number" class="stokCupInput" value="${stokSekarang}" min="0" style="flex:1 1 0%; min-width:0; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
-        <button class="stokCupSaveB" style="flex:0 0 auto; padding:10px 14px; border-radius:10px; border:none; background:var(--pine-900); color:#f3ede0; font-size:12.5px; font-weight:650; cursor:pointer; white-space:nowrap;">Simpan</button>
-        <button class="restockCupOpenB" title="Restock (tambah stok)" style="flex:0 0 auto; width:38px; height:38px; padding:0; border-radius:10px; border:1.4px solid var(--line-soft); background:var(--pine-50); color:var(--pine-700); cursor:pointer; display:flex; align-items:center; justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+      <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+        <input type="number" class="stokCupInput" value="${stokSekarang}" min="0" style="flex:1; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
+        <button class="stokCupSaveB" style="flex:0 0 auto; padding:10px 14px; border-radius:10px; border:none; background:var(--pine-900); color:#f3ede0; font-size:12.5px; font-weight:650; cursor:pointer;">Simpan</button>
+        <button class="restockCupOpenB" title="Restock (tambah stok)" style="flex:0 0 auto; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line-soft); background:var(--pine-50); color:var(--pine-700); cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
     </div>`;
   });
@@ -4228,22 +3808,11 @@ function dorongStateOverlay(){
 function pasangPelacakOverlay(id){
   const elm = document.getElementById(id);
   if(!elm) return;
-  // Simpan status "show" sebelumnya supaya kita hanya push state saat
-  // TERJADI TRANSISI dari tertutup -> terbuka (edge), bukan setiap kali
-  // MutationObserver kebetulan terpanggil (misalnya gara-gara class lain
-  // seperti "closing" ikut berubah). Tanpa penjagaan ini, overlay yang
-  // toggle class-nya berkali-kali dalam waktu singkat (mis. dipicu observer
-  // animasi keluar di bagian akhir file) bisa memicu history.pushState()
-  // berulang-ulang dalam sekejap -> Chrome mendeteksinya sebagai spam
-  // navigasi dan MENAHAN/THROTTLE seluruh navigasi halaman, yang membuat
-  // app terasa freeze total saat tombol apa pun ditekan.
-  let sedangShowSebelumnya = elm.classList.contains('show');
+  // pantau setiap kali class "show" ditambahkan ke overlay ini
   const observer = new MutationObserver(()=>{
-    const sedangShowSekarang = elm.classList.contains('show');
-    if(sedangShowSekarang && !sedangShowSebelumnya){
+    if(elm.classList.contains('show')){
       dorongStateOverlay();
     }
-    sedangShowSebelumnya = sedangShowSekarang;
   });
   observer.observe(elm, { attributes:true, attributeFilter:['class'] });
 }
@@ -4278,33 +3847,15 @@ history.pushState({ kasirBase: true }, '');
 const UPDATE_SIGNAL_REF = doc(db, "sistem", "updateSignal");
 let updateSignalAwalDiabaikan = false; // lewati pembacaan pertama (snapshot awal saat app baru dibuka)
 let updateSignalWaktuTerakhir = null; // waktu sinyal terakhir yang sudah diketahui, dipakai fallback polling
-let updateVersiTerkini = null; // versi terakhir yang tersimpan di Firestore, dipakai fallback polling & tampilan toast
-
-// Hitung nomor versi berikutnya secara OTOMATIS: mulai dari 0.0, tiap Owner
-// menekan "Paksa Update Semua Perangkat" naik +0.1 (0.0 -> 0.1 -> 0.2 -> ...
-// -> 0.9 -> 1.0 -> 1.1 -> dst). Pakai Math.round supaya tidak kena masalah
-// pembulatan desimal biner JS (0.1+0.2 != 0.3 kalau dihitung polos).
-async function hitungVersiBerikutnya(){
-  let versiSekarang = 0;
-  try{
-    const snap = await getDoc(UPDATE_SIGNAL_REF);
-    if(snap.exists() && typeof snap.data().versi === 'number') versiSekarang = snap.data().versi;
-  }catch(e){ /* kalau gagal baca, mulai anggap dari 0 supaya tetap bisa lanjut kirim sinyal */ }
-  return Math.round((versiSekarang + 0.1) * 10) / 10;
-}
 
 onSnapshot(UPDATE_SIGNAL_REF, async (snap)=>{
   if(!updateSignalAwalDiabaikan){
     updateSignalAwalDiabaikan = true;
-    if(snap.exists()){
-      updateSignalWaktuTerakhir = waktuSinyalKeMs(snap.data());
-      if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
-    }
+    if(snap.exists()) updateSignalWaktuTerakhir = waktuSinyalKeMs(snap.data());
     return;
   }
   if(!snap.exists()) return;
-  if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
-  tampilkanBannerUpdate();
+  await paksaAmbilVersiTerbaru();
 }, (err)=>{ console.error('Gagal memantau sinyal update sistem (realtime):', err); });
 
 function waktuSinyalKeMs(data){
@@ -4324,11 +3875,10 @@ async function cekSinyalUpdateManual(){
     const snap = await getDoc(UPDATE_SIGNAL_REF);
     if(!snap.exists()) return;
     const waktuMs = waktuSinyalKeMs(snap.data());
-    if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
     if(updateSignalWaktuTerakhir === null){ updateSignalWaktuTerakhir = waktuMs; return; }
     if(waktuMs && waktuMs > updateSignalWaktuTerakhir){
       updateSignalWaktuTerakhir = waktuMs;
-      tampilkanBannerUpdate();
+      await paksaAmbilVersiTerbaru();
     }
   }catch(e){ console.error('Gagal cek sinyal update sistem (polling):', e); }
 }
@@ -4348,110 +3898,6 @@ window.addEventListener('pageshow', cekSinyalUpdateManual);
 // mengambil ulang dari server, WebView tetap menyajikan versi lama dari cache
 // internal. Fungsi ini mencoba semua cara pembersihan cache yang tersedia di
 // halaman SEBELUM pindah ke URL baru, supaya reload-nya benar-benar "bersih".
-let updBannerSudahTampil = false; // cegah dobel banner kalau ada 2 sinyal susul-susulan / realtime+polling nembak bareng
-let updAutoUpdateTimer = null;
-let updHideNotifTimer = null;
-let updCountdownInterval = null;
-
-function tampilkanBannerUpdate(){
-  if(updBannerSudahTampil) return; // sudah ada banner jalan / update sudah diproses, jangan mulai ulang
-  updBannerSudahTampil = true;
-
-  const DETIK_AUTO_UPDATE = 30;
-  const DETIK_TAMPIL_NOTIF = 7;
-  let sisaDetik = DETIK_AUTO_UPDATE;
-
-  const wrap = el('updToastWrap');
-  const toastEl = el('updToast');
-  const countdownEl = el('updCountdown');
-  const progressEl = el('updProgressFill');
-  const cooldownBar = el('updCooldownBar');
-  const cooldownDetikEl = el('updCooldownDetik');
-
-  // Tampilkan nomor versi di label & isi teks toast, kalau tersedia.
-  const labelEl = el('updToast').querySelector('.updLabel');
-  const textEl2 = el('updToast').querySelector('.updText');
-  if(typeof updateVersiTerkini === 'number'){
-    if(labelEl) labelEl.textContent = `Update Tersedia \u2014 v${updateVersiTerkini}`;
-    if(textEl2) textEl2.textContent = `Sistem menemukan versi ${updateVersiTerkini} terbaru. Halaman akan otomatis di-refresh untuk memasangnya \u2014 pastikan dulu tidak sedang ada pembeli yang lagi dilayani.`;
-  }
-
-  wrap.style.display = 'flex';
-  requestAnimationFrame(()=> toastEl.classList.add('show'));
-  countdownEl.textContent = sisaDetik + 'd';
-  progressEl.style.width = '100%';
-
-  // Strip cooldown kecil di layar utama (di atas tab kategori) -- tetap kelihatan
-  // walau banner notifikasi di atas sudah hilang setelah 7 detik, supaya kasir
-  // masih ingat update bakal jalan otomatis.
-  if(cooldownBar){ cooldownBar.style.display = 'flex'; cooldownDetikEl.textContent = sisaDetik; }
-
-  // Progress bar & countdown angka jalan penuh 30 detik (proses auto-update tetap
-  // berjalan di background walau notifikasi visualnya sudah disembunyikan di detik ke-7).
-  updCountdownInterval = setInterval(()=>{
-    sisaDetik--;
-    if(cooldownDetikEl) cooldownDetikEl.textContent = Math.max(sisaDetik, 0);
-    if(sisaDetik <= 0){ clearInterval(updCountdownInterval); return; }
-    countdownEl.textContent = sisaDetik + 'd';
-    progressEl.style.width = (sisaDetik / DETIK_AUTO_UPDATE * 100) + '%';
-  }, 1000);
-
-  // Sembunyikan notifikasi (geser ke atas) setelah 7 detik -- TIDAK membatalkan
-  // proses auto-update, cuma menyembunyikan tampilannya dari layar.
-  updHideNotifTimer = setTimeout(()=>{ sembunyikanBannerUpdate(); }, DETIK_TAMPIL_NOTIF * 1000);
-
-  // Auto-update paksa setelah 30 detik kalau tidak ada aksi dari user.
-  updAutoUpdateTimer = setTimeout(()=>{ mulaiProsesUpdate(); }, DETIK_AUTO_UPDATE * 1000);
-
-  el('updToastClose').onclick = ()=>{
-    clearTimeout(updHideNotifTimer);
-    sembunyikanBannerUpdate();
-    // Auto-update 30 detik TETAP berjalan walau notifikasi ditutup manual.
-  };
-
-  el('updGoBtn').onclick = ()=>{
-    clearTimeout(updHideNotifTimer);
-    clearTimeout(updAutoUpdateTimer);
-    clearInterval(updCountdownInterval);
-    sembunyikanBannerUpdate();
-    mulaiProsesUpdate();
-  };
-}
-
-function sembunyikanBannerUpdate(){
-  const toastEl = el('updToast');
-  if(!toastEl) return;
-  toastEl.classList.remove('show');
-  toastEl.classList.add('leaving');
-  setTimeout(()=>{ const w = el('updToastWrap'); if(w) w.style.display = 'none'; }, 400);
-}
-
-// Animasi "Memasang update..." selama 3 detik (spinner -> centang sukses) lalu
-// reload halaman. Dipanggil baik dari tombol "Pasang Sekarang" (langsung) maupun
-// dari auto-update 30 detik (tanpa notifikasi kalau bannernya sudah ditutup duluan).
-function mulaiProsesUpdate(){
-  clearTimeout(updAutoUpdateTimer);
-  clearInterval(updCountdownInterval);
-  sembunyikanBannerUpdate();
-  const cooldownBar = el('updCooldownBar');
-  if(cooldownBar) cooldownBar.style.display = 'none';
-
-  const overlay = el('updInstallOverlay');
-  const textEl = el('updInstallText');
-  overlay.classList.remove('done');
-  textEl.textContent = typeof updateVersiTerkini === 'number'
-    ? `Memasang update v${updateVersiTerkini}\u2026`
-    : 'Memasang update terbaru\u2026';
-  overlay.classList.add('show');
-
-  setTimeout(()=>{
-    overlay.classList.add('done');
-    textEl.textContent = 'Berhasil! Memuat ulang\u2026';
-  }, 1900);
-
-  setTimeout(()=>{ paksaAmbilVersiTerbaru(); }, 3000);
-}
-
 async function paksaAmbilVersiTerbaru(){
   try{
     // 1) Hapus semua Cache Storage API (kalau browser/WebView mendukungnya).
@@ -4486,89 +3932,6 @@ async function paksaAmbilVersiTerbaru(){
    ===================================================================== */
 cekWaktuTutupSetiapDetik();
 cobaAutoLogin().finally(()=>{ el('bootLoading').style.display = 'none'; });
-
-/* =====================================================================
-   ANIMASI KELUAR OTOMATIS UTK SEMUA OVERLAY (WAJIB ada animasi masuk & keluar)
-   Semua kode lama menutup overlay dengan classList.remove('show'), yang
-   sebelumnya langsung display:none tanpa animasi. Observer di bawah ini
-   menyadap SETIAP perubahan class 'show' pada elemen apa pun yang nama
-   class-nya mengandung "Overlay" -- begitu 'show' dicabut, kita mainkan
-   dulu animasi keluar (class .closing) selama --ios-med (280ms), baru
-   benar-benar disembunyikan. Ini otomatis berlaku ke SEMUA overlay yang
-   sudah ada maupun yang mungkin ditambah nanti, tanpa perlu ubah kode
-   buka/tutup satu-satu di tempat lain.
-   ===================================================================== */
-(function(){
-  const DURASI_KELUAR = 300; // sedikit lebih lama dari --ios-med (280ms) sbg jaga2
-
-  // Elemen yang SENGAJA dikecualikan dari animasi keluar otomatis -- ini bukan
-  // modal/sheet yg dibuka-tutup pakai class 'show', tapi lapisan efek statis.
-  const ID_DIKECUALIKAN = ['matanyamanOverlay'];
-
-  const timerPerElemen = new WeakMap();
-
-  function elemenOverlay(node){
-    if(!node || node.nodeType !== 1 || !node.classList) return false;
-    if(ID_DIKECUALIKAN.includes(node.id)) return false;
-    return Array.from(node.classList).some(c => /overlay/i.test(c));
-  }
-
-  function tanganiPerubahan(node){
-    if(!elemenOverlay(node)) return;
-    const sedangShow = node.classList.contains('show');
-    const timerLama = timerPerElemen.get(node);
-
-    if(sedangShow){
-      // Baru dibuka -- batalkan proses "closing" yg mungkin masih berjalan,
-      // dan pastikan pointer-events dikembalikan normal (bukan none).
-      if(timerLama) clearTimeout(timerLama);
-      node.classList.remove('closing');
-      node.style.pointerEvents = '';
-    } else if(node.classList.contains('closing')){
-      // Sudah dalam proses closing (dipicu kita sendiri) -- biarkan jalan.
-      return;
-    } else {
-      // Baru saja ditutup (show dicabut) & belum closing -- mainkan animasi
-      // keluar, sekaligus matikan pointer-events LANGSUNG dari JS (failsafe
-      // ganda -- tidak cuma andalkan CSS !important) supaya overlay yg lagi
-      // fade-out tidak pernah bisa menangkap klik/tap.
-      if(timerLama) clearTimeout(timerLama);
-      node.classList.add('closing');
-      node.style.pointerEvents = 'none';
-      const t = setTimeout(()=>{
-        node.classList.remove('closing');
-        node.style.pointerEvents = '';
-        timerPerElemen.delete(node);
-      }, DURASI_KELUAR);
-      timerPerElemen.set(node, t);
-    }
-  }
-
-  const observer = new MutationObserver((mutations)=>{
-    for(const m of mutations){
-      if(m.type === 'attributes' && m.attributeName === 'class'){
-        tanganiPerubahan(m.target);
-      }
-    }
-  });
-
-  observer.observe(document.body, {
-    attributes:true, attributeFilter:['class'], subtree:true
-  });
-
-  // FAILSAFE TAMBAHAN: kalau karena sebab apa pun (error JS lain, elemen
-  // dihapus dari DOM saat timer jalan, dsb) ada overlay yg nyangkut dalam
-  // keadaan 'closing' lebih dari semestinya, paksa bersihkan tiap 2 detik
-  // supaya TIDAK PERNAH ada overlay transparan yg mengunci seluruh layar.
-  setInterval(()=>{
-    document.querySelectorAll('.closing').forEach(elm=>{
-      if(!elm.classList.contains('show')){
-        elm.classList.remove('closing');
-        elm.style.pointerEvents = '';
-      }
-    });
-  }, 2000);
-})();
 </script>
 
 </body>

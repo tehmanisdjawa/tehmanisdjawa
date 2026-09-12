@@ -485,6 +485,13 @@
   .stockCupSaveBar{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;}
   .stockCupSaveBar button{padding:9px 14px; border-radius:10px; border:none; background:var(--pine-900); color:#f3ede0; font-size:12px; font-weight:650; cursor:pointer;}
   .stockCupSaveBar .scHint{font-size:11px; color:var(--muted); flex:1; min-width:160px;}
+
+  /* ============ KELOLA STOK CUP (per ukuran, bukan per menu) ============ */
+  .cupUkuranItem{border:1px solid var(--line-soft); border-radius:14px; padding:14px; margin-bottom:12px; background:var(--card); box-shadow:var(--shadow-card);}
+  .cupUkuranItem .cuiTop{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .cupUkuranItem .cuiName{font-family:"Fraunces",serif; font-size:15px; font-weight:600; color:var(--pine-950);}
+  .cupUkuranItem .cuiStokBadge{font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; background:var(--pine-50); color:var(--pine-700);}
+  .cupUkuranItem .cuiStokBadge.habis{background:var(--merah-light); color:var(--merah);}
   .shiftGrid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
   .shiftCard{background:var(--card); border:1px solid var(--line-soft); border-radius:13px; padding:12px 13px; box-shadow:var(--shadow-card);}
   .shiftCard .scLbl{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-weight:700; margin-bottom:5px; display:flex; align-items:center; gap:5px;}
@@ -674,6 +681,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8V21H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
         <span>Kelola Stok</span>
       </button>
+      <button class="menuDropItem" id="stokCupBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l-1.5 15a2 2 0 01-2 1.8H9.5a2 2 0 01-2-1.8L6 3z"/><path d="M6 8h12"/></svg>
+        <span>Kelola Stok Cup</span>
+      </button>
       <button class="menuDropItem" id="akunBtn" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
         <span>Kelola Akun</span>
@@ -799,6 +810,13 @@
   </div>
 </div>
 
+<div class="cartOverlay" id="stokCupOverlay">
+  <div class="adminSheet">
+    <div class="adminHead"><h2>Kelola Stok Cup</h2><button id="stokCupClose">✕</button></div>
+    <div class="adminBody" id="stokCupBody"></div>
+  </div>
+</div>
+
 <div class="cartOverlay" id="restockOverlay">
   <div class="adminSheet">
     <div class="adminHead"><h2>Restock</h2><button id="restockClose">✕</button></div>
@@ -879,6 +897,7 @@ const db = getFirestore(fbApp);
    STATE GLOBAL
    ===================================================================== */
 let MENU = [];              // [{id, kategori, nama, varian:[{ukuran, harga}]}]
+let STOK_CUP_UKURAN_MAP_AKTIF = {}; // ukuran (dinormalisasi) -> jumlah stok cup fisik outlet aktif
 let activeCat = "Semua";
 let cart = {};
 let modeEditMenuAktif = false; // Owner: mode edit cepat menu langsung dari layar utama
@@ -1194,6 +1213,7 @@ function terapkanTampilanJabatan(){
   el('adminBtn').style.display = isOwner ? 'flex' : 'none';
   el('modeEditMenuBtn').style.display = isOwner ? 'flex' : 'none';
   el('stokBtn').style.display = isOwner ? 'flex' : 'none';
+  el('stokCupBtn').style.display = isOwner ? 'flex' : 'none';
   el('akunBtn').style.display = isOwner ? 'flex' : 'none';
   el('pengaturanBtn').style.display = SESI ? 'flex' : 'none';
   el('userChip').textContent = SESI ? (SESI.namaTampilan + ' \u00b7 ' + SESI.jabatan + (SESI.outlet ? ' \u00b7 ' + SESI.outlet : '')) : '';
@@ -1243,7 +1263,7 @@ function mulaiSemuaSetelahLogin(){
    ===================================================================== */
 el('menuBtn').onclick = (e)=>{ e.stopPropagation(); el('menuDropdownOverlay').classList.add('show'); };
 el('menuDropdownOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'menuDropdownOverlay') el('menuDropdownOverlay').classList.remove('show'); });
-['calcBtn','laporanBtn','adminBtn','modeEditMenuBtn','stokBtn','akunBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
+['calcBtn','laporanBtn','adminBtn','modeEditMenuBtn','stokBtn','stokCupBtn','akunBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
   el(id).addEventListener('click', ()=> el('menuDropdownOverlay').classList.remove('show'));
 });
 
@@ -1407,8 +1427,12 @@ function loadMenuRealtime(){
 }
 
 // Gabungkan status habis dari koleksi "stok" (per outlet) ke MENU, mirip logika lama.
+// Lapisan tambahan: status habis dari STOK CUP PER UKURAN ("stok_cup_ukuran") --
+// ini independen dari menu, jadi kalau Cup ukuran tertentu habis di outlet ini,
+// SEMUA menu dengan ukuran itu otomatis ikut habis, apapun menunya.
 async function terapkanStokKeMenu(rows){
   let stokMap = {};
+  let cupUkuranMap = {}; // ukuran (dinormalisasi) -> jumlah stok cup fisik
   if(SESI && SESI.outlet){
     try{
       const qy = query(collection(db, "stok"), where("outlet", "==", SESI.outlet));
@@ -1417,6 +1441,15 @@ async function terapkanStokKeMenu(rows){
         const s = d.data();
         stokMap[s.kategori+'|'+s.nama+'|'+s.ukuran] = s.jumlah;
       });
+    }catch(e){}
+    try{
+      const qyCup = query(collection(db, "stok_cup_ukuran"), where("outlet", "==", SESI.outlet));
+      const snapCup = await getDocs(qyCup);
+      snapCup.docs.forEach(d=>{
+        const s = d.data();
+        cupUkuranMap[s.ukuran] = s.jumlah;
+      });
+      STOK_CUP_UKURAN_MAP_AKTIF = cupUkuranMap;
     }catch(e){}
   }
   // Kelompokkan per kategori > nama > varian, sesuai struktur lama biar UI tak berubah.
@@ -1434,6 +1467,10 @@ async function terapkanStokKeMenu(rows){
         const key = kategori+'|'+nama+'|'+v.ukuran;
         if(key in stokMap){ stokSisa = stokMap[key]; if(stokSisa <= 0) habis = true; }
       }
+      // Cek stok cup per ukuran (independen dari menu): kalau ukuran cup ini terdaftar
+      // dan stoknya 0, varian ukuran ini ditandai habis TERLEPAS dari stok menu di atas.
+      const ukuranNormal = normalisasiUkuran(v.ukuran, nama);
+      if(ukuranNormal in cupUkuranMap && cupUkuranMap[ukuranNormal] <= 0) habis = true;
       catMap[kategori][nama].varian.push({ nama: v.ukuran, harga: v.harga||0, tambahan: v.tambahan||'', habis, stok: stokSisa });
     });
   });
@@ -1619,6 +1656,25 @@ el('checkoutBtn').onclick = async ()=>{
             tx.update(stokRef, { jumlah: baru });
           });
         }catch(e){ /* gagal kurangi stok utk 1 item, jangan batalkan seluruh transaksi */ }
+      }
+    }
+
+    // Kurangi STOK CUP PER UKURAN (independen dari menu) -- setiap item yang terjual
+    // mengurangi stok cup fisik sesuai ukurannya, apapun menunya.
+    if(SESI.outlet){
+      for(const it of items){
+        const ukuranNormal = normalisasiUkuran(it.varian, it.nama);
+        const cupDocId = (SESI.outlet+'_'+ukuranNormal).replace(/[^a-zA-Z0-9]/g,'_');
+        const cupRef = doc(db, "stok_cup_ukuran", cupDocId);
+        try{
+          await runTransaction(db, async (tx)=>{
+            const snap = await tx.get(cupRef);
+            if(!snap.exists()) return; // ukuran ini belum dikelola stok cup-nya, lewati
+            const skrg = Number(snap.data().jumlah)||0;
+            const baru = Math.max(0, skrg - it.qty);
+            tx.update(cupRef, { jumlah: baru });
+          });
+        }catch(e){ /* gagal kurangi stok cup utk 1 item, jangan batalkan seluruh transaksi */ }
       }
     }
 
@@ -3156,6 +3212,210 @@ el('stokBtn').onclick = async ()=>{
 };
 el('stokClose').onclick = ()=> el('stokOverlay').classList.remove('show');
 
+/* =====================================================================
+   KELOLA STOK CUP (per UKURAN, independen dari menu) — khusus Owner.
+   Beda dari Kelola Stok di atas: ini bukan stok per menu+ukuran, tapi
+   stok cup FISIK per ukuran saja (Small/Medium/Large/Jumbo). Kalau stok
+   ukuran tertentu habis, SEMUA menu dengan ukuran itu otomatis ikut
+   ditandai habis (lihat terapkanStokKeMenu), apapun menunya.
+   Dokumen id: outlet_ukuran (disanitasi), koleksi "stok_cup_ukuran".
+   ===================================================================== */
+let STOKCUP_OUTLET_AKTIF = '';
+let STOKCUP_LIST = [];
+
+el('stokCupBtn').onclick = async ()=>{
+  if(!SESI || SESI.jabatan !== 'Owner') return;
+  await muatDaftarOutlet();
+  if(OUTLET_LIST.length === 0){
+    showToast("Belum ada outlet terdaftar. Tambah outlet lewat Kelola Akun (isi kolom Outlet salah satu akun) dulu.", false);
+    return;
+  }
+  STOKCUP_OUTLET_AKTIF = STOKCUP_OUTLET_AKTIF && OUTLET_LIST.includes(STOKCUP_OUTLET_AKTIF) ? STOKCUP_OUTLET_AKTIF : OUTLET_LIST[0];
+  renderStokCupOutletPicker();
+  await muatKelolaStokCup();
+  el('stokCupOverlay').classList.add('show');
+};
+el('stokCupClose').onclick = ()=> el('stokCupOverlay').classList.remove('show');
+
+function stokCupUkuranDocId(outlet, ukuran){
+  return (outlet+'_'+ukuran).replace(/[^a-zA-Z0-9]/g,'_');
+}
+
+function renderStokCupOutletPicker(){
+  const wrap = document.createElement('div');
+  wrap.className = 'outletPickRow';
+  wrap.id = 'stokCupOutletPicker';
+  wrap.innerHTML = OUTLET_LIST.map(o=>`<button data-o="${o}" class="${o===STOKCUP_OUTLET_AKTIF?'active':''}">${o}</button>`).join('');
+  const existing = document.getElementById('stokCupOutletPicker');
+  if(existing) existing.remove();
+  el('stokCupBody').prepend(wrap);
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick = async ()=>{ STOKCUP_OUTLET_AKTIF = b.dataset.o; renderStokCupOutletPicker(); await muatKelolaStokCup(); };
+  });
+}
+
+async function muatKelolaStokCup(){
+  el('stokCupBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat data stok cup...</div>';
+  try{
+    const qy = query(collection(db, "stok_cup_ukuran"), where("outlet","==", STOKCUP_OUTLET_AKTIF));
+    const snap = await getDocs(qy);
+    STOKCUP_LIST = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderKelolaStokCup();
+  }catch(e){ el('stokCupBody').innerHTML = `<div class="empty">Gagal memuat stok cup.<br><span style="font-size:11px; color:var(--muted-soft);">${e && e.message ? e.message : e}</span></div>`; console.error('Gagal memuat stok cup:', e); }
+}
+function cariStokCup(ukuran){
+  return STOKCUP_LIST.find(s => s.ukuran===ukuran) || null;
+}
+
+function renderKelolaStokCup(){
+  let html = `<div class="empty" style="padding:6px 4px 16px; text-align:left; font-size:12px;">
+      Stok cup di bawah khusus untuk outlet <b>${STOKCUP_OUTLET_AKTIF}</b>, per UKURAN (bukan per menu). Kalau stok satu ukuran habis, SEMUA menu ukuran itu otomatis tidak bisa dipesan di outlet ini. Ketik ulang angka untuk menimpa langsung, atau gunakan tombol Restock untuk menambah stok dengan tercatat di histori.
+    </div>
+    <button class="addBtn" id="riwayatRestockCupBtn" style="border-style:solid; background:var(--pine-50);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>Lihat Riwayat Restock Cup</button>`;
+  UKURAN_OZ.forEach(u=>{
+    const info = cariStokCup(u.value);
+    const stokSekarang = info ? info.jumlah : 0;
+    const habis = stokSekarang <= 0;
+    html += `<div class="cupUkuranItem" data-ukuran="${u.value}">
+      <div class="cuiTop">
+        <div class="cuiName">${u.label}</div>
+        <div class="cuiStokBadge ${habis?'habis':''}">${habis ? 'Habis' : stokSekarang+' cup'}</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+        <input type="number" class="stokCupInput" value="${stokSekarang}" min="0" style="flex:1; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
+        <button class="stokCupSaveB" style="flex:0 0 auto; padding:10px 14px; border-radius:10px; border:none; background:var(--pine-900); color:#f3ede0; font-size:12.5px; font-weight:650; cursor:pointer;">Simpan</button>
+        <button class="restockCupOpenB" title="Restock (tambah stok)" style="flex:0 0 auto; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line-soft); background:var(--pine-50); color:var(--pine-700); cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+    </div>`;
+  });
+  el('stokCupBody').innerHTML = '';
+  renderStokCupOutletPicker();
+  const bodyDiv = document.createElement('div');
+  bodyDiv.innerHTML = html;
+  el('stokCupBody').appendChild(bodyDiv);
+
+  el('riwayatRestockCupBtn').onclick = ()=> bukaRiwayatRestockCup();
+  el('stokCupBody').querySelectorAll('.cupUkuranItem').forEach(rowEl=>{
+    const ukuran = rowEl.dataset.ukuran;
+    rowEl.querySelector('.stokCupSaveB').onclick = async ()=>{
+      const val = Number(rowEl.querySelector('.stokCupInput').value) || 0;
+      await simpanStokCupManual(ukuran, val);
+    };
+    rowEl.querySelector('.restockCupOpenB').onclick = ()=> bukaFormRestockCup(ukuran);
+  });
+}
+
+async function simpanStokCupManual(ukuran, stokBaru){
+  try{
+    const id = stokCupUkuranDocId(STOKCUP_OUTLET_AKTIF, ukuran);
+    await setDoc(doc(db, "stok_cup_ukuran", id), { outlet: STOKCUP_OUTLET_AKTIF, ukuran, jumlah: Math.max(0, stokBaru) }, { merge: true });
+    showToast("Stok cup diperbarui");
+    await muatKelolaStokCup();
+  }catch(e){ showToast("Gagal menyimpan stok cup. Cek koneksi.", false); console.error('Gagal simpan stok cup:', e); }
+}
+
+function bukaFormRestockCup(ukuran){
+  let restockCupSatuanAktif = 'cup';
+  el('restockBody').innerHTML = `
+    <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Restock cup ukuran <b>${ukuran}</b> \u00b7 outlet <b>${STOKCUP_OUTLET_AKTIF}</b>.</div>
+    <div class="satuanToggleRow" id="restockCupSatuanToggle" style="display:flex; gap:8px; margin-bottom:14px;">
+      <button data-s="cup" class="active" style="flex:1; padding:9px; border-radius:10px; border:1.4px solid var(--line); background:var(--pine-900); color:#f3ede0; font-weight:650; cursor:pointer;">Satuan Cup</button>
+      <button data-s="roll" style="flex:1; padding:9px; border-radius:10px; border:1.4px solid var(--line); background:var(--card); color:var(--ink); font-weight:650; cursor:pointer;">Satuan Roll</button>
+    </div>
+    <div class="formField" id="restockCupRollField" style="display:none;">
+      <label>Isi per Roll (cup)</label>
+      <input id="restockCupIsiRoll" type="number" min="1" value="${DEFAULT_ISI_ROLL}">
+    </div>
+    <div class="formField">
+      <label id="restockCupJumlahLabel">Jumlah Cup Ditambah</label>
+      <input id="restockCupJumlah" type="number" min="1" placeholder="Contoh: 20">
+      <div class="hint" id="restockCupPreview"></div>
+    </div>
+    <button class="saveFormBtn" id="restockCupSaveBtn">Simpan Restock</button>
+  `;
+
+  function updatePreviewCup(){
+    const jumlah = Number(el('restockCupJumlah').value) || 0;
+    if(restockCupSatuanAktif === 'roll'){
+      const isiRoll = Number(el('restockCupIsiRoll').value) || DEFAULT_ISI_ROLL;
+      const totalCup = jumlah * isiRoll;
+      el('restockCupPreview').textContent = jumlah > 0 ? `= ${totalCup} cup akan ditambahkan (${jumlah} roll \u00d7 ${isiRoll} cup/roll)` : '';
+    } else {
+      el('restockCupPreview').textContent = '';
+    }
+  }
+
+  el('restockCupSatuanToggle').querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{
+      restockCupSatuanAktif = b.dataset.s;
+      el('restockCupSatuanToggle').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
+      el('restockCupRollField').style.display = restockCupSatuanAktif==='roll' ? 'block' : 'none';
+      el('restockCupJumlahLabel').textContent = restockCupSatuanAktif==='roll' ? 'Jumlah Roll Ditambah' : 'Jumlah Cup Ditambah';
+      el('restockCupJumlah').placeholder = restockCupSatuanAktif==='roll' ? 'Contoh: 1' : 'Contoh: 20';
+      updatePreviewCup();
+    };
+  });
+  el('restockCupJumlah').addEventListener('input', updatePreviewCup);
+  const isiRollCupInput = el('restockCupIsiRoll');
+  if(isiRollCupInput) isiRollCupInput.addEventListener('input', updatePreviewCup);
+
+  el('restockCupSaveBtn').onclick = async ()=>{
+    const jumlahInput = Number(el('restockCupJumlah').value) || 0;
+    if(jumlahInput <= 0){ showToast("Isi jumlah restock yang valid", false); return; }
+    let totalCupDitambah = jumlahInput;
+    let catatanSatuan = `${jumlahInput} cup`;
+    if(restockCupSatuanAktif === 'roll'){
+      const isiRoll = Number(el('restockCupIsiRoll').value) || DEFAULT_ISI_ROLL;
+      totalCupDitambah = jumlahInput * isiRoll;
+      catatanSatuan = `${jumlahInput} roll (\u00d7${isiRoll} = ${totalCupDitambah} cup)`;
+    }
+
+    const btn = el('restockCupSaveBtn'); btn.disabled = true; btn.textContent = "Menyimpan...";
+    try{
+      const id = stokCupUkuranDocId(STOKCUP_OUTLET_AKTIF, ukuran);
+      const ref = doc(db, "stok_cup_ukuran", id);
+      let stokSesudah = totalCupDitambah;
+      await runTransaction(db, async (tx)=>{
+        const snap = await tx.get(ref);
+        const skrg = snap.exists() ? (Number(snap.data().jumlah)||0) : 0;
+        stokSesudah = skrg + totalCupDitambah;
+        tx.set(ref, { outlet: STOKCUP_OUTLET_AKTIF, ukuran, jumlah: stokSesudah }, { merge: true });
+      });
+      await addDoc(collection(db, "riwayat_restock_cup"), {
+        waktu: Timestamp.fromDate(new Date()), outlet: STOKCUP_OUTLET_AKTIF, ukuran,
+        satuan: restockCupSatuanAktif, jumlahInput, isiRoll: restockCupSatuanAktif==='roll' ? (Number(el('restockCupIsiRoll').value)||DEFAULT_ISI_ROLL) : null,
+        jumlahDitambahCup: totalCupDitambah, stokSesudah, oleh: SESI.namaTampilan
+      });
+      showToast(`Restock cup berhasil \u2014 +${catatanSatuan}, stok sekarang ${stokSesudah} cup`);
+      el('restockOverlay').classList.remove('show');
+      await muatKelolaStokCup();
+    }catch(e){ showToast("Gagal restock. Cek koneksi.", false); btn.disabled=false; btn.textContent="Simpan Restock"; }
+  };
+  el('restockOverlay').classList.add('show');
+}
+
+async function bukaRiwayatRestockCup(){
+  el('restockBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat riwayat...</div>';
+  el('restockOverlay').classList.add('show');
+  try{
+    const qy = query(collection(db, "riwayat_restock_cup"), where("outlet","==", STOKCUP_OUTLET_AKTIF));
+    const snap = await getDocs(qy);
+    const riwayat = snap.docs.map(d=>({id:d.id, ...d.data()}))
+      .sort((a,b)=>{ const ta = a.waktu && a.waktu.toDate ? a.waktu.toDate().getTime() : 0; const tb = b.waktu && b.waktu.toDate ? b.waktu.toDate().getTime() : 0; return tb-ta; })
+      .slice(0,100);
+    if(riwayat.length === 0){ el('restockBody').innerHTML = '<div class="empty">Belum ada riwayat restock cup untuk outlet ini.</div>'; return; }
+    el('restockBody').innerHTML = `
+      <div class="empty" style="padding:0 4px 14px; text-align:left; font-size:12px;">Riwayat restock cup outlet <b>${STOKCUP_OUTLET_AKTIF}</b>, terbaru di atas.</div>
+      ${riwayat.map(r=>{
+        const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
+        const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+'/'+w.getFullYear()+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
+        const satuanTxt = r.satuan === 'roll' ? `${r.jumlahInput} roll (\u00d7${r.isiRoll})` : `${r.jumlahInput} cup`;
+        return `<div class="lapRow"><div><div class="lrn">${r.ukuran}</div><div class="lrq">${waktuStr} \u00b7 oleh ${r.oleh}</div></div><div style="text-align:right;"><div class="lrv">+${satuanTxt}</div><div class="lrq">jadi ${r.stokSesudah} cup</div></div></div>`;
+      }).join('')}
+    `;
+  }catch(e){ el('restockBody').innerHTML = '<div class="empty">Gagal memuat riwayat. Cek koneksi.</div>'; }
+}
+
 function stokDocId(outlet, kategori, nama, ukuran){
   return (outlet+'_'+kategori+'_'+nama+'_'+ukuran).replace(/[^a-zA-Z0-9]/g,'_');
 }
@@ -3366,7 +3626,7 @@ async function bukaRiwayatRestock(){
    berikutnya juga masih ke-handle.
    ===================================================================== */
 const OVERLAY_IDS_BACK = [
-  'restockOverlay', 'stokOverlay', 'akunFormOverlay', 'akunOverlay',
+  'restockOverlay', 'stokOverlay', 'stokCupOverlay', 'akunFormOverlay', 'akunOverlay',
   'lapOverlay', 'adminOverlay2', 'calcOverlay', 'cartOverlay',
   'sheetOverlay', 'trxDetailOverlay', 'menuDropdownOverlay', 'logoutWarnOverlay',
   'pengaturanOverlay'
@@ -3375,7 +3635,7 @@ let sedangProsesBack = false;
 
 function overlayTerbukaSaatIni(){
   // urutan terakhir di array = prioritas ditutup duluan (overlay yang biasanya "di atas")
-  const urutanPrioritas = ['pengaturanOverlay','restockOverlay','stokOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
+  const urutanPrioritas = ['pengaturanOverlay','restockOverlay','stokOverlay','stokCupOverlay','akunFormOverlay','akunOverlay','trxDetailOverlay','lapOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
   for(const id of urutanPrioritas){
     const elm = document.getElementById(id);
     if(elm && elm.classList.contains('show')) return id;

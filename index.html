@@ -2052,12 +2052,9 @@ async function voidTransaksi(trxId, dariDetail){
     }
     await deleteDoc(doc(db, "transaksi", trxId));
 
-    // Muat ulang laporan DULU, baru tampilkan toast PALING AKHIR -- supaya toast ini
-    // adalah hal terakhir yang terjadi di layar, tiketnya (lihat showToast) pasti yang
-    // paling baru, dan tidak ke-skip/ketutup keliru oleh proses render laporan yang
-    // masih berjalan di background.
+    // Tidak perlu toast sukses -- transaksi langsung hilang dari daftar laporan,
+    // itu sudah cukup jadi tanda kalau prosesnya berhasil.
     await muatLaporanTanggal(lapTanggalAktif);
-    showToast("Transaksi dibatalkan, stok dikembalikan");
   }catch(e){
     showToast("Gagal membatalkan. Cek koneksi.", false);
     console.error('Gagal void transaksi:', e);

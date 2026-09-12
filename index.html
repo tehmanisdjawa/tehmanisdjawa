@@ -643,6 +643,15 @@
   </div>
 </div>
 
+<div class="logoutWarnOverlay" id="pecatOverlay">
+  <div class="logoutWarnBox">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--merah);"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+    <h3>Akun Tidak Aktif</h3>
+    <p>Akun ini sudah tidak memiliki akses ke sistem. Hubungi Owner kalau ini keliru.</p>
+    <button id="pecatLogoutBtn" style="width:100%; margin-top:16px; background:linear-gradient(160deg, var(--pine-800), var(--pine-950)); color:#f3ede0; border:none; border-radius:13px; padding:14px; font-size:14.5px; font-weight:700; cursor:pointer; box-shadow:0 8px 22px rgba(12,31,22,.25);">Keluar</button>
+  </div>
+</div>
+
 <div class="topbar">
   <div class="brandrow">
     <div class="brandLeft">
@@ -1189,8 +1198,7 @@ function mulaiPengecekanSesiBerkala(){
     try{
       const akun = await cariAkunByUsername(SESI.username);
       if(!akun || akun.jabatan === 'Pecat'){
-        prosesLogout(true);
-        showToast("Sesi berakhir, silakan login ulang", false);
+        tampilkanPopupPecat();
         return;
       }
       // Selalu sinkron ulang jabatan/outlet/jadwal terbaru dari database.
@@ -1206,6 +1214,20 @@ function mulaiPengecekanSesiBerkala(){
     }catch(e){ /* koneksi bermasalah sesaat, jangan langsung logout paksa */ }
   }, 15000);
 }
+
+// Popup blocking khusus akun yang jabatannya sudah diubah jadi "Pecat" SELAGI
+// sesinya masih aktif login. Beda dari toast biasa: overlay ini tidak bisa
+// ditutup dengan klik area luar atau tombol back HP, dan cuma menyediakan
+// SATU tombol "Keluar" -- memastikan orang yang sudah dipecat tidak bisa
+// lanjut memakai kasir walau sedang di tengah-tengah sesi aktif.
+function tampilkanPopupPecat(){
+  if(cekSesiTimer) clearInterval(cekSesiTimer);
+  el('pecatOverlay').classList.add('show');
+}
+el('pecatLogoutBtn').onclick = ()=>{
+  el('pecatOverlay').classList.remove('show');
+  prosesLogout(true);
+};
 
 function mulaiPeringatanTutup(){
   let sisa = 7;

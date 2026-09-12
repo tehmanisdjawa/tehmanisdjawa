@@ -788,13 +788,40 @@ let cekSesiTimer = null, logoutCountdownTimer = null;
 let OUTLET_LIST = [];        // daftar semua outlet (dari sheet akun / koleksi outlet)
 let unsubMenu = null;        // listener realtime menu
 
-// Ukuran oz baku — SATU daftar global dipakai semua menu.
+// Ukuran oz baku — SATU daftar global dipakai semua menu (menu utama, Kelola Menu,
+// keranjang, dan laporan). Format ini yang dipakai di SELURUH aplikasi.
 const UKURAN_OZ = [
-  { label: "Small (10oz)", value: "Small (10oz)" },
-  { label: "Medium (16oz)", value: "Medium (16oz)" },
-  { label: "Large (18oz)", value: "Large (18oz)" },
-  { label: "Jumbo (22oz)", value: "Jumbo (22oz)" }
+  { label: "Small 10oz", value: "Small 10oz" },
+  { label: "Medium 16oz", value: "Medium 16oz" },
+  { label: "Large 18oz", value: "Large 18oz" },
+  { label: "Jumbo 22oz", value: "Jumbo 22oz" }
 ];
+
+// Normalisasi nama ukuran LAMA (campuran: "Reguler", "Cup Jumbo", "Medium (16oz)", dst)
+// menjadi salah satu dari 4 ukuran oz baku di atas -- dipakai di SEMUA tempat yang
+// menampilkan ukuran (menu utama, keranjang, form edit, laporan) supaya data lama yang
+// belum dirapikan otomatis tampil rapi tanpa perlu diketik ulang manual satu-satu.
+const POLA_NORMALISASI_UKURAN = [
+  { label: "Small 10oz", kata: ["small", "10oz", "10 oz", "reguler kecil"] },
+  { label: "Medium 16oz", kata: ["medium", "16oz", "16 oz", "cup medium"] },
+  { label: "Large 18oz", kata: ["large", "18oz", "18 oz"] },
+  { label: "Jumbo 22oz", kata: ["jumbo", "22oz", "22 oz", "cup jumbo"] }
+];
+function normalisasiUkuran(namaUkuran, namaMenu){
+  const teksUkuran = String(namaUkuran || '').toLowerCase();
+  for(const pola of POLA_NORMALISASI_UKURAN){
+    if(pola.kata.some(k => teksUkuran.includes(k))) return pola.label;
+  }
+  // Tidak ketemu dari nama ukurannya sendiri (misal "Reguler" polos) -- coba tebak dari
+  // nama menunya (misal menu "Cup Jumbo" walau ukurannya ditulis "Reguler").
+  const teksMenu = String(namaMenu || '').toLowerCase();
+  for(const pola of POLA_NORMALISASI_UKURAN){
+    if(pola.kata.some(k => teksMenu.includes(k))) return pola.label;
+  }
+  // Sama sekali tidak ada petunjuk -- kembalikan apa adanya (atau "Reguler" kalau kosong)
+  // supaya tidak menyembunyikan data, tinggal Owner rapikan manual lewat Kelola Menu.
+  return namaUkuran || 'Reguler';
+}
 const DEFAULT_ISI_ROLL = 50; // default 1 roll = 50 cup, bisa diubah manual saat restock
 
 const el = id => document.getElementById(id);
@@ -1287,7 +1314,8 @@ function openVariantSheet(ci, ii){
   el('sheetTitle').textContent = item.nama; el('sheetCat').textContent = cat.kategori;
   el('sheetBody').innerHTML = item.varian.map((v, vi)=>{
     const k = ci+"|"+ii+"|"+vi; const qty = cart[k]?.qty || 0;
-    const namaTampil = v.nama + (v.tambahan ? ` <span class="vTambahanTag">(${v.tambahan})</span>` : '');
+    const ukuranTampil = normalisasiUkuran(v.nama, item.nama);
+    const namaTampil = ukuranTampil + (v.tambahan ? ` <span class="vTambahanTag">(${v.tambahan})</span>` : '');
     if(v.habis) return `<div class="varOption habis"><div><div class="vn">${namaTampil}</div><div class="vhabis">Sedang habis</div></div></div>`;
     if(qty > 0) return `<div class="varOption" style="cursor:default;"><div><div class="vn">${namaTampil}</div><div class="vp">Rp${(v.harga||0).toLocaleString('id-ID')}</div></div><div class="qtyStepBar" data-k="${k}"><button class="minus">\u2212</button><div class="val">${qty}</div><button class="plus">+</button></div></div>`;
     return `<div class="varOption" data-k="${k}" data-add="1"><div><div class="vn">${namaTampil}</div><div class="vp">Rp${(v.harga||0).toLocaleString('id-ID')}</div></div><div class="plusBtn">+</div></div>`;
@@ -1326,7 +1354,8 @@ function renderCartBody(){
   else {
     el('cartBody').innerHTML = keys.map(k=>{
       const c = cart[k];
-      return `<div class="cartRow" data-k="${k}"><div class="ci"><div class="cn">${c.nama}</div><div class="cv">${c.varian}${c.tambahan?' ('+c.tambahan+')':''}</div><div class="cp">${rupiah(c.harga)}</div></div><div class="cstep"><button class="cminus">\u2212</button><div class="cval">${c.qty}</div><button class="cplus">+</button></div><button class="cdel"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button></div>`;
+      const ukuranTampilCart = normalisasiUkuran(c.varian, c.nama);
+      return `<div class="cartRow" data-k="${k}"><div class="ci"><div class="cn">${c.nama}</div><div class="cv">${ukuranTampilCart}${c.tambahan?' ('+c.tambahan+')':''}</div><div class="cp">${rupiah(c.harga)}</div></div><div class="cstep"><button class="cminus">\u2212</button><div class="cval">${c.qty}</div><button class="cplus">+</button></div><button class="cdel"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button></div>`;
     }).join('');
     el('cartBody').querySelectorAll('.cartRow').forEach(row=>{
       const k = row.dataset.k;
@@ -1415,7 +1444,7 @@ function renderAdminList(){
     html += `<div class="catLabelAdmin">${cat.kategori}</div>`;
     cat.items.forEach((item, ii)=>{
       const semuaHabis = item.varian.every(v=>v.habis);
-      const varStr = item.varian.map(v=>`${v.nama}${v.tambahan?' ('+v.tambahan+')':''}: ${rupiah(v.harga)}${v.habis?' (Habis)':''}`).join(' \u00b7 ');
+      const varStr = item.varian.map(v=>`${normalisasiUkuran(v.nama, item.nama)}${v.tambahan?' ('+v.tambahan+')':''}: ${rupiah(v.harga)}${v.habis?' (Habis)':''}`).join(' \u00b7 ');
       html += `<div class="adminItem" data-ci="${ci}" data-ii="${ii}">
         <div class="aiTop">
           <div class="ain">${item.nama}</div>
@@ -1459,7 +1488,7 @@ function openAdminForm(target){
   const kategoriVal = item ? cat.kategori : '';
   const namaVal = item ? item.nama : '';
   // varianList sekarang: { nama, harga, tambahan }. nama bisa dari UKURAN_OZ ATAU hasil ketik bebas.
-  const varianList = item ? item.varian.map(v=>({nama:v.nama, harga:v.harga, tambahan:v.tambahan||''})) : [{nama:'', harga:0, tambahan:''}];
+  const varianList = item ? item.varian.map(v=>({nama:normalisasiUkuran(v.nama, item.nama), harga:v.harga, tambahan:v.tambahan||''})) : [{nama:'', harga:0, tambahan:''}];
 
   let html = `<button class="backLink" id="backToList"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>Kembali</button>
     <div class="formField"><label>Kategori</label><input id="fKategori" type="text" value="${kategoriVal}" placeholder="Ketik kategori sendiri, contoh: Es Teh Manis"><div class="hint">Ketik bebas \u2014 boleh kategori baru atau yang sudah ada.</div></div>
@@ -1619,41 +1648,15 @@ async function ambilTransaksiUntukLaporan(tanggal, outlet){
   return rows;
 }
 
-// Standar ukuran resmi: Small=10oz, Medium=16oz, Large=18oz, Jumbo=22oz.
-// Sebagian data lama di sheet Menu kadang menulis nama varian sebagai "Reguler"
-// (bukan salah satu ukuran di atas), padahal nama MENU-nya sendiri sudah
-// menyebut ukurannya (misal menu bernama "Cup Jumbo"). Fungsi ini mencoba
-// mengenali ukuran sebenarnya dari kata kunci di nama varian ATAU nama menu,
-// supaya laporan "Terjual per Ukuran" tetap mengelompokkan dengan benar
-// walau data di sheet belum dirapikan.
-const POLA_UKURAN_CUP = [
-  { label: "Small 10oz", kata: ["small", "10oz", "10 oz"] },
-  { label: "Medium 16oz", kata: ["medium", "16oz", "16 oz"] },
-  { label: "Large 18oz", kata: ["large", "18oz", "18 oz"] },
-  { label: "Jumbo 22oz", kata: ["jumbo", "22oz", "22 oz"] },
-];
-function normalisasiUkuranCup(namaVarian, namaMenu){
-  const teksVarian = String(namaVarian || '').toLowerCase();
-  // Kalau nama varian sendiri sudah jelas menyebut ukuran standar (misal "Large 18oz"
-  // dari sheet yang sudah rapi), langsung pakai apa adanya -- tidak perlu ditebak lagi.
-  for(const pola of POLA_UKURAN_CUP){
-    if(pola.kata.some(k => teksVarian.includes(k))) return namaVarian;
-  }
-  // Kalau tidak cocok (misal variannya "Reguler"), coba tebak dari nama MENU-nya.
-  const teksMenu = String(namaMenu || '').toLowerCase();
-  for(const pola of POLA_UKURAN_CUP){
-    if(pola.kata.some(k => teksMenu.includes(k))) return pola.label;
-  }
-  // Tidak ketemu petunjuk sama sekali -- kembalikan nama varian aslinya (atau "Reguler").
-  return namaVarian || 'Reguler';
-}
-// Nama tampilan "Menu + (Varian)" -- kalau variannya cuma "Reguler" (generik, tidak
-// menambah info), jangan ditampilkan kurungnya sama sekali. Ini mencegah tampilan
-// aneh seperti "Cup Jumbo (Reguler)" padahal "Cup Jumbo" saja sudah cukup jelas.
+// Catatan: normalisasi ukuran (Small 10oz / Medium 16oz / Large 18oz / Jumbo 22oz)
+// sekarang memakai SATU fungsi global "normalisasiUkuran" (lihat dekat UKURAN_OZ di atas)
+// supaya menu utama, keranjang, Kelola Menu, dan laporan semuanya konsisten.
+function normalisasiUkuranCup(namaVarian, namaMenu){ return normalisasiUkuran(namaVarian, namaMenu); }
+
+// Nama tampilan "Menu (Ukuran)" dengan ukuran SUDAH dinormalisasi ke format oz baku.
 function namaTampilItem(it){
-  const varian = String(it.varian || '').trim();
-  if(!varian || varian.toLowerCase() === 'reguler') return it.nama;
-  return it.nama + ' (' + varian + ')';
+  const ukuran = normalisasiUkuran(it.varian, it.nama);
+  return it.nama + ' (' + ukuran + ')';
 }
 
 function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
@@ -1781,24 +1784,44 @@ function renderLaporanSemuaOutlet(data){
       <div class="lapCard"><div class="lapLbl">Transaksi</div><div class="lapVal">${rg.jumlahTrx}</div></div>
       <div class="lapCard"><div class="lapLbl">Item Terjual</div><div class="lapVal">${rg.jumlahItem}</div></div>
     </div>
-    <div class="empty" style="padding:0 4px 14px; text-align:left; font-size:12px;">Rincian tiap outlet TIDAK digabung \u2014 geser ke bawah untuk lihat masing-masing outlet terpisah.</div>`;
+    <div class="empty" style="padding:0 4px 14px; text-align:left; font-size:12px;">Rincian tiap outlet TIDAK digabung. Pencet salah satu kartu outlet di bawah untuk buka laporan lengkap outlet itu.</div>`;
   if(data.perOutlet.length === 0){ html += '<div class="empty">Belum ada transaksi tanggal ini di outlet manapun.</div>'; el('lapBody').innerHTML = html; return; }
-  data.perOutlet.forEach(lap=>{
+  data.perOutlet.forEach((lap, idx)=>{
     const r = lap.ringkasan;
-    html += `<div class="lapSection" style="border:1px solid var(--line-soft); border-radius:14px; padding:14px; margin-bottom:16px; background:var(--card);">
-        <h4 style="display:flex; align-items:center; gap:7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>${lap.outlet}</h4>
+    const bisaDiklik = lap.outlet && lap.outlet !== '(tanpa outlet)';
+    html += `<div class="lapSection lapOutletCard" data-outletidx="${idx}" style="border:1px solid var(--line-soft); border-radius:14px; padding:14px; margin-bottom:16px; background:var(--card); ${bisaDiklik?'cursor:pointer;':''}">
+        <h4 style="display:flex; align-items:center; gap:7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>${lap.outlet}${bisaDiklik ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-left:auto; color:var(--muted-soft);"><path d="M9 6l6 6-6 6"/></svg>' : ''}</h4>
         <div class="lapCardRow">
           <div class="lapCard wide"><div class="lapLbl">Total Penjualan</div><div class="lapVal">${rupiah(r.total)}</div></div>
           <div class="lapCard"><div class="lapLbl">Transaksi</div><div class="lapVal">${r.jumlahTrx}</div></div>
           <div class="lapCard"><div class="lapLbl">Item Terjual</div><div class="lapVal">${r.jumlahItem}</div></div>
         </div>
         ${renderPerUkuranCupHtml(lap.perUkuranCup)}
+        ${renderItemTerlarisHtml(lap.itemTerlaris)}
         ${renderPerKaryawanHtml(lap.perKaryawan)}
       </div>`;
   });
   el('lapBody').innerHTML = html;
+
+  // Kartu outlet bisa dipencet -> buka laporan lengkap khusus outlet itu (memakai
+  // dropdown filter yang sama, supaya konsisten dengan cara Owner memilih outlet manual).
+  document.querySelectorAll('.lapOutletCard[data-outletidx]').forEach(card=>{
+    const lap = data.perOutlet[Number(card.dataset.outletidx)];
+    if(!lap || !lap.outlet || lap.outlet === '(tanpa outlet)') return;
+    card.addEventListener('click', ()=>{
+      lapOutletAktif = lap.outlet;
+      el('lapOutletFilter').value = lap.outlet;
+      muatLaporanTanggal(lapTanggalAktif);
+    });
+  });
 }
 function renderPerUkuranCupHtml(u){ if(!u) return ''; return `<div style="margin-top:12px;"><div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px;">Terjual per Ukuran</div>${u.length ? u.map(x=>`<div class="lapRow"><div class="lrn">${x.ukuran}</div><div class="lrv">${x.qty} cup</div></div>`).join('') : '<div class="empty" style="padding:6px 0; text-align:left;">Belum ada data.</div>'}</div>`; }
+// Daftar NAMA BARANG yang terjual di outlet ini (menu apa saja yang dibeli), bukan cuma
+// ringkasan angka -- ini yang diminta supaya kelihatan produk apa saja yang laku.
+function renderItemTerlarisHtml(items){
+  if(!items) return '';
+  return `<div style="margin-top:12px;"><div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px;">Barang Terjual</div>${items.length ? items.map(x=>`<div class="lapRow"><div><div class="lrn">${x.nama}</div><div class="lrq">${x.qty} terjual</div></div><div class="lrv">${rupiah(x.subtotal)}</div></div>`).join('') : '<div class="empty" style="padding:6px 0; text-align:left;">Belum ada barang terjual.</div>'}</div>`;
+}
 function renderPerKaryawanHtml(k){ if(!k||!k.length) return ''; return `<div style="margin-top:12px;"><div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px;">Per Karyawan</div>${k.map(x=>`<div class="lapRow"><div class="lrn">${x.karyawan}</div><div class="lrv">${rupiah(x.total)}</div></div>`).join('')}</div>`; }
 
 function renderLaporanSatuOutlet(data){
@@ -1918,7 +1941,7 @@ function bukaDetailTransaksi(trxId){
 
   const itemsHtml = (t.items && t.items.length) ? t.items.map(it=>`
     <div class="trxItemRow">
-      <div><div class="tin">${it.nama}${(it.varian && it.varian.toLowerCase()!=='reguler') ? ' \u2014 ' + it.varian : ''}</div><div class="tiv">${it.qty} \u00d7 ${rupiah(it.harga||0)}${it.tambahan ? ' \u00b7 ' + it.tambahan : ''}</div></div>
+      <div><div class="tin">${it.nama} \u2014 ${normalisasiUkuran(it.varian, it.nama)}</div><div class="tiv">${it.qty} \u00d7 ${rupiah(it.harga||0)}${it.tambahan ? ' \u00b7 ' + it.tambahan : ''}</div></div>
       <div class="tiq">${rupiah(it.subtotal||0)}</div>
     </div>`).join('') : '<div class="empty" style="padding:16px 0;">Detail item tidak tersedia untuk transaksi ini.</div>';
 
@@ -2200,7 +2223,7 @@ function renderKelolaStok(){
         const stokSekarang = info ? info.jumlah : 0;
         html += `<div class="adminItem" data-kategori="${cat.kategori}" data-nama="${item.nama}" data-ukuran="${v.nama}">
           <div class="aiTop">
-            <div><div class="ain">${item.nama}</div><div class="aiv" style="margin-top:3px;">${v.nama}</div></div>
+            <div><div class="ain">${item.nama}</div><div class="aiv" style="margin-top:3px;">${normalisasiUkuran(v.nama, item.nama)}</div></div>
             <div class="aiBtns"><button class="restockOpenB" title="Restock (tambah stok)" style="background:var(--pine-50); color:var(--pine-700);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div>
           </div>
           <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
@@ -2251,7 +2274,7 @@ function bukaFormRestock(kategori, nama, ukuran){
   restockIsiRollAktif = DEFAULT_ISI_ROLL;
 
   el('restockBody').innerHTML = `
-    <div class="formField"><label>Menu</label><div class="karyawanTampil">${nama} \u00b7 ${ukuran}</div></div>
+    <div class="formField"><label>Menu</label><div class="karyawanTampil">${nama} \u00b7 ${normalisasiUkuran(ukuran, nama)}</div></div>
     <div class="formField"><label>Stok Sekarang</label><div class="karyawanTampil">${stokSekarang} cup</div></div>
     <div class="formField">
       <label>Satuan Penambahan</label>
@@ -2350,7 +2373,7 @@ async function bukaRiwayatRestock(){
         const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
         const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+'/'+w.getFullYear()+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
         const satuanTxt = r.satuan === 'roll' ? `${r.jumlahInput} roll (\u00d7${r.isiRoll})` : `${r.jumlahInput} cup`;
-        return `<div class="lapRow"><div><div class="lrn">${r.nama} \u00b7 ${r.ukuran}</div><div class="lrq">${waktuStr} \u00b7 oleh ${r.oleh}</div></div><div style="text-align:right;"><div class="lrv">+${satuanTxt}</div><div class="lrq">jadi ${r.stokSesudah} cup</div></div></div>`;
+        return `<div class="lapRow"><div><div class="lrn">${r.nama} \u00b7 ${normalisasiUkuran(r.ukuran, r.nama)}</div><div class="lrq">${waktuStr} \u00b7 oleh ${r.oleh}</div></div><div style="text-align:right;"><div class="lrv">+${satuanTxt}</div><div class="lrq">jadi ${r.stokSesudah} cup</div></div></div>`;
       }).join('')}
     `;
   }catch(e){ el('restockBody').innerHTML = '<div class="empty">Gagal memuat riwayat. Cek koneksi.</div>'; }

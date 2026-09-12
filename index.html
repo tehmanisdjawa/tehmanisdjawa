@@ -113,6 +113,14 @@
   .loginField label{font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:6px;}
   .loginField input{width:100%; padding:13px 14px; border-radius:12px; border:1.5px solid var(--line); font-size:14.5px; font-family:inherit; background:var(--card); color:var(--ink);}
   .loginField input:focus{outline:none; border-color:var(--pine-600);}
+  .loginFieldPw{position:relative;}
+  .loginFieldPw input{padding-right:44px;}
+  .loginFieldPw .togglePw{
+    position:absolute; right:4px; top:50%; transform:translateY(-50%);
+    width:34px; height:34px; border:none; background:transparent; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; color:var(--muted); padding:0;
+  }
+  .loginFieldPw .togglePw svg{width:19px; height:19px;}
   .loginErr{color:var(--merah); font-size:12.5px; margin:2px 0 12px; display:none; font-weight:600; text-align:left;}
   .loginBtn{
     width:100%; background:linear-gradient(160deg, var(--pine-800), var(--pine-950)); color:#f3ede0; border:none; border-radius:13px;
@@ -533,7 +541,12 @@
     </div>
     <div class="loginField">
       <label>Password</label>
-      <input id="loginPassword" type="password" autocomplete="off" placeholder="Password kamu">
+      <div class="loginFieldPw">
+        <input id="loginPassword" type="password" autocomplete="off" placeholder="Password kamu">
+        <button type="button" class="togglePw" id="toggleLoginPw" tabindex="-1" aria-label="Lihat password">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
     </div>
     <div class="loginErr" id="loginErr"></div>
     <button class="loginBtn" id="loginSubmitBtn">Masuk</button>
@@ -989,10 +1002,24 @@ el('loginSubmitBtn').onclick = prosesLogin;
 el('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') prosesLogin(); });
 el('loginUsername').addEventListener('keydown', e=>{ if(e.key==='Enter') el('loginPassword').focus(); });
 
+// Toggle lihat/sembunyi password login -- ikon mata berubah (dicoret saat kelihatan).
+el('toggleLoginPw').onclick = ()=>{
+  const inp = el('loginPassword');
+  const btnMata = el('toggleLoginPw');
+  const kelihatan = inp.type === 'text';
+  inp.type = kelihatan ? 'password' : 'text';
+  btnMata.innerHTML = kelihatan
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 19c-7 0-11-7-11-7a20.3 20.3 0 015.06-5.94M9.9 4.24A10.94 10.94 0 0112 4c7 0 11 7 11 7a20.4 20.4 0 01-2.16 3.19M14.12 14.12a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  inp.focus();
+};
+
 function bukaLoginScreen(){
   document.body.classList.add('terkunci');
   el('loginOverlay').style.display = 'flex';
   el('loginUsername').value = ''; el('loginPassword').value = '';
+  el('loginPassword').type = 'password';
+  el('toggleLoginPw').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
   el('loginErr').style.display = 'none';
   setTimeout(()=> el('loginUsername').focus(), 50);
 }

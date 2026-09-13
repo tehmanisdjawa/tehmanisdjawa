@@ -1843,6 +1843,29 @@ function terapkanTampilanJabatan(){
    pattern" ringan: kita tidak menyimpan snapshot seluruh DB, cukup
    snapshot dokumen yang benar2 berubah oleh aksi itu.
    ===================================================================== */
+
+  // Kelola Stok Cup sekarang boleh diakses SEMUA jabatan (bukan cuma Owner) --
+  // karyawan yang belum punya izin akan melihat tombol "Minta Izin Akses" di
+  // dalamnya (lihat renderKelolaStokCup), bukan langsung diblok di sini.
+  el('stokCupBtn').style.display = SESI ? 'flex' : 'none';
+  // Reject Transaksi: khusus KARYAWAN (Owner sudah punya tombol Batalkan
+  // langsung di dalam Laporan, tidak perlu lewat alur izin ini).
+  el('rejectTrxBtn').style.display = (SESI && !isOwner && SESI.outlet) ? 'flex' : 'none';
+  el('akunBtn').style.display = isOwner ? 'flex' : 'none';
+  el('pengaturanBtn').style.display = SESI ? 'flex' : 'none';
+  el('notifBtn').style.display = isOwner ? 'flex' : 'none';
+  el('notifRejectOwnerBtn').style.display = isOwner ? 'flex' : 'none';
+  if(isOwner){ mulaiPantauNotifPermintaanStokCup(); mulaiPantauNotifPermintaanRejectTrx(); } else { hentikanPantauNotifPermintaanStokCup(); hentikanPantauNotifPermintaanRejectTrx(); }
+  // Tombol status izin milik karyawan sendiri -- Owner tidak butuh ini karena
+  // sudah punya lonceng notifikasi + panel approve/tolak lewat notifBtn di atas.
+  el('notifKaryawanBtn').style.display = (SESI && !isOwner && SESI.outlet) ? 'flex' : 'none';
+  if(SESI && !isOwner && SESI.outlet) mulaiPantauNotifKaryawanStokCup(); else hentikanPantauNotifKaryawanStokCup();
+  // Popup sukses (5 detik) untuk keputusan izin (stok cup & reject transaksi)
+  // -- dipantau SEMUA akun yang punya outlet (Owner maupun karyawan), supaya
+  // siapapun yang sedang login di outlet yang sama ikut lihat popupnya.
+  if(SESI && SESI.outlet) mulaiPantauPopupSuksesUntukSaya(); else hentikanPantauPopupSuksesUntukSaya();
+  el('userChip').textContent = SESI ? (SESI.namaTampilan + ' \u00b7 ' + SESI.jabatan + (SESI.outlet ? ' \u00b7 ' + SESI.outlet : '')) : '';
+  el('karyawanTampil').textContent = SESI ? SESI.namaTampilan : '-';
 }
 
 let UNDO_STACK = [];
@@ -1922,29 +1945,6 @@ document.addEventListener('keydown', (e)=>{
   e.preventDefault();
   if(e.shiftKey) jalankanRedo(); else jalankanUndo();
 });
-  // Kelola Stok Cup sekarang boleh diakses SEMUA jabatan (bukan cuma Owner) --
-  // karyawan yang belum punya izin akan melihat tombol "Minta Izin Akses" di
-  // dalamnya (lihat renderKelolaStokCup), bukan langsung diblok di sini.
-  el('stokCupBtn').style.display = SESI ? 'flex' : 'none';
-  // Reject Transaksi: khusus KARYAWAN (Owner sudah punya tombol Batalkan
-  // langsung di dalam Laporan, tidak perlu lewat alur izin ini).
-  el('rejectTrxBtn').style.display = (SESI && !isOwner && SESI.outlet) ? 'flex' : 'none';
-  el('akunBtn').style.display = isOwner ? 'flex' : 'none';
-  el('pengaturanBtn').style.display = SESI ? 'flex' : 'none';
-  el('notifBtn').style.display = isOwner ? 'flex' : 'none';
-  el('notifRejectOwnerBtn').style.display = isOwner ? 'flex' : 'none';
-  if(isOwner){ mulaiPantauNotifPermintaanStokCup(); mulaiPantauNotifPermintaanRejectTrx(); } else { hentikanPantauNotifPermintaanStokCup(); hentikanPantauNotifPermintaanRejectTrx(); }
-  // Tombol status izin milik karyawan sendiri -- Owner tidak butuh ini karena
-  // sudah punya lonceng notifikasi + panel approve/tolak lewat notifBtn di atas.
-  el('notifKaryawanBtn').style.display = (SESI && !isOwner && SESI.outlet) ? 'flex' : 'none';
-  if(SESI && !isOwner && SESI.outlet) mulaiPantauNotifKaryawanStokCup(); else hentikanPantauNotifKaryawanStokCup();
-  // Popup sukses (5 detik) untuk keputusan izin (stok cup & reject transaksi)
-  // -- dipantau SEMUA akun yang punya outlet (Owner maupun karyawan), supaya
-  // siapapun yang sedang login di outlet yang sama ikut lihat popupnya.
-  if(SESI && SESI.outlet) mulaiPantauPopupSuksesUntukSaya(); else hentikanPantauPopupSuksesUntukSaya();
-  el('userChip').textContent = SESI ? (SESI.namaTampilan + ' \u00b7 ' + SESI.jabatan + (SESI.outlet ? ' \u00b7 ' + SESI.outlet : '')) : '';
-  el('karyawanTampil').textContent = SESI ? SESI.namaTampilan : '-';
-}
 
 // Coba auto-login dari sesi tersimpan di localStorage saat halaman pertama dibuka.
 async function cobaAutoLogin(){

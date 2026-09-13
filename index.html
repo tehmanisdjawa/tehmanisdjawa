@@ -3343,6 +3343,57 @@ function bukaFormAjukanRejectTrx(trxId){
   el('rejectTrxFormOverlay').classList.add('show');
 }
 
+/* =====================================================================
+   SNAPSHOT STOK CUP (Pagi/Siang/Sore/Malam) & REJECT TRANSAKSI utk LAPORAN
+   Snapshot stok cup dicatat OTOMATIS oleh backend Apps Script (trigger jam
+   -- lihat file backend, fungsi snapshotStokCupCheckpoint) ke koleksi
+   Firestore "snapshot_stok_cup". Di sini kita cuma BACA hasilnya utk
+   ditampilkan di laporan WA & file txt. Reject yang dimaksud di laporan
+   adalah REJECT TRANSAKSI (koleksi "permintaan_reject_trx" yang sudah ada),
+   bukan reject cup fisik.
+   ===================================================================== */
+const URUTAN_CHECKPOINT_STOKCUP = ["Pagi","Siang","Sore","Malam"];
+
+async function ambilSnapshotStokCupUntukLaporan(tanggal, outlet){
+  try{
+    // Filter tunggal (tanggal) di query, sisanya (outlet) difilter di client --
+    // pola yang sama dipakai ambilTransaksiUntukLaporan, supaya tidak butuh
+    // composite index baru di Firestore.
+    const qy = query(collection(db, "snapshot_stok_cup"), where("tanggal","==",tanggal));
+    const snap = await getDocs(qy);
+    let rows = snap.docs.map(d=>d.data());
+    if(outlet) rows = rows.filter(r=>(r.outlet||'')===outlet);
+    // Susun jadi { Pagi:{ukuran:jumlah}, Siang:{...}, ... } urut checkpoint.
+    const hasil = {};
+    URUTAN_CHECKPOINT_STOKCUP.forEach(cp=>{
+      const baris = rows.find(r=>r.checkpoint===cp);
+      if(baris) hasil[cp] = baris.stok || {};
+    });
+    return hasil;
+  }catch(e){ console.error('Gagal memuat snapshot stok cup:', e); return {}; }
+}
+
+async function ambilRejectTransaksiUntukLaporan(tanggal, outlet){
+  try{
+    // Sama seperti data lain: filter outlet di query (single-field), lalu
+    // filter tanggal di client dari field waktu dokumen.
+    let qy = outlet
+      ? query(collection(db, "permintaan_reject_trx"), where("outlet","==",outlet))
+      : query(collection(db, "permintaan_reject_trx"));
+    const snap = await getDocs(qy);
+    return snap.docs.map(d=>({id:d.id, ...d.data()})).filter(r=>{
+      const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : (r.dibuatPada && r.dibuatPada.toDate ? r.dibuatPada.toDate() : null);
+      if(!w) return false;
+      return formatTanggalLokalUntukReject(w) === tanggal;
+    });
+  }catch(e){ console.error('Gagal memuat reject transaksi:', e); return []; }
+}
+// Helper kecil: format Date jadi "yyyy-MM-dd" sesuai zona waktu browser (dipakai
+// hanya utk pencocokan tanggal reject transaksi di atas).
+function formatTanggalLokalUntukReject(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
 function susunTeksLaporan(data){
   const r = data.ringkasan;
   let t = `*LAPORAN PENJUALAN \u2014 ES TEH MANIS DJAWA*\n`;
@@ -3351,19 +3402,52 @@ function susunTeksLaporan(data){
   t += `*Metode Bayar*\nCash: ${rupiah(r.cash)} (${r.cashTrx||0} trx)\nQRIS: ${rupiah(r.qris)} (${r.qrisTrx||0} trx)\nTransfer: ${rupiah(r.transfer)} (${r.transferTrx||0} trx)\n\n`;
   if(data.perShift && data.perShift.length){ t += `*Per Shift*\n`; data.perShift.forEach(s=>{ t += `${s.shift}: ${rupiah(s.total)} (${s.jumlahTrx} trx)\n`; }); t += `\n`; }
   if(data.perUkuranCup && data.perUkuranCup.length){ t += `*Terjual per Ukuran*\n`; data.perUkuranCup.forEach(u=>{ t += `${u.ukuran}: ${u.qty} cup\n`; }); t += `\n`; }
+  if(data.snapshotStokCup && Object.keys(data.snapshotStokCup).length){
+    t += `*Stok Cup*\n`;
+    URUTAN_CHECKPOINT_STOKCUP.forEach(cp=>{
+      const stokCp = data.snapshotStokCup[cp];
+      if(!stokCp) return;
+      const totalCp = Object.values(stokCp).reduce((a,b)=>a+(Number(b)||0),0);
+      const rincian = Object.keys(stokCp).length ? ' (' + Object.entries(stokCp).map(([u,j])=>`${u}: ${j}`).join(', ') + ')' : '';
+      t += `${cp}: ${totalCp} cup${rincian}\n`;
+    });
+    t += `\n`;
+  }
   if(data.perKaryawan && data.perKaryawan.length){ t += `*Per Karyawan*\n`; data.perKaryawan.forEach(k=>{ t += `${k.karyawan}: ${rupiah(k.total)}\n`; }); t += `\n`; }
   if(data.itemTerlaris && data.itemTerlaris.length){ t += `*Menu Terlaris*\n`; data.itemTerlaris.slice(0,10).forEach((it,idx)=>{ t += `${idx+1}. ${it.nama} \u2014 ${it.qty}x (${rupiah(it.subtotal)})\n`; }); t += `\n`; }
+  if(data.rejectTransaksi && data.rejectTransaksi.length){
+    t += `*Reject Transaksi* (${data.rejectTransaksi.length})\n`;
+    data.rejectTransaksi.forEach(rt=>{
+      t += `- ${rt.pemohonNama || rt.karyawan || '-'}${rt.status ? ' \u2014 ' + rt.status : ''}${rt.keterangan ? ' (' + rt.keterangan + ')' : ''}\n`;
+    });
+    t += `\n`;
+  }
   t += `------------------------------\nDibuat otomatis dari Kasir Es Teh Manis Djawa`;
   return t;
+}
+// Tambahkan snapshot stok cup & reject transaksi ke object data laporan
+// sebelum disusun jadi teks -- dipakai bareng oleh tombol WA & Unduh supaya
+// isinya selalu konsisten. Untuk mode "semua outlet" (Owner), bagian ini
+// dilewati (tetap tampil laporan penjualan seperti biasa) karena snapshot
+// stok cup & reject transaksi sifatnya per-outlet.
+async function lengkapiDataLaporanUntukTeks(data){
+  if(data.modeSemuaOutlet) return data;
+  const [snapshotStokCup, rejectTransaksi] = await Promise.all([
+    ambilSnapshotStokCupUntukLaporan(data.tanggal, data.outlet||''),
+    ambilRejectTransaksiUntukLaporan(data.tanggal, data.outlet||'')
+  ]);
+  return Object.assign({}, data, { snapshotStokCup, rejectTransaksi });
 }
 async function bagikanLaporanWA(data){
   // Selalu kirim sebagai teks pesan WA langsung (bukan file) supaya konsisten dengan apa
   // yang tampil di layar dan yang ada di file unduhan -- tidak bergantung perilaku share-file HP.
-  const teks = susunTeksLaporan(data);
+  const dataLengkap = await lengkapiDataLaporanUntukTeks(data);
+  const teks = susunTeksLaporan(dataLengkap);
   window.open("https://wa.me/?text=" + encodeURIComponent(teks), '_blank');
 }
-function unduhLaporan(data){
-  const teks = susunTeksLaporan(data);
+async function unduhLaporan(data){
+  const dataLengkap = await lengkapiDataLaporanUntukTeks(data);
+  const teks = susunTeksLaporan(dataLengkap);
   const fileName = `Laporan-EsTehManisDjawa-${data.tanggal}.txt`;
   // CATATAN: sempat dicoba upload ke Firebase Storage supaya dapat URL http(s) asli
   // (biar WebView Android lebih konsisten menanganinya), tapi Storage butuh paket

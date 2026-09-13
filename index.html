@@ -2351,6 +2351,12 @@ el('checkoutBtn').onclick = async ()=>{
 
     // Kurangi STOK CUP PER UKURAN (independen dari menu) -- setiap item yang terjual
     // mengurangi stok cup fisik sesuai ukurannya, apapun menunya.
+    // CATATAN DEFISIT: kalau penjualan melebihi stok yang tercatat (misal karena
+    // Owner belum sempat ACC izin restock padahal cup fisiknya sudah dipakai
+    // duluan), angka "jumlah" TETAP dikunci minimum 0 (tidak boleh minus di
+    // tampilan biasa) -- tapi kekurangannya dicatat terpisah di field "defisit"
+    // supaya nanti saat izin restock di-ACC, jumlah yang ditambahkan ke stok bisa
+    // dipotong dulu sebesar defisit ini (lihat putuskanPermintaanStokCup).
     if(SESI.outlet){
       for(const it of items){
         const ukuranNormal = normalisasiUkuran(it.varian, it.nama);
@@ -2361,8 +2367,10 @@ el('checkoutBtn').onclick = async ()=>{
             const snap = await tx.get(cupRef);
             if(!snap.exists()) return; // ukuran ini belum dikelola stok cup-nya, lewati
             const skrg = Number(snap.data().jumlah)||0;
+            const kurang = Math.max(0, it.qty - skrg); // bagian yang tidak tertutup stok yang ada
             const baru = Math.max(0, skrg - it.qty);
-            tx.update(cupRef, { jumlah: baru });
+            const defisitSkrg = Number(snap.data().defisit)||0;
+            tx.update(cupRef, { jumlah: baru, defisit: defisitSkrg + kurang });
           });
         }catch(e){ /* gagal kurangi stok cup utk 1 item, jangan batalkan seluruh transaksi */ }
       }
@@ -4436,10 +4444,17 @@ function renderKelolaStokCup(){
   UKURAN_OZ.forEach(u=>{
     const info = cariStokCup(u.value);
     const stokSekarang = info ? info.jumlah : 0;
+    const defisitSekarang = info ? (Number(info.defisit)||0) : 0;
     const habis = stokSekarang <= 0;
     const menipis = !habis && stokSekarang <= BATAS_STOK_MENIPIS;
     const badgeCupTxt = habis ? 'Habis' : (menipis ? 'Menipis \u2014 ' + stokSekarang + ' cup' : stokSekarang+' cup');
     const badgeCupCls = habis ? 'habis' : (menipis ? 'menipis' : '');
+    // Kalau ada defisit tercatat (penjualan sudah melebihi stok yg ada, biasanya
+    // krn izin restock belum di-ACC Owner), tampilkan sebagai info tambahan --
+    // khusus Owner, supaya sadar sebelum approve bahwa sebagian jumlah restock
+    // nanti akan otomatis dipotong untuk menutup kekurangan ini.
+    const infoDefisit = (isOwner && defisitSekarang > 0)
+      ? `<div style="font-size:11px; color:var(--gold-dark); margin-top:4px;">Sudah terjual ${defisitSekarang} cup melebihi stok tercatat \u2014 akan otomatis dipotong dari restock berikutnya.</div>` : '';
     html += `<div class="cupUkuranItem" data-ukuran="${u.value}">
       <div class="cuiTop">
         <div class="cuiName">${u.label}</div>
@@ -4450,6 +4465,7 @@ function renderKelolaStokCup(){
         <button class="stokCupSaveB" style="flex:0 0 auto; padding:10px 14px; border-radius:10px; border:none; background:var(--pine-900); color:#f3ede0; font-size:12.5px; font-weight:650; cursor:pointer; white-space:nowrap;">Simpan</button>
         <button class="restockCupOpenB" title="Restock (tambah stok)" style="flex:0 0 auto; width:38px; height:38px; padding:0; border-radius:10px; border:1.4px solid var(--line-soft); background:var(--pine-50); color:var(--pine-700); cursor:pointer; display:flex; align-items:center; justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>` : `<div class="karyawanTampil" style="flex:1 1 0%;">${stokSekarang} cup saat ini</div>`}
       </div>
+      ${infoDefisit}
     </div>`;
   });
   el('stokCupBody').innerHTML = '';
@@ -4774,23 +4790,39 @@ async function putuskanPermintaanStokCup(id, statusBaru){
       // Approve = langsung eksekusi tambah stok utk SEMUA ukuran di rincian,
       // masing-masing dalam transaksi tersendiri supaya aman dari race
       // condition dgn restock/edit manual lain yang mungkin jalan bersamaan.
+      //
+      // POTONGAN DEFISIT: kalau selama permintaan ini masih "menunggu" ternyata
+      // sudah ada penjualan yang melebihi stok tercatat (misal Owner telat ACC),
+      // kekurangan itu sudah dicatat otomatis di field "defisit" pada dokumen
+      // stok_cup_ukuran (lihat proses checkout). Di sini, sebelum menambahkan
+      // jumlah restock, defisit itu dipotong dulu dari jumlah yang ditambahkan --
+      // supaya cup yang sudah terlanjur laku duluan TIDAK ikut dihitung dobel
+      // sebagai tambahan stok baru. Sisa defisit yang tidak tertutup restock ini
+      // (kalau jumlah defisit > jumlah restock) tetap tersimpan untuk dipotong
+      // lagi di restock/approval berikutnya.
       for(const item of rincian){
         try{
           const docId = stokCupUkuranDocId(r.outlet, item.ukuran);
           const ref = doc(db, "stok_cup_ukuran", docId);
           let stokSesudah = item.jumlah;
+          let defisitTerpotong = 0;
           await runTransaction(db, async (tx)=>{
             const snap = await tx.get(ref);
             const skrg = snap.exists() ? (Number(snap.data().jumlah)||0) : 0;
-            stokSesudah = skrg + item.jumlah;
-            tx.set(ref, { outlet: r.outlet, ukuran: item.ukuran, jumlah: stokSesudah }, { merge: true });
+            const defisitSkrg = snap.exists() ? (Number(snap.data().defisit)||0) : 0;
+            defisitTerpotong = Math.min(defisitSkrg, item.jumlah);
+            const jumlahBersih = item.jumlah - defisitTerpotong; // yang benar2 nambah stok
+            stokSesudah = skrg + jumlahBersih;
+            tx.set(ref, { outlet: r.outlet, ukuran: item.ukuran, jumlah: stokSesudah, defisit: defisitSkrg - defisitTerpotong }, { merge: true });
           });
           await addDoc(collection(db, "riwayat_restock_cup"), {
             waktu: Timestamp.fromDate(new Date()), outlet: r.outlet, ukuran: item.ukuran,
             satuan: 'cup', jumlahInput: item.jumlah, isiRoll: null,
-            jumlahDitambahCup: item.jumlah, stokSesudah,
+            jumlahDitambahCup: item.jumlah - defisitTerpotong, stokSesudah,
             oleh: r.pemohonNama || r.pemohonUsername,
-            keterangan: `Via izin restock \u2014 disetujui oleh ${SESI ? SESI.namaTampilan : 'Owner'}`
+            keterangan: defisitTerpotong > 0
+              ? `Via izin restock \u2014 disetujui oleh ${SESI ? SESI.namaTampilan : 'Owner'} (dipotong ${defisitTerpotong} krn sudah terjual duluan sblm di-ACC)`
+              : `Via izin restock \u2014 disetujui oleh ${SESI ? SESI.namaTampilan : 'Owner'}`
           });
         }catch(errItem){ console.error(`Gagal eksekusi restock utk ukuran ${item.ukuran}:`, errItem); }
       }

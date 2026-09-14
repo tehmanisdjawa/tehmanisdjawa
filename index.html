@@ -3303,8 +3303,9 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
   const ringkasan = { total:0, jumlahTrx:transaksiArr.length, jumlahItem:0, cash:0, qris:0, transfer:0, cashTrx:0, qrisTrx:0, transferTrx:0 };
   const perKaryawan = {};
   const SHIFT_URUTAN = ["Pagi","Siang","Sore","Malam","Luar Jam Operasional"];
-  const perShift = {}; SHIFT_URUTAN.forEach(s=> perShift[s] = { shift:s, total:0, jumlahTrx:0, jumlahItem:0 });
+  const perShift = {}; SHIFT_URUTAN.forEach(s=> perShift[s] = { shift:s, total:0, jumlahTrx:0, jumlahItem:0, mlTeh:0 });
   const perItem = {}; const perUkuran = {};
+  let mlTehTerpakaiTotal = 0;
 
   transaksiArr.forEach(t=>{
     ringkasan.total += t.total || 0;
@@ -3327,7 +3328,12 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
       if(!perShift[shift].ukuran[ukr]) perShift[shift].ukuran[ukr] = { ukuran:ukr, qty:0, subtotal:0 };
       perShift[shift].ukuran[ukr].qty += it.qty||0;
       perShift[shift].ukuran[ukr].subtotal += it.subtotal||0;
+      // Ml teh terpakai -- HANYA menu kategori "Es Teh Manis" yang menghitung (lihat mlTehUntukItem).
+      const mlItem = mlTehUntukItem(it.kategori, it.nama) * (it.qty||0);
+      perShift[shift].mlTeh += mlItem;
+      mlTehTerpakaiTotal += mlItem;
     });
+
 
     (t.items||[]).forEach(it=>{
       const key = namaTampilItem(it);
@@ -3355,6 +3361,7 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
     })).filter(s=>s.jumlahTrx>0 || s.shift!=='Luar Jam Operasional'),
     itemTerlaris: Object.values(perItem).sort((a,b)=>b.qty-a.qty),
     perUkuranCup: Object.values(perUkuran).sort((a,b)=>b.qty-a.qty),
+    mlTehTerpakaiTotal,
     transaksi: daftarTrx
   };
 }
@@ -3386,6 +3393,15 @@ async function muatLaporanTanggal(tanggal, diam){
     } else {
       const arr = await ambilTransaksiUntukLaporan(tanggal, lapOutletAktif);
       data = Object.assign({ status:'ok' }, susunLaporanDariTransaksi(arr, tanggal, lapOutletAktif));
+      // Sisa stok teh SAAT INI hanya relevan kalau laporan yang dibuka adalah hari ini
+      // (angka "sisa" berubah tiap saat, jadi untuk tanggal lampau tidak ditampilkan).
+      if(lapOutletAktif && tanggal === tanggalHariIniStr()){
+        try{
+          const ref = doc(db, "stok_teh", stokTehDocId(lapOutletAktif));
+          const snap = await getDoc(ref);
+          data.stokTehSisaSaatIni = snap.exists() ? (Number(snap.data().ml)||0) : 0;
+        }catch(e){ console.error('Gagal ambil sisa stok teh untuk laporan:', e); }
+      }
     }
     const dataBaru = JSON.stringify(data);
     if(!diam || dataBaru !== JSON.stringify(lapDataTerakhir)){ lapDataTerakhir = data; renderLaporan(data); }
@@ -3486,6 +3502,18 @@ function renderLaporanSatuOutlet(data){
     html += `<div class="lapSection"><h4>Penjualan per Shift</h4><div class="shiftGrid">`;
     data.perShift.forEach((s, idx)=>{ html += `<div class="shiftCard" data-shiftidx="${idx}"><div class="scLbl">${SHIFT_ICON[s.shift]||''} ${s.shift}</div>${SHIFT_JAM[s.shift] ? `<div class="scJam">${SHIFT_JAM[s.shift]}</div>` : ''}<div class="scVal">${rupiah(s.total)}</div><div class="scSub">${s.jumlahTrx} transaksi \u00b7 ${s.jumlahItem} item</div></div>`; });
     html += `</div></div>`;
+  }
+  if(typeof data.mlTehTerpakaiTotal === 'number'){
+    html += `<div class="lapSection"><h4>Stok Teh</h4>`;
+    data.perShift.forEach(s=>{
+      if(s.shift === 'Luar Jam Operasional' && !s.mlTeh) return;
+      html += `<div class="lapRow"><div class="lrn">${SHIFT_ICON[s.shift]||''} ${s.shift}</div><div class="lrv">${(s.mlTeh||0).toLocaleString('id-ID')} ml</div></div>`;
+    });
+    html += `<div class="lapRow" style="font-weight:700;"><div class="lrn">Total Terpakai</div><div class="lrv">${data.mlTehTerpakaiTotal.toLocaleString('id-ID')} ml</div></div>`;
+    if(typeof data.stokTehSisaSaatIni === 'number'){
+      html += `<div class="lapRow" style="font-weight:700;"><div class="lrn">Sisa Saat Ini</div><div class="lrv">${data.stokTehSisaSaatIni.toLocaleString('id-ID')} ml</div></div>`;
+    }
+    html += `</div>`;
   }
   if(data.perUkuranCup){
     html += `<div class="lapSection"><h4>Terjual per Ukuran</h4>`;
@@ -3965,6 +3993,16 @@ function susunTeksLaporan(data){
   t += `Total Penjualan: ${rupiah(r.total)}\nJumlah Transaksi: ${r.jumlahTrx}\nItem Terjual: ${r.jumlahItem}\n\n`;
   t += `*Metode Bayar*\nCash: ${rupiah(r.cash)} (${r.cashTrx||0} trx)\nQRIS: ${rupiah(r.qris)} (${r.qrisTrx||0} trx)\nTransfer: ${rupiah(r.transfer)} (${r.transferTrx||0} trx)\n\n`;
   if(data.perShift && data.perShift.length){ t += `*Per Shift*\n`; data.perShift.forEach(s=>{ t += `${s.shift}: ${rupiah(s.total)} (${s.jumlahTrx} trx)\n`; }); t += `\n`; }
+  if(typeof data.mlTehTerpakaiTotal === 'number'){
+    t += `*Stok Teh*\n`;
+    data.perShift.forEach(s=>{
+      if(s.shift === 'Luar Jam Operasional' && !s.mlTeh) return;
+      t += `${s.shift}: ${(s.mlTeh||0).toLocaleString('id-ID')} ml\n`;
+    });
+    t += `Total Terpakai: ${data.mlTehTerpakaiTotal.toLocaleString('id-ID')} ml\n`;
+    if(typeof data.stokTehSisaSaatIni === 'number'){ t += `Sisa Saat Ini: ${data.stokTehSisaSaatIni.toLocaleString('id-ID')} ml\n`; }
+    t += `\n`;
+  }
   if(data.perUkuranCup && data.perUkuranCup.length){ t += `*Terjual per Ukuran*\n`; data.perUkuranCup.forEach(u=>{ t += `${u.ukuran}: ${u.qty} cup\n`; }); t += `\n`; }
   if(data.perKaryawan && data.perKaryawan.length){ t += `*Per Karyawan*\n`; data.perKaryawan.forEach(k=>{ t += `${k.karyawan}: ${rupiah(k.total)}\n`; }); t += `\n`; }
   if(data.itemTerlaris && data.itemTerlaris.length){ t += `*Menu Terlaris*\n`; data.itemTerlaris.slice(0,10).forEach((it,idx)=>{ t += `${idx+1}. ${it.nama} \u2014 ${it.qty}x (${rupiah(it.subtotal)})\n`; }); t += `\n`; }

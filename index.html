@@ -2989,76 +2989,73 @@ el('checkoutBtn').onclick = async ()=>{
       items: items
     });
 
-    // Kurangi stok per item (kalau outlet-nya kelola stok untuk varian itu).
+    // Kurangi stok (barang per varian, cup per ukuran, dan teh ml) -- SEMUA
+    // paralel via Promise.allSettled (bukan berurutan) supaya checkout tidak
+    // lambat menunggu satu-satu, terutama saat Firestore lagi bermasalah
+    // (kuota habis/koneksi jelek) -- kalau satu gagal, yang lain tetap jalan
+    // dan tidak saling menunggu. Kegagalan di sini TIDAK membatalkan transaksi
+    // (pesanan sudah tersimpan di atas), tapi dilaporkan jelas ke pengguna.
+    let gagalStokBarang = false, gagalStokCup = false, gagalStokTeh = false;
     if(SESI.outlet){
-      for(const it of items){
+      const tugasStokBarang = items.map(async (it)=>{
         const stokDocId = (SESI.outlet+'_'+it.kategori+'_'+it.nama+'_'+it.varian).replace(/[^a-zA-Z0-9]/g,'_');
         const stokRef = doc(db, "stok", stokDocId);
-        try{
-          await runTransaction(db, async (tx)=>{
-            const snap = await tx.get(stokRef);
-            if(!snap.exists()) return; // outlet ini belum kelola stok utk varian ini, lewati
-            const skrg = Number(snap.data().jumlah)||0;
-            const baru = Math.max(0, skrg - it.qty);
-            tx.update(stokRef, { jumlah: baru });
-          });
-        }catch(e){ /* gagal kurangi stok utk 1 item, jangan batalkan seluruh transaksi */ }
-      }
-    }
+        const snap = await getDoc(stokRef);
+        if(!snap.exists()) return; // outlet ini belum kelola stok utk varian ini, lewati
+        const skrg = Number(snap.data().jumlah)||0;
+        const baru = Math.max(0, skrg - it.qty);
+        await setDoc(stokRef, { jumlah: baru }, { merge: true });
+      });
 
-    // Kurangi STOK CUP PER UKURAN (independen dari menu) -- setiap item yang terjual
-    // mengurangi stok cup fisik sesuai ukurannya, apapun menunya.
-    if(SESI.outlet){
-      for(const it of items){
+      const tugasStokCup = items.map(async (it)=>{
         const ukuranNormal = normalisasiUkuran(it.varian, it.nama);
         const cupDocId = (SESI.outlet+'_'+ukuranNormal).replace(/[^a-zA-Z0-9]/g,'_');
         const cupRef = doc(db, "stok_cup_ukuran", cupDocId);
-        try{
-          await runTransaction(db, async (tx)=>{
-            const snap = await tx.get(cupRef);
-            if(!snap.exists()) return; // ukuran ini belum dikelola stok cup-nya, lewati
-            const skrg = Number(snap.data().jumlah)||0;
-            const baru = Math.max(0, skrg - it.qty);
-            tx.update(cupRef, { jumlah: baru });
-          });
-        }catch(e){ /* gagal kurangi stok cup utk 1 item, jangan batalkan seluruh transaksi */ }
-      }
-    }
+        const snap = await getDoc(cupRef);
+        if(!snap.exists()) return; // ukuran ini belum dikelola stok cup-nya, lewati
+        const skrg = Number(snap.data().jumlah)||0;
+        const baru = Math.max(0, skrg - it.qty);
+        await setDoc(cupRef, { jumlah: baru }, { merge: true });
+      });
 
-    // Kurangi STOK TEH (ml, satu angka per outlet) -- hanya utk item kategori
-    // "Es Teh Manis" (lihat mlTehUntukItem). Nutrisari/Good Day/dst dilewati
-    // karena tidak memakai teh sama sekali.
-    let gagalKurangiStokTeh = false;
-    if(SESI.outlet){
       let totalMlTehDipakai = 0;
       for(const it of items){
         const mlPerCup = mlTehUntukItem(it.kategori, it.nama);
         if(mlPerCup > 0) totalMlTehDipakai += mlPerCup * it.qty;
       }
-      if(totalMlTehDipakai > 0){
+      const tugasStokTeh = totalMlTehDipakai > 0 ? (async ()=>{
         const tehRef = doc(db, "stok_teh", stokTehDocId(SESI.outlet));
-        try{
-          await runTransaction(db, async (tx)=>{
-            const snap = await tx.get(tehRef);
-            if(!snap.exists()) return; // outlet ini belum kelola stok teh, lewati
-            const skrg = Number(snap.data().ml)||0;
-            const baru = Math.max(0, skrg - totalMlTehDipakai);
-            tx.update(tehRef, { ml: baru });
-          });
-        }catch(e){
-          // Gagal kurangi stok teh (misal kuota Firestore penuh/koneksi putus) --
-          // JANGAN batalkan transaksi (pesanan tetap tercatat), tapi kasih tahu
-          // pengguna secara terang-terangan supaya stok teh dikoreksi manual nanti,
-          // bukan gagal diam-diam tanpa jejak.
-          gagalKurangiStokTeh = true;
-          console.error('Gagal mengurangi stok teh (transaksi tetap tersimpan):', e);
-        }
+        const snap = await getDoc(tehRef);
+        if(!snap.exists()) return; // outlet ini belum kelola stok teh, lewati
+        const skrg = Number(snap.data().ml)||0;
+        const baru = Math.max(0, skrg - totalMlTehDipakai);
+        await setDoc(tehRef, { ml: baru }, { merge: true });
+      })() : Promise.resolve();
+
+      const [hasilBarang, hasilCup, hasilTeh] = await Promise.allSettled([
+        Promise.allSettled(tugasStokBarang),
+        Promise.allSettled(tugasStokCup),
+        tugasStokTeh
+      ]);
+      // hasilBarang & hasilCup itu sendiri array hasil per-item (dari Promise.allSettled bertingkat) --
+      // tandai gagal kalau ADA SATU SAJA item yang gagal, supaya user tahu ada yang perlu dikoreksi manual.
+      if(hasilBarang.status === 'fulfilled' && hasilBarang.value.some(r=>r.status==='rejected')) gagalStokBarang = true;
+      if(hasilBarang.status === 'rejected') gagalStokBarang = true;
+      if(hasilCup.status === 'fulfilled' && hasilCup.value.some(r=>r.status==='rejected')) gagalStokCup = true;
+      if(hasilCup.status === 'rejected') gagalStokCup = true;
+      if(hasilTeh.status === 'rejected') gagalStokTeh = true;
+      if(gagalStokBarang || gagalStokCup || gagalStokTeh){
+        console.error('Gagal mengurangi sebagian stok (transaksi tetap tersimpan):', { gagalStokBarang, gagalStokCup, gagalStokTeh });
       }
     }
 
     mainkanSuaraCheckout();
-    if(gagalKurangiStokTeh){
-      showToast("Pesanan terkirim \u2014 " + rupiah(total) + ". Stok teh belum terpotong (koneksi/kuota bermasalah), cek & koreksi manual di Kelola Stok Teh.", false);
+    if(gagalStokBarang || gagalStokCup || gagalStokTeh){
+      const bagianGagal = [];
+      if(gagalStokBarang) bagianGagal.push('stok barang');
+      if(gagalStokCup) bagianGagal.push('stok cup');
+      if(gagalStokTeh) bagianGagal.push('stok teh');
+      showToast("Pesanan terkirim \u2014 " + rupiah(total) + ". " + bagianGagal.join(', ') + " belum terpotong (koneksi/kuota bermasalah), cek & koreksi manual.", false);
     } else {
       showToast("Pesanan terkirim \u2014 " + rupiah(total));
     }

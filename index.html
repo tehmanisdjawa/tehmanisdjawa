@@ -150,33 +150,33 @@
       radial-gradient(circle at 12% -20%, rgba(200,151,63,.14), transparent 42%),
       linear-gradient(160deg, var(--pine-900), var(--pine-950));
     color:#f3ede0;
-    padding:18px 18px 14px;
+    padding:10px 14px 9px;
     box-shadow:0 4px 22px rgba(12,31,22,.30);
     border-bottom:1px solid rgba(243,237,224,.06);
     overflow-x:hidden;
   }
-  .brandrow{display:flex; align-items:flex-start; justify-content:space-between; gap:8px; flex-wrap:wrap;}
-  .brandLeft{display:flex; align-items:center; gap:11px; min-width:0;}
+  .brandrow{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:nowrap;}
+  .brandLeft{display:flex; align-items:center; gap:8px; min-width:0; flex:1 1 auto; overflow:hidden;}
   .leafBadge{
-    width:38px; height:38px; border-radius:11px; flex:0 0 auto;
+    width:30px; height:30px; border-radius:9px; flex:0 0 auto;
     background:linear-gradient(160deg, var(--pine-700), var(--pine-800));
     border:1px solid rgba(243,237,224,.14);
     display:flex; align-items:center; justify-content:center;
   }
-  .leafBadge svg{width:20px;height:20px;}
-  .brandLeft h1{font-family:"Fraunces",serif; font-size:17px; margin:0; font-weight:600; letter-spacing:.2px; line-height:1.25;}
-  .brandLeft .sub{font-size:11px; color:rgba(243,237,224,.55); margin-top:2px; letter-spacing:.3px;}
+  .leafBadge svg{width:16px;height:16px;}
+  .brandLeft h1{font-family:"Fraunces",serif; font-size:14px; margin:0; font-weight:600; letter-spacing:.2px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .brandLeft .sub{font-size:10px; color:rgba(243,237,224,.55); margin-top:1px; letter-spacing:.3px;}
 
-  .headRight{display:flex; flex-direction:column; align-items:flex-end; gap:7px; flex:0 0 auto;}
-  .headBtns{display:flex; align-items:center; gap:7px; overflow-x:auto; max-width:100%; scrollbar-width:none; padding-bottom:1px;}
+  .headRight{display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex:0 0 auto; text-align:right;}
+  .headBtns{display:flex; align-items:center; gap:6px; overflow-x:auto; max-width:100%; scrollbar-width:none; padding-bottom:1px; justify-content:flex-end;}
   .headBtns::-webkit-scrollbar{display:none;}
   .iconBtn{
     background:rgba(243,237,224,.07); border:1px solid rgba(243,237,224,.14); color:#f3ede0;
-    border-radius:10px; width:34px; height:34px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    border-radius:9px; width:28px; height:28px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; cursor:pointer;
     transition:background .15s; position:relative;
   }
   .iconBtn:active{background:rgba(243,237,224,.16);}
-  .iconBtn svg{width:17px;height:17px;}
+  .iconBtn svg{width:14px;height:14px;}
   .iconBtn .notifDot{
     position:absolute; top:-4px; right:-4px; min-width:16px; height:16px; padding:0 4px; border-radius:999px;
     background:var(--merah); color:#fff; font-size:9.5px; font-weight:800; line-height:16px; text-align:center;
@@ -234,9 +234,9 @@
   .menuDropDivider{height:1px; background:var(--line-soft); margin:5px 4px;}
 
   .clockBox{text-align:right;}
-  .clock{font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:.3px;}
-  .dateSmall{font-size:9.5px; color:rgba(243,237,224,.5); text-transform:uppercase; letter-spacing:.5px; margin-top:1px;}
-  .userChip{font-size:9.5px; color:rgba(243,237,224,.6); margin-top:1px; letter-spacing:.2px;}
+  .clock{font-size:11.5px; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:.3px;}
+  .dateSmall{font-size:8.5px; color:rgba(243,237,224,.5); text-transform:uppercase; letter-spacing:.5px; margin-top:0;}
+  .userChip{font-size:8.5px; color:rgba(243,237,224,.6); margin-top:0; letter-spacing:.2px;}
 
   .searchWrap{padding:15px 0 0; position:relative;}
   .searchWrap svg.sIcon{position:absolute; left:13px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:rgba(243,237,224,.45); pointer-events:none;}

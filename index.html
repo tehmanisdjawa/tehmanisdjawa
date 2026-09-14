@@ -167,7 +167,7 @@
   .brandLeft h1{font-family:"Fraunces",serif; font-size:17px; margin:0; font-weight:600; letter-spacing:.2px; line-height:1.25;}
   .brandLeft .sub{font-size:11px; color:rgba(243,237,224,.55); margin-top:2px; letter-spacing:.3px;}
 
-  .headRight{display:flex; flex-direction:column; align-items:flex-end; gap:7px; flex:0 0 auto;}
+  .headRight{display:flex; flex-direction:column; align-items:flex-end; gap:7px; flex:0 0 auto; margin-left:auto;}
   .headBtns{display:flex; align-items:center; gap:7px; overflow-x:auto; max-width:100%; scrollbar-width:none; padding-bottom:1px;}
   .headBtns::-webkit-scrollbar{display:none;}
   .iconBtn{
@@ -5499,17 +5499,17 @@ function bukaFormKirimIzinStokTeh(){
     <div class="formField">
       <label>Takaran Air/Teh (ml)</label>
       <input id="izinTehTakaran" type="number" min="1" placeholder="Contoh: 1000">
-      <div class="hint">Isi ml air yang dituang (jumlah teh dianggap sama). Gula dan total dihitung otomatis di bawah.</div>
+      <div class="hint">Isi ml air yang dituang (jumlah teh dianggap sama).</div>
     </div>
-    <div id="izinTehPreview" style="padding:10px 12px; border-radius:10px; background:var(--card); border:1.4px dashed var(--line); font-size:12px; color:var(--muted); margin-bottom:4px;">Isi takaran dulu untuk lihat rincian.</div>
+    <div id="izinTehPreview" style="padding:10px 12px; border-radius:10px; background:var(--card); border:1.4px dashed var(--line); font-size:12px; color:var(--muted); margin-bottom:4px;">Isi takaran dulu untuk lihat total.</div>
     <button class="saveFormBtn" id="izinTehSaveBtn">Kirim Izin</button>
   `;
 
   const updateIzinTehPreview = ()=>{
     const x = Number(el('izinTehTakaran').value) || 0;
-    if(x <= 0){ el('izinTehPreview').innerHTML = 'Isi takaran dulu untuk lihat rincian.'; return; }
+    if(x <= 0){ el('izinTehPreview').innerHTML = 'Isi takaran dulu untuk lihat total.'; return; }
     const h = hitungTotalMlTehDariTakaran(x);
-    el('izinTehPreview').innerHTML = `Air ${h.air.toLocaleString('id-ID')}ml + Teh ${h.teh.toLocaleString('id-ID')}ml + Gula ${h.gula.toLocaleString('id-ID')}ml = <b style="color:var(--pine-700);">Total ${h.total.toLocaleString('id-ID')}ml</b> yang akan diminta ditambahkan.`;
+    el('izinTehPreview').innerHTML = `<b style="color:var(--pine-700);">Total ${h.total.toLocaleString('id-ID')}ml</b> yang akan diminta ditambahkan.`;
   };
   el('izinTehTakaran').addEventListener('input', updateIzinTehPreview);
 

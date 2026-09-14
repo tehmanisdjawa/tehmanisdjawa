@@ -1889,7 +1889,13 @@ const POLA_ML_TEH = [
 ];
 const ML_TEH_DEFAULT = 150; // dipakai kalau nama menu tidak cocok pola manapun di atas (semua teh rasa buah/susu/dll)
 function mlTehUntukItem(kategori, namaMenu){
-  if(String(kategori||'').trim() !== KATEGORI_PAKAI_TEH) return 0; // kategori lain tidak pakai teh
+  // Dibuat TIDAK case-sensitive & toleran spasi ganda -- supaya kategori "es teh manis",
+  // "Es Teh Manis ", atau "ES TEH MANIS" tetap dikenali sebagai kategori pemakai teh,
+  // bukan cuma yang persis sama huruf besar/kecilnya. Ini penyebab paling umum kenapa
+  // stok teh (ml) tidak berkurang walau menunya jelas teh manis.
+  const kategoriNormal = String(kategori||'').trim().toLowerCase().replace(/\s+/g,' ');
+  const kategoriTehNormal = KATEGORI_PAKAI_TEH.toLowerCase().replace(/\s+/g,' ');
+  if(kategoriNormal !== kategoriTehNormal) return 0; // kategori lain tidak pakai teh
   const teks = String(namaMenu||'').toLowerCase();
   for(const pola of POLA_ML_TEH){
     if(pola.kata.some(k => teks.includes(k))) return pola.ml;
@@ -2851,7 +2857,7 @@ function gabungkanMenuDanStok(){
       // Cek stok teh (ml, total per outlet, bukan per menu/ukuran): kalau kategorinya
       // "Es Teh Manis" dan stok teh cair sudah 0, SEMUA varian di kategori ini otomatis
       // ditandai habis juga -- terlepas dari status habis manual atau stok menu lainnya.
-      if(kategori === KATEGORI_PAKAI_TEH && STOKTEH_ML_KASIR_AKTIF !== null && STOKTEH_ML_KASIR_AKTIF <= 0) habis = true;
+      if(mlTehUntukItem(kategori, nama) > 0 && STOKTEH_ML_KASIR_AKTIF !== null && STOKTEH_ML_KASIR_AKTIF <= 0) habis = true;
       catMap[kategori][nama].varian.push({ nama: v.ukuran, harga: v.harga||0, tambahan: v.tambahan||'', habis, stok: stokSisa });
     });
   });
@@ -3080,12 +3086,20 @@ el('checkoutBtn').onclick = async ()=>{
         try{
           await runTransaction(db, async (tx)=>{
             const snap = await tx.get(tehRef);
-            if(!snap.exists()) return; // outlet ini belum kelola stok teh, lewati
-            const skrg = Number(snap.data().ml)||0;
-            const baru = Math.max(0, skrg - totalMlTehDipakai);
-            tx.update(tehRef, { ml: baru });
+            // PENTING: dulu kalau dokumen stok_teh outlet ini belum pernah dibuat
+            // (misal Owner belum sempat restock/setup awal), baris ini langsung
+            // "return" alias DIAM-DIAM DILEWATI -- akibatnya ml teh kelihatan tidak
+            // pernah berkurang walau tehnya laku terus, tanpa ada error/toast apapun.
+            // Sekarang: kalau dokumennya belum ada, BUAT dulu dengan ml=0 (dianggap
+            // belum ada stok tercatat), baru pengurangan tetap dihitung dari 0 -- supaya
+            // pemakaian tetap konsisten TERCATAT (walau hasilnya jadi negatif/0), dan
+            // Owner langsung sadar dari kartu Kelola Stok Teh bahwa outlet ini perlu direstock.
+            const skrgMentah = snap.exists() ? (Number(snap.data().ml)||0) : 0;
+            const baru = Math.max(0, skrgMentah - totalMlTehDipakai);
+            if(snap.exists()) tx.update(tehRef, { ml: baru });
+            else tx.set(tehRef, { outlet: SESI.outlet, ml: baru });
           });
-        }catch(e){ /* gagal kurangi stok teh, jangan batalkan seluruh transaksi */ }
+        }catch(e){ console.error('Gagal kurangi stok teh saat checkout:', e); /* jangan batalkan seluruh transaksi krn stok teh gagal dicatat */ }
       }
     }
 

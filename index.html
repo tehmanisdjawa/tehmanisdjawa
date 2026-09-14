@@ -491,6 +491,43 @@
   .popupSuksesTitle{font-family:"Fraunces",serif; font-size:17px; font-weight:600; color:var(--ink); margin-bottom:6px;}
   .popupSuksesSub{font-size:12.5px; color:var(--muted); line-height:1.5;}
 
+  /* ============ POPUP STOK MENIPIS/HABIS (khusus Owner) ============
+     Sama pola dgn popup sukses di atas (muncul tengah layar, 5 detik,
+     tombol close), tapi warna kuning/amber (peringatan) dan isinya
+     daftar item yang menipis/habis, bisa lebih dari satu baris. */
+  .popupStokOverlay{
+    position:fixed; inset:0; z-index:250; display:none; align-items:center; justify-content:center; padding:24px;
+    background:rgba(12,20,15,.45); backdrop-filter:blur(2px);
+    opacity:0; transition:opacity .3s var(--ios-ease, cubic-bezier(.25,.1,.25,1));
+  }
+  .popupStokOverlay.show{display:flex; opacity:1;}
+  .popupStokBox{
+    position:relative;
+    background:var(--card); border-radius:22px; padding:30px 26px; width:100%; max-width:340px; text-align:center;
+    box-shadow:var(--shadow-float); border:1px solid var(--line-soft);
+    transform:scale(.82) translateY(10px); opacity:0;
+    transition:transform .38s var(--ios-spring, cubic-bezier(.34,1.32,.64,1)), opacity .3s;
+  }
+  #popupStokCloseBtn{
+    position:absolute; top:12px; right:12px; width:28px; height:28px; border-radius:50%; border:none;
+    background:var(--paper); color:var(--muted); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; padding:0; transition:background .15s var(--ios-ease, cubic-bezier(.25,.1,.25,1));
+  }
+  #popupStokCloseBtn:active{background:var(--line-soft);}
+  .popupStokOverlay.show .popupStokBox{transform:scale(1) translateY(0); opacity:1;}
+  .popupStokOverlay.leaving{opacity:0;}
+  .popupStokOverlay.leaving .popupStokBox{transform:scale(.9) translateY(6px); opacity:0;}
+  .popupStokIcon{
+    width:56px; height:56px; border-radius:50%; margin:0 auto 14px;
+    background:linear-gradient(160deg, var(--gold), var(--gold-dark)); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .popupStokOverlay.habis .popupStokIcon{background:linear-gradient(160deg, var(--merah), #7d3120);}
+  .popupStokTitle{font-family:"Fraunces",serif; font-size:17px; font-weight:600; color:var(--ink); margin-bottom:8px;}
+  .popupStokList{font-size:12.5px; color:var(--muted); line-height:1.6; text-align:left; max-height:180px; overflow-y:auto; padding:2px 2px 2px 4px;}
+  .popupStokList div{padding:3px 0; border-bottom:1px solid var(--line-soft);}
+  .popupStokList div:last-child{border-bottom:none;}
+
   /* Banner "Update Tersedia" -- muncul di atas layar (di atas segalanya, termasuk
      overlay lain) saat Owner menekan Paksa Update Semua Perangkat. */
   .updToastWrap{position:fixed; top:12px; left:0; right:0; z-index:400; display:flex; justify-content:center; pointer-events:none; padding:0 14px;}
@@ -1094,17 +1131,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
           <span class="notifDot" id="notifRejectOwnerDot">0</span>
         </button>
-        <button class="iconBtn" id="notifKaryawanBtn" aria-label="Status Izin Stok Cup" title="Status Izin Stok Cup" style="display:none;">
+        <button class="iconBtn" id="notifKaryawanBtn" aria-label="Notifikasi" title="Notifikasi" style="display:none;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
           <span class="notifDot" id="notifKaryawanDot">0</span>
-        </button>
-        <button class="iconBtn" id="notifTehBtn" aria-label="Permintaan Izin Stok Teh" title="Permintaan Izin Stok Teh" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-          <span class="notifDot" id="notifTehDot">0</span>
-        </button>
-        <button class="iconBtn" id="notifKaryawanTehBtn" aria-label="Status Izin Stok Teh" title="Status Izin Stok Teh" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-          <span class="notifDot" id="notifKaryawanTehDot">0</span>
         </button>
         <button class="iconBtn" id="menuBtn" aria-label="Menu" title="Menu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
@@ -1348,7 +1377,7 @@
 <div class="notifPanelOverlay" id="notifPanelOverlay">
   <div class="notifPanelBackdrop" id="notifPanelBackdrop"></div>
   <div class="notifPanel">
-    <div class="notifPanelHead"><span>Permintaan Akses Stok Cup</span><button id="notifPanelClose">✕</button></div>
+    <div class="notifPanelHead"><span>Notifikasi</span><button id="notifPanelClose">✕</button></div>
     <div class="notifPanelBody" id="notifPanelBody"></div>
   </div>
 </div>
@@ -1356,7 +1385,7 @@
 <div class="notifPanelOverlay" id="notifKaryawanPanelOverlay">
   <div class="notifPanelBackdrop" id="notifKaryawanPanelBackdrop"></div>
   <div class="notifPanel" id="notifKaryawanPanel">
-    <div class="notifPanelHead"><span>Status Izin Stok Cup</span><button id="notifKaryawanPanelClose">✕</button></div>
+    <div class="notifPanelHead"><span>Notifikasi</span><button id="notifKaryawanPanelClose">✕</button></div>
     <div class="notifPanelBody" id="notifKaryawanPanelBody"></div>
   </div>
 </div>
@@ -1365,22 +1394,6 @@
   <div class="adminSheet">
     <div class="adminHead"><h2>Kelola Stok Teh</h2><button id="stokTehClose">✕</button></div>
     <div class="adminBody" id="stokTehBody"></div>
-  </div>
-</div>
-
-<div class="notifPanelOverlay" id="notifTehPanelOverlay">
-  <div class="notifPanelBackdrop" id="notifTehPanelBackdrop"></div>
-  <div class="notifPanel">
-    <div class="notifPanelHead"><span>Permintaan Izin Stok Teh</span><button id="notifTehPanelClose">✕</button></div>
-    <div class="notifPanelBody" id="notifTehPanelBody"></div>
-  </div>
-</div>
-
-<div class="notifPanelOverlay" id="notifKaryawanTehPanelOverlay">
-  <div class="notifPanelBackdrop" id="notifKaryawanTehPanelBackdrop"></div>
-  <div class="notifPanel" id="notifKaryawanTehPanel">
-    <div class="notifPanelHead"><span>Status Izin Stok Teh</span><button id="notifKaryawanTehPanelClose">✕</button></div>
-    <div class="notifPanelBody" id="notifKaryawanTehPanelBody"></div>
   </div>
 </div>
 
@@ -1426,6 +1439,15 @@
     <div class="popupSuksesIcon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg></div>
     <div class="popupSuksesTitle" id="popupSuksesTitle">Permintaan Disetujui</div>
     <div class="popupSuksesSub" id="popupSuksesSub"></div>
+  </div>
+</div>
+
+<div class="popupStokOverlay" id="popupStokOverlay">
+  <div class="popupStokBox">
+    <button id="popupStokCloseBtn" aria-label="Tutup" title="Tutup"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <div class="popupStokIcon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
+    <div class="popupStokTitle" id="popupStokTitle">Stok Menipis</div>
+    <div class="popupStokList" id="popupStokList"></div>
   </div>
 </div>
 
@@ -1830,6 +1852,7 @@ function prosesLogout(diam){
   if(unsubStokCupMenu){ unsubStokCupMenu(); unsubStokCupMenu = null; }
   if(unsubStokMenipis){ unsubStokMenipis(); unsubStokMenipis = null; }
   if(unsubStokCupMenipis){ unsubStokCupMenipis(); unsubStokCupMenipis = null; }
+  if(unsubStokTehMenipis){ unsubStokTehMenipis(); unsubStokTehMenipis = null; }
   SESI = null;
   UNDO_STACK = []; REDO_STACK = []; // riwayat undo tidak boleh lintas sesi/akun
   hapusSesiLokal();
@@ -2076,20 +2099,27 @@ function mulaiSemuaSetelahLogin(){
 }
 
 /* =====================================================================
-   NOTIFIKASI STOK MENIPIS (khusus Owner) — cek semua outlet, dua koleksi
-   stok ("stok" per menu & "stok_cup_ukuran" per ukuran fisik). Kalau ada
-   yang stoknya <= BATAS_STOK_MENIPIS (termasuk yang sudah 0/Habis), Owner
-   dapat toast peringatan.
+   NOTIFIKASI STOK MENIPIS (khusus Owner) — cek SEMUA sumber stok (3
+   koleksi: "stok" per menu, "stok_cup_ukuran" per ukuran fisik, dan
+   "stok_teh" total ml per outlet). Kalau ada yang stoknya <=
+   BATAS_STOK_MENIPIS (termasuk yang sudah 0/Habis), Owner dapat POPUP
+   di tengah layar selama 5 detik + tombol close (bukan toast biasa).
    Dipasang sebagai REALTIME LISTENER (onSnapshot), bukan polling getDocs
    berulang -- ini jauh lebih hemat kuota Firestore: onSnapshot cuma
    membayar "read" penuh sekali di awal (saat listener pertama nyala),
    setelah itu Firestore cuma mengirim PERUBAHAN datanya (jauh lebih
    murah), sekaligus otomatis realtime begitu ada yang restock/laku --
    tidak perlu nunggu siklus 10 menit seperti sebelumnya.
+
+   Catatan Stok Teh: karena satuannya ml (bukan cup/pcs), ambang menipis
+   dikonversi memakai ML_TEH_DEFAULT (ml per cup standar) supaya angka
+   "<=20" tetap punya makna yang sama secara kuantitas cup -- misal
+   sisa 20 cup senilai 150ml = 3000ml.
    ===================================================================== */
-let unsubStokMenipis = null, unsubStokCupMenipis = null;
-let stokMenipisTerakhir = {}, stokCupMenipisTerakhir = {}; // simpan snapshot data terbaru dari kedua listener
+let unsubStokMenipis = null, unsubStokCupMenipis = null, unsubStokTehMenipis = null;
+let stokMenipisTerakhir = {}, stokCupMenipisTerakhir = {}, stokTehMenipisTerakhir = {}; // simpan snapshot data terbaru dari ketiga listener
 let toastStokMenipisTimer = null;
+const BATAS_ML_TEH_MENIPIS = BATAS_STOK_MENIPIS * ML_TEH_DEFAULT; // setara "<=20 cup" dalam ml
 
 function evaluasiDanTampilkanStokMenipis(){
   const menipisList = [], habisList = [];
@@ -2103,21 +2133,49 @@ function evaluasiDanTampilkanStokMenipis(){
     if(jumlah <= 0) habisList.push(`Cup ${s.ukuran} \u2014 ${s.outlet}`);
     else if(jumlah <= BATAS_STOK_MENIPIS) menipisList.push(`Cup ${s.ukuran} \u2014 ${s.outlet}: sisa ${jumlah}`);
   });
+  Object.values(stokTehMenipisTerakhir).forEach(s=>{
+    const ml = Number(s.ml)||0;
+    if(ml <= 0) habisList.push(`Teh \u2014 ${s.outlet}`);
+    else if(ml <= BATAS_ML_TEH_MENIPIS) menipisList.push(`Teh \u2014 ${s.outlet}: sisa ${ml.toLocaleString('id-ID')} ml`);
+  });
   // Debounce kecil (1.5 detik) supaya kalau banyak dokumen berubah beruntun
-  // (misal restock banyak item sekaligus), toast tidak numpuk berkali-kali.
+  // (misal restock banyak item sekaligus), popup tidak numpuk berkali-kali.
   if(toastStokMenipisTimer) clearTimeout(toastStokMenipisTimer);
   toastStokMenipisTimer = setTimeout(()=>{
     if(habisList.length>0){
-      showToast(`\u26a0\ufe0f ${habisList.length} stok sudah HABIS: ${habisList.slice(0,3).join(', ')}${habisList.length>3?', dll':''}`, false);
+      tampilkanPopupStok('Stok Habis', habisList, 'habis');
     } else if(menipisList.length>0){
-      showToast(`\u26a0\ufe0f Stok menipis (\u2264${BATAS_STOK_MENIPIS}): ${menipisList.slice(0,3).join(', ')}${menipisList.length>3?', dll':''}`, false);
+      tampilkanPopupStok(`Stok Menipis (\u2264${BATAS_STOK_MENIPIS})`, menipisList, 'menipis');
     }
   }, 1500);
+}
+
+let popupStokHideTimer = null;
+function tutupPopupStokSekarang(){
+  const overlay = el('popupStokOverlay');
+  if(popupStokHideTimer){ clearTimeout(popupStokHideTimer); popupStokHideTimer = null; }
+  overlay.classList.add('leaving');
+  setTimeout(()=>{ overlay.classList.remove('show'); overlay.classList.remove('leaving'); }, 320);
+}
+el('popupStokCloseBtn').onclick = ()=> tutupPopupStokSekarang();
+function tampilkanPopupStok(judul, daftar, jenis){
+  const overlay = el('popupStokOverlay');
+  if(popupStokHideTimer){ clearTimeout(popupStokHideTimer); popupStokHideTimer = null; }
+  overlay.classList.remove('leaving');
+  overlay.classList.toggle('habis', jenis === 'habis');
+  el('popupStokTitle').textContent = judul;
+  el('popupStokList').innerHTML = daftar.map(t=>`<div>${t}</div>`).join('');
+  overlay.classList.add('show');
+  popupStokHideTimer = setTimeout(()=>{
+    overlay.classList.add('leaving');
+    setTimeout(()=>{ overlay.classList.remove('show'); overlay.classList.remove('leaving'); }, 320);
+  }, 5000);
 }
 
 function mulaiPengecekanStokMenipis(){
   if(unsubStokMenipis) unsubStokMenipis();
   if(unsubStokCupMenipis) unsubStokCupMenipis();
+  if(unsubStokTehMenipis) unsubStokTehMenipis();
   let siapTampilAwal = false;
   unsubStokMenipis = onSnapshot(collection(db, "stok"), (snap)=>{
     snap.docChanges().forEach(ch=>{
@@ -2133,7 +2191,14 @@ function mulaiPengecekanStokMenipis(){
     });
     if(siapTampilAwal) evaluasiDanTampilkanStokMenipis();
   }, (err)=> console.error('Gagal memantau stok cup menipis:', err));
-  // Kasih toast ringkasan awal sekali begitu kedua listener sudah dapat data pertamanya,
+  unsubStokTehMenipis = onSnapshot(collection(db, "stok_teh"), (snap)=>{
+    snap.docChanges().forEach(ch=>{
+      if(ch.type === 'removed') delete stokTehMenipisTerakhir[ch.doc.id];
+      else stokTehMenipisTerakhir[ch.doc.id] = ch.doc.data();
+    });
+    if(siapTampilAwal) evaluasiDanTampilkanStokMenipis();
+  }, (err)=> console.error('Gagal memantau stok teh menipis:', err));
+  // Kasih popup ringkasan awal sekali begitu ketiga listener sudah dapat data pertamanya,
   // lalu baru listener aktif merespons perubahan realtime berikutnya.
   setTimeout(()=>{ siapTampilAwal = true; evaluasiDanTampilkanStokMenipis(); }, 3000);
 }
@@ -5254,8 +5319,9 @@ async function putuskanPermintaanStokTeh(id, statusBaru){
 }
 
 /* =====================================================================
-   NOTIFIKASI PERMINTAAN IZIN STOK TEH — khusus Owner, lonceng terpisah
-   (notifTehBtn). Pola sama persis dengan notif Stok Cup.
+   NOTIFIKASI PERMINTAAN IZIN STOK TEH — data mentah dipantau di sini,
+   badge & panelnya juga sudah DIGABUNG ke lonceng "Notifikasi" yang sama
+   dengan izin stok cup (lihat blok gabungan tepat di bawah ini).
    ===================================================================== */
 let unsubNotifStokTeh = null;
 let NOTIF_STOKTEH_LIST = [];
@@ -5266,8 +5332,8 @@ function mulaiPantauNotifPermintaanStokTeh(){
     unsubNotifStokTeh = onSnapshot(collection(db, "permintaan_stok_teh"), (snap)=>{
       NOTIF_STOKTEH_LIST = snap.docs.map(d=>({id:d.id, ...d.data()}))
         .sort((a,b)=>{ const ta=a.waktu&&a.waktu.toDate?a.waktu.toDate().getTime():0; const tb=b.waktu&&b.waktu.toDate?b.waktu.toDate().getTime():0; return tb-ta; });
-      perbaruiBadgeNotifStokTeh();
-      if(el('notifTehPanelOverlay').classList.contains('show')) renderPanelNotifStokTeh();
+      perbaruiBadgeNotifGabungan();
+      if(el('notifPanelOverlay').classList.contains('show')) renderPanelNotifGabungan();
     }, (err)=> console.error('Gagal memantau permintaan stok teh:', err));
   }catch(e){ console.error('Gagal memulai pemantauan notif stok teh:', e); }
 }
@@ -5276,39 +5342,69 @@ function hentikanPantauNotifPermintaanStokTeh(){
   NOTIF_STOKTEH_LIST = [];
 }
 
-function perbaruiBadgeNotifStokTeh(){
-  const belumDibaca = NOTIF_STOKTEH_LIST.filter(r => r.status === 'menunggu' && !r.dibacaOwner).length;
-  const dot = el('notifTehDot');
-  if(belumDibaca > 0){ dot.textContent = belumDibaca > 99 ? '99+' : String(belumDibaca); dot.classList.add('show'); }
+/* =====================================================================
+   LONCENG "NOTIFIKASI" GABUNGAN (khusus Owner) — dipakai BERSAMA oleh izin
+   stok cup DAN izin stok teh, satu tombol satu panel, satu angka badge.
+   Tiap kartu permintaan ditandai jenisnya (Cup/Teh) supaya Owner tetap
+   bisa membedakan tanpa perlu dua lonceng terpisah. Badge merah = jumlah
+   permintaan "menunggu" dari KEDUA jenis yang belum dibaca Owner.
+   Owner juga tetap bisa approve/tolak langsung dari dalam Kelola Stok
+   Cup / Kelola Stok Teh masing-masing (muatPermintaanCupOwner /
+   muatPermintaanTehOwner) -- beberapa jalan, satu tujuan.
+   ===================================================================== */
+function perbaruiBadgeNotifGabungan(){
+  const belumDibacaCup = NOTIF_STOKCUP_LIST.filter(r => r.status === 'menunggu' && !r.dibacaOwner).length;
+  const belumDibacaTeh = NOTIF_STOKTEH_LIST.filter(r => r.status === 'menunggu' && !r.dibacaOwner).length;
+  const total = belumDibacaCup + belumDibacaTeh;
+  const dot = el('notifDot');
+  if(total > 0){ dot.textContent = total > 99 ? '99+' : String(total); dot.classList.add('show'); }
   else { dot.classList.remove('show'); }
 }
 
-el('notifTehBtn').onclick = async (e)=>{
+el('notifBtn').onclick = async (e)=>{
   e.stopPropagation();
   if(!SESI || SESI.jabatan !== 'Owner') return;
-  el('notifTehPanelOverlay').classList.add('show');
-  renderPanelNotifStokTeh();
-  const belumDibaca = NOTIF_STOKTEH_LIST.filter(r => r.status === 'menunggu' && !r.dibacaOwner);
-  for(const r of belumDibaca){
+  el('notifPanelOverlay').classList.add('show');
+  renderPanelNotifGabungan();
+  // Tandai semua permintaan "menunggu" (cup & teh) yang kelihatan sebagai
+  // sudah dibaca, supaya badge merah hilang begitu Owner membuka panelnya.
+  const belumDibacaCup = NOTIF_STOKCUP_LIST.filter(r => r.status === 'menunggu' && !r.dibacaOwner);
+  for(const r of belumDibacaCup){
+    try{ await updateDoc(doc(db, "permintaan_stok_cup", r.id), { dibacaOwner: true }); }catch(err){ console.error('Gagal tandai notif cup dibaca:', err); }
+  }
+  const belumDibacaTeh = NOTIF_STOKTEH_LIST.filter(r => r.status === 'menunggu' && !r.dibacaOwner);
+  for(const r of belumDibacaTeh){
     try{ await updateDoc(doc(db, "permintaan_stok_teh", r.id), { dibacaOwner: true }); }catch(err){ console.error('Gagal tandai notif teh dibaca:', err); }
   }
 };
-el('notifTehPanelClose').onclick = ()=> tutupOverlaySmooth(el('notifTehPanelOverlay'));
-el('notifTehPanelBackdrop').onclick = ()=> tutupOverlaySmooth(el('notifTehPanelOverlay'));
+el('notifPanelClose').onclick = ()=> tutupOverlaySmooth(el('notifPanelOverlay'));
+el('notifPanelBackdrop').onclick = ()=> tutupOverlaySmooth(el('notifPanelOverlay'));
 
-function renderPanelNotifStokTeh(){
-  if(NOTIF_STOKTEH_LIST.length === 0){
-    el('notifTehPanelBody').innerHTML = '<div class="empty" style="padding:20px 8px;">Belum ada permintaan izin stok teh.</div>';
+function renderPanelNotifGabungan(){
+  // Gabung kedua daftar, masing-masing ditandai jenisnya, lalu urutkan ulang
+  // berdasarkan waktu (terbaru di atas) supaya campur rapi bukan cup-semua-
+  // dulu-baru-teh-semua.
+  const gabungan = [
+    ...NOTIF_STOKCUP_LIST.map(r=>({...r, _jenis:'cup'})),
+    ...NOTIF_STOKTEH_LIST.map(r=>({...r, _jenis:'teh'}))
+  ].sort((a,b)=>{ const ta=a.waktu&&a.waktu.toDate?a.waktu.toDate().getTime():0; const tb=b.waktu&&b.waktu.toDate?b.waktu.toDate().getTime():0; return tb-ta; });
+
+  if(gabungan.length === 0){
+    el('notifPanelBody').innerHTML = '<div class="empty" style="padding:20px 8px;">Belum ada permintaan izin stok.</div>';
     return;
   }
-  el('notifTehPanelBody').innerHTML = NOTIF_STOKTEH_LIST.map(r=>{
+  el('notifPanelBody').innerHTML = gabungan.map(r=>{
     const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
     const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
     const statusLabel = r.status === 'menunggu' ? 'Menunggu' : (r.status === 'disetujui' ? 'Disetujui \u00b7 stok sudah ditambah' : 'Ditolak');
-    return `<div class="notifReqItem" data-id="${r.id}">
+    const jenisLabel = r._jenis === 'cup' ? 'Stok Cup' : 'Stok Teh';
+    const ringkasan = r._jenis === 'cup'
+      ? (Array.isArray(r.rincian) && r.rincian.length ? r.rincian.map(x=>`${x.label||x.ukuran} <b>+${x.jumlah}</b>`).join(' \u00b7 ') : '')
+      : `Minta tambah <b>+${r.jumlahMl} ml</b>`;
+    return `<div class="notifReqItem" data-id="${r.id}" data-jenis="${r._jenis}">
       <div class="nriTop">
         <div>
-          <div class="nriNama">${r.pemohonNama || r.pemohonUsername}</div>
+          <div class="nriNama">${r.pemohonNama || r.pemohonUsername} <span style="font-weight:600; color:var(--muted-soft); font-size:10.5px; text-transform:uppercase; letter-spacing:.3px;">\u00b7 ${jenisLabel}</span></div>
           <div class="nriOutlet">Outlet ${r.outlet}</div>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
@@ -5318,7 +5414,7 @@ function renderPanelNotifStokTeh(){
           </button>` : ''}
         </div>
       </div>
-      <div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">Minta tambah <b>+${r.jumlahMl} ml</b></div>
+      ${ringkasan ? `<div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">${ringkasan}</div>` : ''}
       <div class="nriStatus ${r.status}">${statusLabel}</div>
       ${r.status === 'menunggu' ? `<div class="nriBtns">
         <button class="nriApprove">Setujui</button>
@@ -5327,14 +5423,17 @@ function renderPanelNotifStokTeh(){
     </div>`;
   }).join('');
 
-  el('notifTehPanelBody').querySelectorAll('.notifReqItem').forEach(itemEl=>{
+  el('notifPanelBody').querySelectorAll('.notifReqItem').forEach(itemEl=>{
     const id = itemEl.dataset.id;
+    const jenis = itemEl.dataset.jenis;
     const approveBtn = itemEl.querySelector('.nriApprove');
     const tolakBtn = itemEl.querySelector('.nriTolak');
     const hapusBtn = itemEl.querySelector('.nriHapus');
-    if(approveBtn) approveBtn.onclick = ()=> putuskanPermintaanStokTeh(id, 'disetujui');
-    if(tolakBtn) tolakBtn.onclick = ()=> putuskanPermintaanStokTeh(id, 'ditolak');
-    if(hapusBtn) hapusBtn.onclick = ()=> hapusNotifStokTeh(id);
+    const fnPutuskan = jenis === 'cup' ? putuskanPermintaanStokCup : putuskanPermintaanStokTeh;
+    const fnHapus = jenis === 'cup' ? hapusNotifStokCup : hapusNotifStokTeh;
+    if(approveBtn) approveBtn.onclick = ()=> fnPutuskan(id, 'disetujui');
+    if(tolakBtn) tolakBtn.onclick = ()=> fnPutuskan(id, 'ditolak');
+    if(hapusBtn) hapusBtn.onclick = ()=> fnHapus(id);
   });
 }
 
@@ -5432,14 +5531,10 @@ function renderPanelNotifKaryawanStokTeh(){
 }
 
 /* =====================================================================
-   NOTIFIKASI PERMINTAAN IZIN AKSES STOK CUP — khusus Owner, lewat lonceng
-   di topbar. Menampilkan angka merah sebanyak permintaan berstatus
-   "menunggu" yang BELUM dibaca Owner (dibacaOwner=false), dipantau
-   realtime lewat onSnapshot supaya badge langsung update begitu ada
-   karyawan kirim permintaan baru, dari outlet manapun -- Owner tidak
-   perlu buka Kelola Stok Cup dulu utk tahu ada permintaan baru.
-   Owner juga tetap bisa approve/tolak langsung dari dalam Kelola Stok
-   Cup (lihat muatPermintaanCupOwner) -- dua jalan, satu tujuan.
+   NOTIFIKASI PERMINTAAN IZIN AKSES STOK CUP — data mentah dipantau di sini,
+   TAPI badge & panelnya sudah DIGABUNG jadi satu lonceng "Notifikasi" milik
+   Owner bareng permintaan izin stok teh (lihat blok gabungan setelah blok
+   notif teh di bawah -- perbaruiBadgeNotifGabungan & renderPanelNotifGabungan).
    ===================================================================== */
 let unsubNotifStokCup = null;
 let NOTIF_STOKCUP_LIST = [];
@@ -5450,80 +5545,14 @@ function mulaiPantauNotifPermintaanStokCup(){
     unsubNotifStokCup = onSnapshot(collection(db, "permintaan_stok_cup"), (snap)=>{
       NOTIF_STOKCUP_LIST = snap.docs.map(d=>({id:d.id, ...d.data()}))
         .sort((a,b)=>{ const ta=a.waktu&&a.waktu.toDate?a.waktu.toDate().getTime():0; const tb=b.waktu&&b.waktu.toDate?b.waktu.toDate().getTime():0; return tb-ta; });
-      perbaruiBadgeNotifStokCup();
-      if(el('notifPanelOverlay').classList.contains('show')) renderPanelNotifStokCup();
+      perbaruiBadgeNotifGabungan();
+      if(el('notifPanelOverlay').classList.contains('show')) renderPanelNotifGabungan();
     }, (err)=> console.error('Gagal memantau permintaan stok cup:', err));
   }catch(e){ console.error('Gagal memulai pemantauan notif stok cup:', e); }
 }
 function hentikanPantauNotifPermintaanStokCup(){
   if(unsubNotifStokCup){ unsubNotifStokCup(); unsubNotifStokCup = null; }
   NOTIF_STOKCUP_LIST = [];
-}
-
-function perbaruiBadgeNotifStokCup(){
-  const belumDibaca = NOTIF_STOKCUP_LIST.filter(r => r.status === 'menunggu' && !r.dibacaOwner).length;
-  const dot = el('notifDot');
-  if(belumDibaca > 0){ dot.textContent = belumDibaca > 99 ? '99+' : String(belumDibaca); dot.classList.add('show'); }
-  else { dot.classList.remove('show'); }
-}
-
-el('notifBtn').onclick = async (e)=>{
-  e.stopPropagation();
-  if(!SESI || SESI.jabatan !== 'Owner') return;
-  el('notifPanelOverlay').classList.add('show');
-  renderPanelNotifStokCup();
-  // Tandai semua permintaan "menunggu" yang kelihatan sebagai sudah dibaca,
-  // supaya badge merah hilang begitu Owner membuka panel notifikasinya.
-  const belumDibaca = NOTIF_STOKCUP_LIST.filter(r => r.status === 'menunggu' && !r.dibacaOwner);
-  for(const r of belumDibaca){
-    try{ await updateDoc(doc(db, "permintaan_stok_cup", r.id), { dibacaOwner: true }); }catch(err){ console.error('Gagal tandai notif dibaca:', err); }
-  }
-};
-el('notifPanelClose').onclick = ()=> tutupOverlaySmooth(el('notifPanelOverlay'));
-el('notifPanelBackdrop').onclick = ()=> tutupOverlaySmooth(el('notifPanelOverlay'));
-
-function renderPanelNotifStokCup(){
-  if(NOTIF_STOKCUP_LIST.length === 0){
-    el('notifPanelBody').innerHTML = '<div class="empty" style="padding:20px 8px;">Belum ada permintaan akses stok cup.</div>';
-    return;
-  }
-  el('notifPanelBody').innerHTML = NOTIF_STOKCUP_LIST.map(r=>{
-    const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
-    const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
-    const statusLabel = r.status === 'menunggu' ? 'Menunggu' : (r.status === 'disetujui' ? 'Disetujui \u00b7 stok sudah ditambah' : 'Ditolak');
-    const ringkasanRincian = Array.isArray(r.rincian) && r.rincian.length
-      ? `<div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">${r.rincian.map(x=>`${x.label||x.ukuran} <b>+${x.jumlah}</b>`).join(' \u00b7 ')}</div>` : '';
-    return `<div class="notifReqItem" data-id="${r.id}">
-      <div class="nriTop">
-        <div>
-          <div class="nriNama">${r.pemohonNama || r.pemohonUsername}</div>
-          <div class="nriOutlet">Outlet ${r.outlet}</div>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <div class="nriWaktu">${waktuStr}</div>
-          ${r.status !== 'menunggu' ? `<button class="nriHapus" title="Hapus notifikasi ini">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-          </button>` : ''}
-        </div>
-      </div>
-      ${ringkasanRincian}
-      <div class="nriStatus ${r.status}">${statusLabel}</div>
-      ${r.status === 'menunggu' ? `<div class="nriBtns">
-        <button class="nriApprove">Setujui</button>
-        <button class="nriTolak">Tolak</button>
-      </div>` : ''}
-    </div>`;
-  }).join('');
-
-  el('notifPanelBody').querySelectorAll('.notifReqItem').forEach(itemEl=>{
-    const id = itemEl.dataset.id;
-    const approveBtn = itemEl.querySelector('.nriApprove');
-    const tolakBtn = itemEl.querySelector('.nriTolak');
-    const hapusBtn = itemEl.querySelector('.nriHapus');
-    if(approveBtn) approveBtn.onclick = ()=> putuskanPermintaanStokCup(id, 'disetujui');
-    if(tolakBtn) tolakBtn.onclick = ()=> putuskanPermintaanStokCup(id, 'ditolak');
-    if(hapusBtn) hapusBtn.onclick = ()=> hapusNotifStokCup(id);
-  });
 }
 
 /* =====================================================================

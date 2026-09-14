@@ -1632,6 +1632,33 @@ function mlTehUntukItem(kategori, namaMenu){
   return ML_TEH_DEFAULT;
 }
 
+// KALKULATOR TAKARAN TEH -- bukan lagi angka batch tetap, karena Owner
+// meracik dengan takaran air yang BERBEDA-BEDA tiap kali (kadang 500ml,
+// kadang 800ml, dst). Rumus tetapnya:
+//   X   = ml AIR yang dituang = ml TEH yang dipakai (air dan teh SELALU sama banyak)
+//   Gula = 0.8 x X
+//   Total ml teh jadi = X (air) + X (teh) + 0.8*X (gula) = 2.8 x X
+// Owner/karyawan cukup isi X (takaran air/teh), sistem otomatis hitung
+// totalnya -- TIDAK memengaruhi stok bahan mentah, cuma bantu hitung
+// berapa ml TEH JADI yang harus masuk ke stok_teh.
+const RESEP_TEH_FAKTOR_GULA = 0.8; // gula = 0.8 x takaran air/teh
+const RESEP_TEH_PENGALI_TOTAL = 2 + RESEP_TEH_FAKTOR_GULA; // 2.8 -- total = pengali x X
+function hitungTotalMlTehDariTakaran(x){
+  x = Number(x) || 0;
+  const gula = x * RESEP_TEH_FAKTOR_GULA;
+  const total = x + x + gula; // air + teh + gula
+  return { air: x, teh: x, gula, total };
+}
+// Keterangan racikan singkat, dipakai di panel permintaan & riwayat --
+// hanya tampil kalau data takaranAirTeh ada (permintaan lama sebelum fitur
+// ini tetap tampil apa adanya tanpa rincian, tidak error).
+function keteranganTakaranTeh(r){
+  if(!r || !r.takaranAirTeh) return '';
+  const h = hitungTotalMlTehDariTakaran(r.takaranAirTeh);
+  return ` <span style="color:var(--muted-soft);">(Air ${h.air.toLocaleString('id-ID')} + Teh ${h.teh.toLocaleString('id-ID')} + Gula ${h.gula.toLocaleString('id-ID')})</span>`;
+}
+const RESEP_TEH_KETERANGAN = `Isi takaran AIR (sama dengan takaran TEH), gula otomatis dihitung 0.8\u00d7-nya. Contoh: isi 1000 \u2192 1000ml air + 1000ml teh + 800ml gula = <b>2.800ml</b> total teh jadi.`;
+
 // URL Web App Google Apps Script -- dipakai HANYA untuk mencatat riwayat
 // permintaan izin akses Stok Cup ke sheet "Riwayat Izin Stok Cup" sebagai LOG
 // cadangan (Firestore tetap sumber data utama & realtime, ini sekadar salinan
@@ -5231,6 +5258,7 @@ function renderKelolaStokTeh(){
   } else {
     keteranganAkses = `Kamu bisa melihat stok teh outlet <b>${STOKTEH_OUTLET_AKTIF}</b>. Untuk menambah stok, isi dulu jumlah ml teh yang mau ditambah lewat tombol di bawah, lalu kirim ke Owner untuk disetujui. Kamu tidak bisa mengubah/reset angka stok secara manual.`;
   }
+  keteranganAkses += `<div style="margin-top:8px; padding:8px 10px; background:var(--pine-50); border-radius:10px; color:var(--pine-700); font-size:11.5px;">\u2615 ${RESEP_TEH_KETERANGAN}</div>`;
 
   let html = `<div class="empty" style="padding:6px 4px 16px; text-align:left; font-size:12px;">${keteranganAkses}</div>`;
 
@@ -5247,7 +5275,7 @@ function renderKelolaStokTeh(){
           </div>
           <div class="nriWaktu">${waktuStr}</div>
         </div>
-        <div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">Minta tambah <b>+${r.jumlahMl} ml</b></div>
+        <div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">Minta tambah <b>+${r.jumlahMl} ml</b>${keteranganTakaranTeh(r)}</div>
         <div class="nriBtns">
           <button class="permTehApprove">Setujui</button>
           <button class="permTehTolak">Tolak</button>
@@ -5322,17 +5350,29 @@ function bukaFormKirimIzinStokTeh(){
   if(!SESI || SESI.jabatan === 'Owner' || !SESI.outlet) return;
 
   el('restockTehBody').innerHTML = `
-    <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Isi jumlah ml teh yang mau ditambah untuk outlet <b>${SESI.outlet}</b>. Stok sekarang: <b>${STOKTEH_ML_AKTIF.toLocaleString('id-ID')} ml</b>.</div>
+    <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Isi takaran teh untuk outlet <b>${SESI.outlet}</b>. Stok sekarang: <b>${STOKTEH_ML_AKTIF.toLocaleString('id-ID')} ml</b>.</div>
+    <div class="empty" style="padding:8px 10px; margin-bottom:12px; text-align:left; font-size:11.5px; background:var(--pine-50); border-radius:10px; color:var(--pine-700);">\u2615 ${RESEP_TEH_KETERANGAN}</div>
     <div class="formField">
-      <label>Jumlah ml Ditambah</label>
-      <input id="izinTehJumlah" type="number" min="1" placeholder="Contoh: 3000">
+      <label>Takaran Air/Teh (ml)</label>
+      <input id="izinTehTakaran" type="number" min="1" placeholder="Contoh: 1000">
+      <div class="hint">Isi ml air yang dituang (jumlah teh dianggap sama). Gula dan total dihitung otomatis di bawah.</div>
     </div>
+    <div id="izinTehPreview" style="padding:10px 12px; border-radius:10px; background:var(--card); border:1.4px dashed var(--line); font-size:12px; color:var(--muted); margin-bottom:4px;">Isi takaran dulu untuk lihat rincian.</div>
     <button class="saveFormBtn" id="izinTehSaveBtn">Kirim Izin</button>
   `;
 
+  const updateIzinTehPreview = ()=>{
+    const x = Number(el('izinTehTakaran').value) || 0;
+    if(x <= 0){ el('izinTehPreview').innerHTML = 'Isi takaran dulu untuk lihat rincian.'; return; }
+    const h = hitungTotalMlTehDariTakaran(x);
+    el('izinTehPreview').innerHTML = `Air ${h.air.toLocaleString('id-ID')}ml + Teh ${h.teh.toLocaleString('id-ID')}ml + Gula ${h.gula.toLocaleString('id-ID')}ml = <b style="color:var(--pine-700);">Total ${h.total.toLocaleString('id-ID')}ml</b> yang akan diminta ditambahkan.`;
+  };
+  el('izinTehTakaran').addEventListener('input', updateIzinTehPreview);
+
   el('izinTehSaveBtn').onclick = async ()=>{
-    const jumlahMl = Number(el('izinTehJumlah').value) || 0;
-    if(jumlahMl <= 0){ showToast("Isi jumlah ml yang valid", false); return; }
+    const takaran = Number(el('izinTehTakaran').value) || 0;
+    if(takaran <= 0){ showToast("Isi takaran air/teh yang valid", false); return; }
+    const jumlahMl = hitungTotalMlTehDariTakaran(takaran).total;
 
     const btn = el('izinTehSaveBtn'); btn.disabled = true; btn.textContent = "Mengirim...";
     try{
@@ -5343,7 +5383,7 @@ function bukaFormKirimIzinStokTeh(){
 
       await addDoc(collection(db, "permintaan_stok_teh"), {
         outlet: SESI.outlet, pemohonUsername: SESI.username, pemohonNama: SESI.namaTampilan,
-        status: 'menunggu', dibacaOwner: false, jumlahMl, waktu: Timestamp.fromDate(new Date())
+        status: 'menunggu', dibacaOwner: false, jumlahMl, takaranAirTeh: takaran, waktu: Timestamp.fromDate(new Date())
       });
       showToast("Permintaan izin dikirim ke Owner. Tunggu persetujuan ya.");
       tutupOverlaySmooth(el('restockTehOverlay'));
@@ -5358,17 +5398,29 @@ el('restockTehClose').onclick = ()=> tutupOverlaySmooth(el('restockTehOverlay'))
 function bukaFormRestockTeh(){
   el('restockTehBody').innerHTML = `
     <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Restock teh outlet <b>${STOKTEH_OUTLET_AKTIF}</b>. Stok sekarang: <b>${STOKTEH_ML_AKTIF.toLocaleString('id-ID')} ml</b>.</div>
+    <div class="empty" style="padding:8px 10px; margin-bottom:12px; text-align:left; font-size:11.5px; background:var(--pine-50); border-radius:10px; color:var(--pine-700);">\u2615 ${RESEP_TEH_KETERANGAN}</div>
     <div class="formField">
-      <label>Jumlah ml Ditambah</label>
-      <input id="restockTehJumlah" type="number" min="1" placeholder="Contoh: 5000">
+      <label>Takaran Air/Teh (ml)</label>
+      <input id="restockTehTakaran" type="number" min="1" placeholder="Contoh: 1000">
+      <div class="hint">Isi ml air yang dituang (jumlah teh dianggap sama). Gula dan total dihitung otomatis di bawah.</div>
     </div>
+    <div id="restockTehPreview" style="padding:10px 12px; border-radius:10px; background:var(--card); border:1.4px dashed var(--line); font-size:12px; color:var(--muted); margin-bottom:4px;">Isi takaran dulu untuk lihat rincian.</div>
     <button class="saveFormBtn" id="restockTehSaveBtn">Simpan Restock</button>
   `;
 
+  const updateRestockTehPreview = ()=>{
+    const x = Number(el('restockTehTakaran').value) || 0;
+    if(x <= 0){ el('restockTehPreview').innerHTML = 'Isi takaran dulu untuk lihat rincian.'; return; }
+    const h = hitungTotalMlTehDariTakaran(x);
+    el('restockTehPreview').innerHTML = `Air ${h.air.toLocaleString('id-ID')}ml + Teh ${h.teh.toLocaleString('id-ID')}ml + Gula ${h.gula.toLocaleString('id-ID')}ml = <b style="color:var(--pine-700);">Total ${h.total.toLocaleString('id-ID')}ml</b> yang akan ditambahkan ke stok.`;
+  };
+  el('restockTehTakaran').addEventListener('input', updateRestockTehPreview);
+
   el('restockTehSaveBtn').onclick = async ()=>{
     if(!SESI || SESI.jabatan !== 'Owner'){ showToast("Hanya Owner yang bisa restock langsung di sini.", false); return; }
-    const jumlahMl = Number(el('restockTehJumlah').value) || 0;
-    if(jumlahMl <= 0){ showToast("Isi jumlah restock yang valid", false); return; }
+    const takaran = Number(el('restockTehTakaran').value) || 0;
+    if(takaran <= 0){ showToast("Isi takaran air/teh yang valid", false); return; }
+    const jumlahMl = hitungTotalMlTehDariTakaran(takaran).total;
 
     const btn = el('restockTehSaveBtn'); btn.disabled = true; btn.textContent = "Menyimpan...";
     try{
@@ -5382,7 +5434,7 @@ function bukaFormRestockTeh(){
       });
       await addDoc(collection(db, "riwayat_restock_teh"), {
         waktu: Timestamp.fromDate(new Date()), outlet: STOKTEH_OUTLET_AKTIF,
-        jumlahMlDitambah: jumlahMl, mlSesudah, oleh: SESI.namaTampilan
+        jumlahMlDitambah: jumlahMl, mlSesudah, oleh: SESI.namaTampilan, takaranAirTeh: takaran
       });
       showToast(`Restock teh berhasil \u2014 +${jumlahMl} ml, stok sekarang ${mlSesudah.toLocaleString('id-ID')} ml`);
       tutupOverlaySmooth(el('restockTehOverlay'));
@@ -5407,7 +5459,7 @@ async function bukaRiwayatRestockTeh(){
       ${riwayat.map(r=>{
         const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
         const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+'/'+w.getFullYear()+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
-        return `<div class="lapRow"><div><div class="lrn">Teh</div><div class="lrq">${waktuStr} \u00b7 oleh ${r.oleh}</div></div><div style="text-align:right;"><div class="lrv">+${r.jumlahMlDitambah} ml</div><div class="lrq">jadi ${r.mlSesudah.toLocaleString('id-ID')} ml</div></div></div>`;
+        return `<div class="lapRow"><div><div class="lrn">Teh${keteranganTakaranTeh(r)}</div><div class="lrq">${waktuStr} \u00b7 oleh ${r.oleh}</div></div><div style="text-align:right;"><div class="lrv">+${r.jumlahMlDitambah} ml</div><div class="lrq">jadi ${r.mlSesudah.toLocaleString('id-ID')} ml</div></div></div>`;
       }).join('')}
     `;
   }catch(e){ el('restockTehBody').innerHTML = '<div class="empty">Gagal memuat riwayat. Cek koneksi.</div>'; }
@@ -5433,6 +5485,7 @@ async function putuskanPermintaanStokTeh(id, statusBaru){
           waktu: Timestamp.fromDate(new Date()), outlet: r.outlet,
           jumlahMlDitambah: r.jumlahMl, mlSesudah,
           oleh: r.pemohonNama || r.pemohonUsername,
+          takaranAirTeh: r.takaranAirTeh || null,
           keterangan: `Via izin restock \u2014 disetujui oleh ${SESI ? SESI.namaTampilan : 'Owner'}`
         });
       }catch(errItem){ console.error('Gagal eksekusi restock teh:', errItem); }
@@ -5524,7 +5577,7 @@ function renderPanelNotifStokTeh(){
           </button>` : ''}
         </div>
       </div>
-      <div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">Minta tambah <b>+${r.jumlahMl} ml</b></div>
+      <div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">Minta tambah <b>+${r.jumlahMl} ml</b>${keteranganTakaranTeh(r)}</div>
       <div class="nriStatus ${r.status}">${statusLabel}</div>
       ${r.status === 'menunggu' ? `<div class="nriBtns">
         <button class="nriApprove">Setujui</button>
@@ -5631,7 +5684,7 @@ function renderPanelNotifKaryawanStokTeh(){
         </div>
         <div class="nriWaktu">${waktuStr}</div>
       </div>
-      <div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">Minta tambah <b>+${r.jumlahMl} ml</b></div>
+      <div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">Minta tambah <b>+${r.jumlahMl} ml</b>${keteranganTakaranTeh(r)}</div>
       <div class="nriStatus ${r.status}">${statusLabel}</div>
     </div>`;
   }).join('');

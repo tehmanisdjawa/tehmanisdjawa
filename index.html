@@ -1123,8 +1123,8 @@
         <div class="userChip" id="userChip"></div>
       </div>
       <div class="headBtns" style="position:relative;">
-        <button class="iconBtn" id="notifBtn" aria-label="Notifikasi" title="Notifikasi" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <button class="iconBtn" id="notifBtn" aria-label="Permintaan Izin Stok Cup" title="Permintaan Izin Stok Cup" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l-1.5 15a2 2 0 01-2 1.8H9.5a2 2 0 01-2-1.8L6 3z"/><path d="M6 8h12"/></svg>
           <span class="notifDot" id="notifDot">0</span>
         </button>
         <button class="iconBtn" id="notifRejectOwnerBtn" aria-label="Permintaan Reject Transaksi" title="Permintaan Reject Transaksi" style="display:none;">
@@ -1132,15 +1132,15 @@
           <span class="notifDot" id="notifRejectOwnerDot">0</span>
         </button>
         <button class="iconBtn" id="notifKaryawanBtn" aria-label="Status Izin Stok Cup" title="Status Izin Stok Cup" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l-1.5 15a2 2 0 01-2 1.8H9.5a2 2 0 01-2-1.8L6 3z"/><path d="M6 8h12"/><path d="M9 21h6" stroke-width="1.6"/></svg>
           <span class="notifDot" id="notifKaryawanDot">0</span>
         </button>
         <button class="iconBtn" id="notifTehBtn" aria-label="Permintaan Izin Stok Teh" title="Permintaan Izin Stok Teh" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3h16l-1.4 15.6A2.4 2.4 0 0116.2 21H7.8a2.4 2.4 0 01-2.4-2.4L4 3z"/><path d="M4 3h16"/><path d="M8 10c1 1.4 3 1.4 4 0s3-1.4 4 0" stroke-width="1.6"/></svg>
           <span class="notifDot" id="notifTehDot">0</span>
         </button>
         <button class="iconBtn" id="notifKaryawanTehBtn" aria-label="Status Izin Stok Teh" title="Status Izin Stok Teh" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3h16l-1.4 15.6A2.4 2.4 0 0116.2 21H7.8a2.4 2.4 0 01-2.4-2.4L4 3z"/><path d="M4 3h16"/><path d="M9 21h6" stroke-width="1.6"/></svg>
           <span class="notifDot" id="notifKaryawanTehDot">0</span>
         </button>
         <button class="iconBtn" id="menuBtn" aria-label="Menu" title="Menu">
@@ -1983,9 +1983,11 @@ function terapkanTampilanJabatan(){
   // Kelola Stok Teh -- sama polanya dengan Stok Cup: semua jabatan boleh buka,
   // karyawan lihat tombol "Minta Izin Akses" di dalamnya.
   el('stokTehBtn').style.display = SESI ? 'flex' : 'none';
-  // Reject Transaksi: khusus KARYAWAN (Owner sudah punya tombol Batalkan
-  // langsung di dalam Laporan, tidak perlu lewat alur izin ini).
-  el('rejectTrxBtn').style.display = (SESI && !isOwner && SESI.outlet) ? 'flex' : 'none';
+  // Reject Transaksi: Karyawan pakai ini untuk mengajukan reject + lihat
+  // riwayat reject miliknya sendiri. Owner tidak mengajukan dari sini (Owner
+  // sudah punya tombol Batalkan langsung di Laporan), tapi tetap boleh buka
+  // menu ini khusus untuk melihat RIWAYAT reject semua outlet.
+  el('rejectTrxBtn').style.display = (SESI && (isOwner || SESI.outlet)) ? 'flex' : 'none';
   el('akunBtn').style.display = isOwner ? 'flex' : 'none';
   el('pengaturanBtn').style.display = SESI ? 'flex' : 'none';
   el('notifBtn').style.display = isOwner ? 'flex' : 'none';
@@ -3625,17 +3627,107 @@ async function voidTransaksi(trxId, dariDetail){
 let rejectTrxTanggalAktif = tanggalHariIniStr();
 let rejectTrxDaftarTerakhir = [];
 
+// Daftar alasan reject transaksi standar -- dropdown, BUKAN ketik bebas,
+// supaya alasan konsisten dan mudah direkap Owner. Minimal 12 pilihan.
+const ALASAN_REJECT_TRX = [
+  "Salah input menu",
+  "Salah input ukuran/varian",
+  "Salah input jumlah (qty)",
+  "Salah input metode pembayaran",
+  "Salah input harga",
+  "Transaksi dobel/duplikat",
+  "Pelanggan membatalkan pesanan",
+  "Barang pecah/rusak",
+  "Penutup/sealer tidak nempel",
+  "Minuman tumpah",
+  "Salah kirim ke outlet lain",
+  "Stok ternyata habis setelah checkout",
+  "Pelanggan komplain rasa/kualitas",
+  "Uang pelanggan kurang/tidak jadi bayar",
+  "Lainnya"
+];
+
 el('rejectTrxBtn').onclick = ()=>{
-  if(!SESI || SESI.jabatan === 'Owner' || !SESI.outlet) return;
+  if(!SESI) return;
   bukaDaftarRejectTrx();
 };
 el('rejectTrxClose').onclick = ()=> tutupOverlaySmooth(el('rejectTrxOverlay'));
 el('rejectTrxFormClose').onclick = ()=> tutupOverlaySmooth(el('rejectTrxFormOverlay'));
 
+let rejectTrxTabAktif = 'ajukan'; // 'ajukan' (khusus karyawan) atau 'riwayat'
+
 async function bukaDaftarRejectTrx(){
+  const isOwner = SESI && SESI.jabatan === 'Owner';
   rejectTrxTanggalAktif = tanggalHariIniStr();
+  rejectTrxTabAktif = isOwner ? 'riwayat' : 'ajukan'; // Owner cuma punya tab riwayat
   el('rejectTrxOverlay').classList.add('show');
-  await muatDaftarRejectTrx(rejectTrxTanggalAktif);
+  if(isOwner){ await muatRiwayatRejectTrx(); }
+  else { await muatDaftarRejectTrx(rejectTrxTanggalAktif); }
+}
+
+function renderTabRejectTrx(){
+  const isOwner = SESI && SESI.jabatan === 'Owner';
+  if(isOwner) return ''; // Owner tidak punya tab "Ajukan", langsung riwayat
+  return `<div style="display:flex; gap:8px; margin-bottom:14px;">
+    <button id="rejectTrxTabAjukanBtn" style="flex:1; padding:9px 10px; border-radius:10px; border:1.4px solid var(--line); cursor:pointer; font-weight:650; font-size:12.5px; background:${rejectTrxTabAktif==='ajukan' ? 'var(--pine-900)' : 'var(--card)'}; color:${rejectTrxTabAktif==='ajukan' ? '#f3ede0' : 'var(--ink)'};">Ajukan Reject</button>
+    <button id="rejectTrxTabRiwayatBtn" style="flex:1; padding:9px 10px; border-radius:10px; border:1.4px solid var(--line); cursor:pointer; font-weight:650; font-size:12.5px; background:${rejectTrxTabAktif==='riwayat' ? 'var(--pine-900)' : 'var(--card)'}; color:${rejectTrxTabAktif==='riwayat' ? '#f3ede0' : 'var(--ink)'};">Riwayat Reject</button>
+  </div>`;
+}
+
+function pasangTabRejectTrx(){
+  const isOwner = SESI && SESI.jabatan === 'Owner';
+  if(isOwner) return;
+  const btnAjukan = document.getElementById('rejectTrxTabAjukanBtn');
+  const btnRiwayat = document.getElementById('rejectTrxTabRiwayatBtn');
+  if(btnAjukan) btnAjukan.onclick = ()=>{ rejectTrxTabAktif = 'ajukan'; muatDaftarRejectTrx(rejectTrxTanggalAktif); };
+  if(btnRiwayat) btnRiwayat.onclick = ()=>{ rejectTrxTabAktif = 'riwayat'; muatRiwayatRejectTrx(); };
+}
+
+// Riwayat reject: Owner melihat SEMUA permintaan reject (semua outlet, semua
+// status). Karyawan HANYA melihat riwayat permintaan reject miliknya sendiri.
+async function muatRiwayatRejectTrx(){
+  rejectTrxTabAktif = 'riwayat';
+  const isOwner = SESI && SESI.jabatan === 'Owner';
+  el('rejectTrxBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat riwayat reject...</div>';
+  try{
+    const qy = isOwner
+      ? query(collection(db, "permintaan_reject_trx"))
+      : query(collection(db, "permintaan_reject_trx"), where("pemohonUsername","==", SESI.username));
+    const snap = await getDocs(qy);
+    const riwayat = snap.docs.map(d=>({id:d.id, ...d.data()}))
+      .sort((a,b)=>{ const ta=a.waktu&&a.waktu.toDate?a.waktu.toDate().getTime():0; const tb=b.waktu&&b.waktu.toDate?b.waktu.toDate().getTime():0; return tb-ta; })
+      .slice(0,150);
+
+    let html = renderTabRejectTrx();
+    if(riwayat.length === 0){
+      html += '<div class="empty">Belum ada riwayat pengajuan reject.</div>';
+    } else {
+      html += riwayat.map(r=>{
+        const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
+        const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+'/'+w.getFullYear()+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
+        const statusLabel = r.status === 'menunggu' ? 'Menunggu Owner' : (r.status === 'disetujui' ? 'Disetujui \u00b7 transaksi dibatalkan' : 'Ditolak');
+        const statusCls = r.status === 'menunggu' ? 'menunggu' : (r.status === 'disetujui' ? 'disetujui' : 'ditolak');
+        return `<div class="notifReqItem" style="margin-bottom:10px;">
+          <div class="nriTop">
+            <div>
+              <div class="nriNama">${r.pemohonNama || r.pemohonUsername}${isOwner ? '' : ''}</div>
+              <div class="nriOutlet">Outlet ${r.outlet}</div>
+            </div>
+            <div class="nriWaktu">${waktuStr}</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">${r.ringkasanTrx || ''}</div>
+          ${r.alasan ? `<div style="font-size:11.5px; color:var(--muted-soft); margin:0 0 2px;">Alasan: ${r.alasan}</div>` : ''}
+          <div class="nriStatus ${statusCls}">${statusLabel}</div>
+        </div>`;
+      }).join('');
+    }
+    el('rejectTrxBody').innerHTML = html;
+    pasangTabRejectTrx();
+  }catch(e){
+    el('rejectTrxBody').innerHTML = renderTabRejectTrx() + '<div class="empty">Gagal memuat riwayat reject. Cek koneksi.</div>';
+    pasangTabRejectTrx();
+    console.error('Gagal memuat riwayat reject transaksi:', e);
+  }
 }
 
 async function muatDaftarRejectTrx(tanggal){
@@ -3661,7 +3753,8 @@ async function muatDaftarRejectTrx(tanggal){
     const rejectByTrxId = {};
     snapReject.docs.forEach(d=>{ const rr = d.data(); if(rr.status === 'menunggu') rejectByTrxId[rr.trxId] = true; });
 
-    let html = `
+    let html = renderTabRejectTrx();
+    html += `
       <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Pilih tanggal, lalu pilih transaksi yang mau diajukan reject untuk outlet <b>${SESI.outlet}</b>.</div>
       <div style="display:flex; gap:8px; margin-bottom:14px;">
         <input type="date" id="rejectTrxTanggalInput" value="${tanggal}" style="flex:1; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
@@ -3690,6 +3783,7 @@ async function muatDaftarRejectTrx(tanggal){
       const v = el('rejectTrxTanggalInput').value; if(v) muatDaftarRejectTrx(v);
     });
     el('rejectTrxHariIniBtn').onclick = ()=> muatDaftarRejectTrx(tanggalHariIniStr());
+    pasangTabRejectTrx();
 
     if(!punyaMenunggu){
       el('rejectTrxBody').querySelectorAll('.trxRow').forEach(row=>{
@@ -3714,14 +3808,30 @@ function bukaFormAjukanRejectTrx(trxId){
     <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Transaksi <b>${t.karyawan} \u00b7 ${t.metode}</b> \u2014 ${waktuStr} \u00b7 ${t.jumlahItem} item \u00b7 <b>${rupiah(t.total)}</b>.</div>
     <div class="formField">
       <label>Alasan Reject</label>
-      <input id="rejectTrxAlasan" type="text" placeholder="Contoh: Salah input menu">
-      <div class="hint">Jelaskan singkat kenapa transaksi ini perlu dibatalkan, supaya Owner lebih mudah memutuskan.</div>
+      <select id="rejectTrxAlasan">
+        <option value="" disabled selected>Pilih alasan\u2026</option>
+        ${ALASAN_REJECT_TRX.map(a=>`<option value="${a}">${a}</option>`).join('')}
+      </select>
+      <div class="hint">Pilih alasan yang paling sesuai, supaya Owner lebih mudah memutuskan.</div>
+    </div>
+    <div class="formField" id="rejectTrxAlasanLainWrap" style="display:none;">
+      <label>Jelaskan Alasan Lainnya</label>
+      <input id="rejectTrxAlasanLain" type="text" placeholder="Tulis alasan singkat">
     </div>
     <button class="saveFormBtn" id="rejectTrxSaveBtn">Ajukan Reject</button>
   `;
 
+  el('rejectTrxAlasan').addEventListener('change', ()=>{
+    el('rejectTrxAlasanLainWrap').style.display = el('rejectTrxAlasan').value === 'Lainnya' ? 'block' : 'none';
+  });
+
   el('rejectTrxSaveBtn').onclick = async ()=>{
-    const alasan = el('rejectTrxAlasan').value.trim();
+    const dipilih = el('rejectTrxAlasan').value;
+    if(!dipilih){ showToast("Pilih alasan reject dulu", false); return; }
+    const alasan = dipilih === 'Lainnya'
+      ? ('Lainnya: ' + el('rejectTrxAlasanLain').value.trim())
+      : dipilih;
+    if(dipilih === 'Lainnya' && !el('rejectTrxAlasanLain').value.trim()){ showToast("Jelaskan alasan lainnya dulu", false); return; }
     const btn = el('rejectTrxSaveBtn'); btn.disabled = true; btn.textContent = "Mengirim...";
     try{
       const qyCek = query(collection(db, "permintaan_reject_trx"),
@@ -5338,7 +5448,14 @@ async function putuskanPermintaanStokTeh(id, statusBaru){
       statusBaru === 'disetujui' ? 'sukses' : 'tolak'
     );
     showToast(statusBaru === 'disetujui' ? "Permintaan disetujui \u2014 stok sudah ditambah otomatis" : "Permintaan ditolak");
+    // PENTING: approve/tolak izin stok teh bisa dipicu dari DUA tempat --
+    // panel lonceng notifikasi (notifTehPanelOverlay) ATAU dari dalam menu
+    // Kelola Stok Teh itu sendiri (stokTehOverlay). Sebelumnya refresh cuma
+    // dicek untuk stokTehOverlay, jadi kalau Owner approve lewat lonceng,
+    // angka ml di Kelola Stok Teh kelihatan tidak nambah (padahal di database
+    // sudah nambah, cuma layarnya belum di-refresh). Sekarang dicek keduanya.
     if(el('stokTehOverlay').classList.contains('show')) await muatKelolaStokTeh();
+    if(el('notifTehPanelOverlay').classList.contains('show')){ await muatPermintaanTehOwner(); renderPanelNotifStokTeh(); }
   }catch(e){ showToast("Gagal memproses permintaan. Cek koneksi.", false); console.error('Gagal memutuskan permintaan stok teh:', e); }
 }
 
@@ -5916,7 +6033,10 @@ async function putuskanPermintaanRejectTrx(id, statusBaru){
       );
     }
     showToast(statusBaru === 'disetujui' ? "Permintaan disetujui \u2014 transaksi sudah dibatalkan" : "Permintaan ditolak");
-    if(el('rejectTrxOverlay').classList.contains('show')) await muatDaftarRejectTrx(rejectTrxTanggalAktif);
+    if(el('rejectTrxOverlay').classList.contains('show')){
+      if(rejectTrxTabAktif === 'riwayat') await muatRiwayatRejectTrx();
+      else await muatDaftarRejectTrx(rejectTrxTanggalAktif);
+    }
     if(el('lapOverlay').classList.contains('show')) await muatLaporanTanggal(lapTanggalAktif, true);
   }catch(e){ showToast("Gagal memproses permintaan. Cek koneksi.", false); console.error('Gagal memutuskan permintaan reject transaksi:', e); }
 }

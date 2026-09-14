@@ -150,36 +150,36 @@
       radial-gradient(circle at 12% -20%, rgba(200,151,63,.14), transparent 42%),
       linear-gradient(160deg, var(--pine-900), var(--pine-950));
     color:#f3ede0;
-    padding:11px 16px 9px;
+    padding:18px 18px 14px;
     box-shadow:0 4px 22px rgba(12,31,22,.30);
     border-bottom:1px solid rgba(243,237,224,.06);
     overflow-x:hidden;
   }
-  .brandrow{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
-  .brandLeft{display:flex; align-items:center; gap:9px; min-width:0;}
+  .brandrow{display:flex; align-items:flex-start; justify-content:space-between; gap:8px; flex-wrap:wrap;}
+  .brandLeft{display:flex; align-items:center; gap:11px; min-width:0;}
   .leafBadge{
-    width:30px; height:30px; border-radius:9px; flex:0 0 auto;
+    width:38px; height:38px; border-radius:11px; flex:0 0 auto;
     background:linear-gradient(160deg, var(--pine-700), var(--pine-800));
     border:1px solid rgba(243,237,224,.14);
     display:flex; align-items:center; justify-content:center;
   }
-  .leafBadge svg{width:16px;height:16px;}
-  .brandLeft h1{font-family:"Fraunces",serif; font-size:14.5px; margin:0; font-weight:600; letter-spacing:.2px; line-height:1.25;}
-  .brandLeft .sub{font-size:10px; color:rgba(243,237,224,.55); margin-top:1px; letter-spacing:.3px;}
+  .leafBadge svg{width:20px;height:20px;}
+  .brandLeft h1{font-family:"Fraunces",serif; font-size:17px; margin:0; font-weight:600; letter-spacing:.2px; line-height:1.25;}
+  .brandLeft .sub{font-size:11px; color:rgba(243,237,224,.55); margin-top:2px; letter-spacing:.3px;}
 
-  .headRight{display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex:0 0 auto; margin-left:auto;}
-  .headBtns{display:flex; align-items:center; gap:6px; overflow-x:auto; max-width:100%; scrollbar-width:none; padding-bottom:1px;}
+  .headRight{display:flex; flex-direction:column; align-items:flex-end; gap:7px; flex:0 0 auto;}
+  .headBtns{display:flex; align-items:center; gap:7px; overflow-x:auto; max-width:100%; scrollbar-width:none; padding-bottom:1px;}
   .headBtns::-webkit-scrollbar{display:none;}
   .iconBtn{
     background:rgba(243,237,224,.07); border:1px solid rgba(243,237,224,.14); color:#f3ede0;
-    border-radius:9px; width:29px; height:29px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    border-radius:10px; width:34px; height:34px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; cursor:pointer;
     transition:background .15s; position:relative;
   }
   .iconBtn:active{background:rgba(243,237,224,.16);}
-  .iconBtn svg{width:15px;height:15px;}
+  .iconBtn svg{width:17px;height:17px;}
   .iconBtn .notifDot{
-    position:absolute; top:-4px; right:-4px; min-width:15px; height:15px; padding:0 3px; border-radius:999px;
-    background:var(--merah); color:#fff; font-size:9px; font-weight:800; line-height:15px; text-align:center;
+    position:absolute; top:-4px; right:-4px; min-width:16px; height:16px; padding:0 4px; border-radius:999px;
+    background:var(--merah); color:#fff; font-size:9.5px; font-weight:800; line-height:16px; text-align:center;
     border:1.5px solid var(--pine-950); display:none;
   }
   .iconBtn .notifDot.show{display:block;}
@@ -189,7 +189,7 @@
   .notifPanelOverlay.show{display:block;}
   .notifPanelBackdrop{position:absolute; inset:0; background:rgba(12,20,15,.5);}
   .notifPanel{
-    position:absolute; top:52px; right:14px; width:min(340px, calc(100vw - 28px)); max-height:min(480px, calc(100vh - 100px));
+    position:absolute; top:64px; right:14px; width:min(340px, calc(100vw - 28px)); max-height:min(480px, calc(100vh - 100px));
     background:var(--card); border-radius:16px; border:1px solid var(--line-soft); box-shadow:var(--shadow-float);
     display:flex; flex-direction:column; overflow:hidden;
   }
@@ -216,7 +216,7 @@
   .menuDropdownOverlay{position:fixed; inset:0; z-index:65; display:none;}
   .menuDropdownOverlay.show{display:block;}
   .menuDropdown{
-    position:absolute; top:64px; right:18px; z-index:66; width:220px;
+    position:absolute; top:78px; right:18px; z-index:66; width:220px;
     background:var(--card); border:1px solid var(--line-soft); border-radius:16px;
     box-shadow:var(--shadow-float); padding:8px; display:flex; flex-direction:column; gap:2px;
     animation:menuDropIn .16s cubic-bezier(.2,.8,.3,1);
@@ -231,40 +231,12 @@
   .menuDropItem svg{width:17px; height:17px; flex:0 0 auto; color:var(--pine-700);}
   .menuDropItem-danger{color:var(--merah);}
   .menuDropItem-danger svg{color:var(--merah);}
-
-  /* ============ DROPDOWN AKSI PER AKUN (Kelola Akun) ============ */
-  .akAksiOverlay{position:fixed; inset:0; z-index:67; display:none;}
-  .akAksiOverlay.show{display:block;}
-  .akAksiSheet{
-    position:absolute; background:var(--card); border-radius:14px; padding:6px;
-    box-shadow:var(--shadow-float); border:1px solid var(--line-soft); min-width:196px;
-    display:flex; flex-direction:column; gap:2px;
-  }
-  .akAksiItem{
-    display:flex; align-items:center; gap:10px; width:100%; padding:11px 12px; border-radius:10px;
-    border:none; background:none; font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer; text-align:left;
-    font-family:inherit;
-  }
-  .akAksiItem:active{background:var(--pine-50);}
-  .akAksiItem svg{width:16px; height:16px; flex:0 0 auto; color:var(--pine-700);}
-  .akAksiItem-awasi svg{color:var(--gold-dark);}
-  .akAksiItem-berhenti svg{color:var(--muted);}
-
-  /* ============ STRIP "SEDANG DIAWASI" DI TOPBAR ============ */
-  .awasiStrip{
-    display:none; align-items:center; justify-content:center; gap:6px;
-    background:linear-gradient(160deg, var(--gold-dark), #8a5f20); color:#fff8e8;
-    font-size:11px; font-weight:700; letter-spacing:.25px;
-    padding:6px 10px; border-radius:10px; margin-top:8px;
-  }
-  .awasiStrip.show{display:flex;}
-  .awasiStrip svg{width:13px; height:13px; flex:0 0 auto;}
   .menuDropDivider{height:1px; background:var(--line-soft); margin:5px 4px;}
 
   .clockBox{text-align:right;}
-  .clock{font-size:11.5px; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:.3px;}
-  .dateSmall{font-size:8.5px; color:rgba(243,237,224,.5); text-transform:uppercase; letter-spacing:.5px; margin-top:1px;}
-  .userChip{font-size:8.5px; color:rgba(243,237,224,.6); margin-top:1px; letter-spacing:.2px;}
+  .clock{font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:.3px;}
+  .dateSmall{font-size:9.5px; color:rgba(243,237,224,.5); text-transform:uppercase; letter-spacing:.5px; margin-top:1px;}
+  .userChip{font-size:9.5px; color:rgba(243,237,224,.6); margin-top:1px; letter-spacing:.2px;}
 
   .searchWrap{padding:15px 0 0; position:relative;}
   .searchWrap svg.sIcon{position:absolute; left:13px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:rgba(243,237,224,.45); pointer-events:none;}
@@ -367,7 +339,7 @@
 
   .varOption{
     display:flex; align-items:center; justify-content:space-between; padding:14px 15px; border:1px solid var(--line-soft);
-    background:var(--card); border-radius:13px; margin-bottom:9px; cursor:pointer; transition:transform var(--ios-fast, .16s) var(--ios-spring, cubic-bezier(.34,1.32,.64,1)); box-shadow:var(--shadow-card);
+    background:var(--card); border-radius:13px; margin-bottom:9px; cursor:pointer; transition:.13s; box-shadow:var(--shadow-card);
   }
   .varOption:active{transform:scale(.98);}
   .varOption.habis{opacity:.5; cursor:not-allowed;}
@@ -458,12 +430,12 @@
 
   /* ============ TOAST ============ */
   .toast{
-    position:fixed; top:16px; left:50%; transform:translateX(-50%) scale(.96); opacity:0; pointer-events:none;
+    position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-74px);
     background:var(--pine-950); color:#f3ede0; padding:13px 22px; border-radius:13px; font-size:13.5px; font-weight:550;
-    z-index:80; transition:transform .28s cubic-bezier(.2,.8,.3,1), opacity .28s ease; box-shadow:0 10px 28px rgba(12,31,22,.35);
+    z-index:80; transition:transform .3s cubic-bezier(.2,.8,.3,1); box-shadow:0 10px 28px rgba(12,31,22,.35);
     max-width:88%; text-align:center; display:flex; align-items:center; gap:9px; border:1px solid rgba(243,237,224,.1); cursor:pointer;
   }
-  .toast.show{transform:translateX(-50%) scale(1); opacity:1; pointer-events:auto;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
   .toast svg{width:16px;height:16px;flex:0 0 auto; color:var(--gold);}
   .toast.err svg{color:#e2897a;}
 
@@ -930,16 +902,6 @@
                background var(--ios-fast) var(--ios-ease),
                opacity var(--ios-fast) var(--ios-ease);
   }
-  /* Efek tekan default utk SEMUA tombol yang belum punya :active sendiri --
-     scale-down halus ala iOS. Aturan :active lebih spesifik yang sudah ada
-     di atas (mis. .iconBtn:active, .item:active, dst) tetap menang krn lebih
-     spesifik, jadi ini aman dipasang sebagai fallback global. */
-  button:active{
-    transform:scale(.95);
-  }
-  button:disabled:active{
-    transform:none;
-  }
 
   /* Sheet/modal (bottom sheet) -- ganti easing jadi spring iOS + sedikit lebih lambat
      supaya berasa "meluncur", bukan "muncul tiba-tiba". Override durasi lama (.22s ease
@@ -1188,11 +1150,6 @@
     </div>
   </div>
 
-  <div class="awasiStrip" id="awasiStrip">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-    <span>Anda sedang dalam pengawasan</span>
-  </div>
-
   <div class="menuDropdownOverlay" id="menuDropdownOverlay">
     <div class="menuDropdown" id="menuDropdown">
       <button class="menuDropItem" id="calcBtn">
@@ -1412,19 +1369,6 @@
   <div class="adminSheet">
     <div class="adminHead"><h2>Kelola Akun</h2><button id="akunClose">✕</button></div>
     <div class="adminBody" id="akunBody"></div>
-  </div>
-</div>
-
-<div class="akAksiOverlay" id="akAksiOverlay">
-  <div class="akAksiSheet" id="akAksiSheet">
-    <button class="akAksiItem" id="akAksiEditBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>
-      <span>Edit Akun</span>
-    </button>
-    <button class="akAksiItem akAksiItem-awasi" id="akAksiAwasiBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-      <span>Awasi Akun Ini</span>
-    </button>
   </div>
 </div>
 
@@ -1723,13 +1667,15 @@ function hitungTotalMlTehDariTakaran(x){
   const total = x + x + gula; // air + teh + gula
   return { air: x, teh: x, gula, total };
 }
-// Dulu menampilkan rincian racikan (Air/Teh/Gula) di panel permintaan & riwayat.
-// SEKARANG SENGAJA DIKOSONGKAN -- takaran air/teh/gula tidak boleh ditampilkan
-// ke jabatan manapun (termasuk Owner), cukup total ml saja yang tampil.
+// Keterangan racikan singkat, dipakai di panel permintaan & riwayat --
+// hanya tampil kalau data takaranAirTeh ada (permintaan lama sebelum fitur
+// ini tetap tampil apa adanya tanpa rincian, tidak error).
 function keteranganTakaranTeh(r){
-  return '';
+  if(!r || !r.takaranAirTeh) return '';
+  const h = hitungTotalMlTehDariTakaran(r.takaranAirTeh);
+  return ` <span style="color:var(--muted-soft);">(Air ${h.air.toLocaleString('id-ID')} + Teh ${h.teh.toLocaleString('id-ID')} + Gula ${h.gula.toLocaleString('id-ID')})</span>`;
 }
-
+const RESEP_TEH_KETERANGAN = `Isi takaran AIR (sama dengan takaran TEH), gula otomatis dihitung 0.8\u00d7-nya. Contoh: isi 1000 \u2192 1000ml air + 1000ml teh + 800ml gula = <b>2.800ml</b> total teh jadi.`;
 
 // URL Web App Google Apps Script -- dipakai HANYA untuk mencatat riwayat
 // permintaan izin akses Stok Cup ke sheet "Riwayat Izin Stok Cup" sebagai LOG
@@ -1923,8 +1869,7 @@ async function prosesLogin(){
     SESI = {
       akunId: akun.id, username: akun.username, jabatan: akun.jabatan,
       namaTampilan: akun.namaTampilan || akun.username, outlet: akun.outlet || '',
-      mulaiJam: akun.mulaiJam || '', sampaiJam: akun.sampaiJam || '', temaWarna: akun.temaWarna || null,
-      diawasi: !!akun.diawasi
+      mulaiJam: akun.mulaiJam || '', sampaiJam: akun.sampaiJam || '', temaWarna: akun.temaWarna || null
     };
     simpanSesiLokal(SESI);
     terapkanTemaWarna(SESI.temaWarna);
@@ -1998,10 +1943,9 @@ function mulaiPengecekanSesiBerkala(){
         tampilkanPopupPecat();
         return;
       }
-      // Selalu sinkron ulang jabatan/outlet/jadwal/status pengawasan terbaru dari database.
+      // Selalu sinkron ulang jabatan/outlet/jadwal terbaru dari database.
       SESI.jabatan = akun.jabatan; SESI.outlet = akun.outlet || '';
       SESI.mulaiJam = akun.mulaiJam || ''; SESI.sampaiJam = akun.sampaiJam || '';
-      SESI.diawasi = !!akun.diawasi;
       simpanSesiLokal(SESI);
       terapkanTampilanJabatan();
       const cekShift = dalamJadwalShift(akun);
@@ -2107,7 +2051,6 @@ function terapkanTampilanJabatan(){
   if(SESI && SESI.outlet) mulaiPantauPopupSuksesUntukSaya(); else hentikanPantauPopupSuksesUntukSaya();
   el('userChip').textContent = SESI ? (SESI.namaTampilan + ' \u00b7 ' + SESI.jabatan + (SESI.outlet ? ' \u00b7 ' + SESI.outlet : '')) : '';
   el('karyawanTampil').textContent = SESI ? SESI.namaTampilan : '-';
-  el('awasiStrip').classList.toggle('show', !!(SESI && SESI.diawasi));
 }
 
 let UNDO_STACK = [];
@@ -2200,8 +2143,7 @@ async function cobaAutoLogin(){
     SESI = {
       akunId: akun.id, username: akun.username, jabatan: akun.jabatan,
       namaTampilan: akun.namaTampilan || akun.username, outlet: akun.outlet || '',
-      mulaiJam: akun.mulaiJam || '', sampaiJam: akun.sampaiJam || '', temaWarna: akun.temaWarna || null,
-      diawasi: !!akun.diawasi
+      mulaiJam: akun.mulaiJam || '', sampaiJam: akun.sampaiJam || '', temaWarna: akun.temaWarna || null
     };
     simpanSesiLokal(SESI);
     terapkanTemaWarna(SESI.temaWarna);
@@ -4049,7 +3991,7 @@ async function renderAkunList(){
       html += `<div class="akunItem" data-id="${a.id}">
         <div class="akAvatar">${inisial}</div>
         <div class="akInfo">
-          <div class="aun">${nama}${a.diawasi ? ' <span style="color:var(--gold-dark); font-size:11px; font-weight:700;">\u25cf Diawasi</span>' : ''}</div>
+          <div class="aun">${nama}</div>
           <div class="auu">@${a.username}${a.outlet ? ' \u00b7 '+a.outlet : ''}${a.mulaiJam && a.sampaiJam ? ' \u00b7 '+a.mulaiJam+'\u2013'+a.sampaiJam : ''}</div>
         </div>
         <div class="akRight">
@@ -4063,45 +4005,10 @@ async function renderAkunList(){
     el('akunBody').querySelectorAll('.akunItem').forEach(rowEl=>{
       const id = rowEl.dataset.id;
       const akun = daftar.find(a=>a.id===id);
-      rowEl.onclick = ()=> bukaAkAksiDropdown(rowEl, akun);
+      rowEl.onclick = ()=> openAkunForm(akun);
     });
   }catch(e){ el('akunBody').innerHTML = `<div class="empty">Gagal memuat akun.<br><span style="font-size:11px; color:var(--muted-soft);">${e && e.message ? e.message : e}</span></div>`; console.error('Gagal memuat akun:', e); }
 }
-
-// Dropdown aksi kecil per baris akun di Kelola Akun -- muncul dekat baris yang
-// diklik (bukan modal penuh), isinya "Edit Akun" dan toggle "Awasi Akun Ini".
-function bukaAkAksiDropdown(rowEl, akun){
-  const overlay = el('akAksiOverlay');
-  const sheet = el('akAksiSheet');
-  const rect = rowEl.getBoundingClientRect();
-  const lebarSheet = 210;
-  let left = rect.left;
-  if(left + lebarSheet > window.innerWidth - 12) left = window.innerWidth - lebarSheet - 12;
-  if(left < 12) left = 12;
-  sheet.style.left = left + 'px';
-  sheet.style.top = (rect.bottom + 6 + window.scrollY) + 'px';
-
-  const awasiBtn = el('akAksiAwasiBtn');
-  awasiBtn.classList.toggle('akAksiItem-berhenti', !!akun.diawasi);
-  awasiBtn.classList.toggle('akAksiItem-awasi', !akun.diawasi);
-  awasiBtn.querySelector('span').textContent = akun.diawasi ? 'Berhenti Awasi' : 'Awasi Akun Ini';
-
-  overlay.classList.add('show');
-
-  el('akAksiEditBtn').onclick = ()=>{
-    overlay.classList.remove('show');
-    openAkunForm(akun);
-  };
-  awasiBtn.onclick = async ()=>{
-    overlay.classList.remove('show');
-    try{
-      await updateDoc(doc(db, "akun", akun.id), { diawasi: !akun.diawasi });
-      showToast(!akun.diawasi ? `${akun.namaTampilan || akun.username} sekarang diawasi` : `${akun.namaTampilan || akun.username} berhenti diawasi`);
-      renderAkunList();
-    }catch(e){ showToast("Gagal mengubah status pengawasan. Cek koneksi.", false); }
-  };
-}
-el('akAksiOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'akAksiOverlay') el('akAksiOverlay').classList.remove('show'); });
 
 function openAkunForm(akun){
   el('akunFormTitle').textContent = akun ? 'Edit Akun' : 'Tambah Akun';
@@ -5498,6 +5405,8 @@ function renderKelolaStokTeh(){
   } else {
     keteranganAkses = `Kamu bisa melihat stok teh outlet <b>${STOKTEH_OUTLET_AKTIF}</b>. Untuk menambah stok, isi dulu jumlah ml teh yang mau ditambah lewat tombol di bawah, lalu kirim ke Owner untuk disetujui. Kamu tidak bisa mengubah/reset angka stok secara manual.`;
   }
+  keteranganAkses += `<div style="margin-top:8px; padding:8px 10px; background:var(--pine-50); border-radius:10px; color:var(--pine-700); font-size:11.5px;">\u2615 ${RESEP_TEH_KETERANGAN}</div>`;
+
   let html = `<div class="empty" style="padding:6px 4px 16px; text-align:left; font-size:12px;">${keteranganAkses}</div>`;
 
   if(isOwner && PERMINTAAN_TEH_OWNER_LIST.length){
@@ -5589,19 +5498,21 @@ function bukaFormKirimIzinStokTeh(){
 
   el('restockTehBody').innerHTML = `
     <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Isi takaran teh untuk outlet <b>${SESI.outlet}</b>. Stok sekarang: <b>${STOKTEH_ML_AKTIF.toLocaleString('id-ID')} ml</b>.</div>
+    <div class="empty" style="padding:8px 10px; margin-bottom:12px; text-align:left; font-size:11.5px; background:var(--pine-50); border-radius:10px; color:var(--pine-700);">\u2615 ${RESEP_TEH_KETERANGAN}</div>
     <div class="formField">
       <label>Takaran Air/Teh (ml)</label>
       <input id="izinTehTakaran" type="number" min="1" placeholder="Contoh: 1000">
+      <div class="hint">Isi ml air yang dituang (jumlah teh dianggap sama). Gula dan total dihitung otomatis di bawah.</div>
     </div>
-    <div id="izinTehPreview" style="padding:10px 12px; border-radius:10px; background:var(--card); border:1.4px dashed var(--line); font-size:12px; color:var(--muted); margin-bottom:4px;">Isi takaran dulu untuk lihat total.</div>
+    <div id="izinTehPreview" style="padding:10px 12px; border-radius:10px; background:var(--card); border:1.4px dashed var(--line); font-size:12px; color:var(--muted); margin-bottom:4px;">Isi takaran dulu untuk lihat rincian.</div>
     <button class="saveFormBtn" id="izinTehSaveBtn">Kirim Izin</button>
   `;
 
   const updateIzinTehPreview = ()=>{
     const x = Number(el('izinTehTakaran').value) || 0;
-    if(x <= 0){ el('izinTehPreview').innerHTML = 'Isi takaran dulu untuk lihat total.'; return; }
+    if(x <= 0){ el('izinTehPreview').innerHTML = 'Isi takaran dulu untuk lihat rincian.'; return; }
     const h = hitungTotalMlTehDariTakaran(x);
-    el('izinTehPreview').innerHTML = `<b style="color:var(--pine-700);">Total ${h.total.toLocaleString('id-ID')}ml</b> yang akan diminta ditambahkan.`;
+    el('izinTehPreview').innerHTML = `Air ${h.air.toLocaleString('id-ID')}ml + Teh ${h.teh.toLocaleString('id-ID')}ml + Gula ${h.gula.toLocaleString('id-ID')}ml = <b style="color:var(--pine-700);">Total ${h.total.toLocaleString('id-ID')}ml</b> yang akan diminta ditambahkan.`;
   };
   el('izinTehTakaran').addEventListener('input', updateIzinTehPreview);
 
@@ -5634,19 +5545,21 @@ el('restockTehClose').onclick = ()=> tutupOverlaySmooth(el('restockTehOverlay'))
 function bukaFormRestockTeh(){
   el('restockTehBody').innerHTML = `
     <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Restock teh outlet <b>${STOKTEH_OUTLET_AKTIF}</b>. Stok sekarang: <b>${STOKTEH_ML_AKTIF.toLocaleString('id-ID')} ml</b>.</div>
+    <div class="empty" style="padding:8px 10px; margin-bottom:12px; text-align:left; font-size:11.5px; background:var(--pine-50); border-radius:10px; color:var(--pine-700);">\u2615 ${RESEP_TEH_KETERANGAN}</div>
     <div class="formField">
       <label>Takaran Air/Teh (ml)</label>
       <input id="restockTehTakaran" type="number" min="1" placeholder="Contoh: 1000">
+      <div class="hint">Isi ml air yang dituang (jumlah teh dianggap sama). Gula dan total dihitung otomatis di bawah.</div>
     </div>
-    <div id="restockTehPreview" style="padding:10px 12px; border-radius:10px; background:var(--card); border:1.4px dashed var(--line); font-size:12px; color:var(--muted); margin-bottom:4px;">Isi takaran dulu untuk lihat total.</div>
+    <div id="restockTehPreview" style="padding:10px 12px; border-radius:10px; background:var(--card); border:1.4px dashed var(--line); font-size:12px; color:var(--muted); margin-bottom:4px;">Isi takaran dulu untuk lihat rincian.</div>
     <button class="saveFormBtn" id="restockTehSaveBtn">Simpan Restock</button>
   `;
 
   const updateRestockTehPreview = ()=>{
     const x = Number(el('restockTehTakaran').value) || 0;
-    if(x <= 0){ el('restockTehPreview').innerHTML = 'Isi takaran dulu untuk lihat total.'; return; }
+    if(x <= 0){ el('restockTehPreview').innerHTML = 'Isi takaran dulu untuk lihat rincian.'; return; }
     const h = hitungTotalMlTehDariTakaran(x);
-    el('restockTehPreview').innerHTML = `<b style="color:var(--pine-700);">Total ${h.total.toLocaleString('id-ID')}ml</b> yang akan ditambahkan ke stok.`;
+    el('restockTehPreview').innerHTML = `Air ${h.air.toLocaleString('id-ID')}ml + Teh ${h.teh.toLocaleString('id-ID')}ml + Gula ${h.gula.toLocaleString('id-ID')}ml = <b style="color:var(--pine-700);">Total ${h.total.toLocaleString('id-ID')}ml</b> yang akan ditambahkan ke stok.`;
   };
   el('restockTehTakaran').addEventListener('input', updateRestockTehPreview);
 

@@ -339,7 +339,7 @@
 
   .varOption{
     display:flex; align-items:center; justify-content:space-between; padding:14px 15px; border:1px solid var(--line-soft);
-    background:var(--card); border-radius:13px; margin-bottom:9px; cursor:pointer; transition:.13s; box-shadow:var(--shadow-card);
+    background:var(--card); border-radius:13px; margin-bottom:9px; cursor:pointer; transition:transform var(--ios-fast, .16s) var(--ios-spring, cubic-bezier(.34,1.32,.64,1)); box-shadow:var(--shadow-card);
   }
   .varOption:active{transform:scale(.98);}
   .varOption.habis{opacity:.5; cursor:not-allowed;}
@@ -901,6 +901,16 @@
     transition:transform var(--ios-fast) var(--ios-spring),
                background var(--ios-fast) var(--ios-ease),
                opacity var(--ios-fast) var(--ios-ease);
+  }
+  /* Efek tekan default utk SEMUA tombol yang belum punya :active sendiri --
+     scale-down halus ala iOS. Aturan :active lebih spesifik yang sudah ada
+     di atas (mis. .iconBtn:active, .item:active, dst) tetap menang krn lebih
+     spesifik, jadi ini aman dipasang sebagai fallback global. */
+  button:active{
+    transform:scale(.95);
+  }
+  button:disabled:active{
+    transform:none;
   }
 
   /* Sheet/modal (bottom sheet) -- ganti easing jadi spring iOS + sedikit lebih lambat
@@ -5499,7 +5509,6 @@ function bukaFormKirimIzinStokTeh(){
     <div class="formField">
       <label>Takaran Air/Teh (ml)</label>
       <input id="izinTehTakaran" type="number" min="1" placeholder="Contoh: 1000">
-      <div class="hint">Isi ml air yang dituang (jumlah teh dianggap sama).</div>
     </div>
     <div id="izinTehPreview" style="padding:10px 12px; border-radius:10px; background:var(--card); border:1.4px dashed var(--line); font-size:12px; color:var(--muted); margin-bottom:4px;">Isi takaran dulu untuk lihat total.</div>
     <button class="saveFormBtn" id="izinTehSaveBtn">Kirim Izin</button>

@@ -1897,6 +1897,39 @@ function mlTehUntukItem(kategori, namaMenu){
   return ML_TEH_DEFAULT;
 }
 
+/* =====================================================================
+   BATASI TAMBAH KATEGORI "Es Teh Manis" SESUAI SISA STOK TEH (ml)
+   Dipakai di 3 titik penambahan qty: buka varian sheet ("+"), stepper qty
+   di sheet ("+"), dan stepper qty di keranjang ("+"). Kalau menambah 1 lagi
+   bikin total ml teh yang dibutuhkan keranjang saat ini melebihi sisa ml
+   teh outlet berjalan, penambahan dibatalkan + toast peringatan muncul.
+   ===================================================================== */
+function sisaMlTehSaatIni(){
+  if(!SESI) return null;
+  const doc = stokTehMenipisTerakhir[stokTehDocId(SESI.outlet)];
+  if(!doc) return null; // data belum sempat kemuat dari listener realtime -- jangan blokir, anggap belum tahu
+  return Number(doc.ml)||0;
+}
+// Total ml teh yang sudah "dipesan" oleh isi keranjang saat ini (semua item kategori Es Teh Manis).
+function mlTehTerpakaiDiKeranjang(){
+  return Object.values(cart).reduce((s,c)=> s + mlTehUntukItem(c.kategori, c.nama)*(c.qty||0), 0);
+}
+// Cek boleh/tidaknya menambah 1 item lagi (kategori+nama menu tertentu) ke keranjang.
+// Return true kalau boleh; kalau tidak boleh, otomatis tampilkan toast peringatan lalu return false.
+function bolehTambahTeh(kategori, namaMenu){
+  const mlPerItem = mlTehUntukItem(kategori, namaMenu);
+  if(mlPerItem <= 0) return true; // bukan kategori Es Teh Manis -- tidak dibatasi
+  const sisa = sisaMlTehSaatIni();
+  if(sisa === null) return true; // data stok teh belum tersedia -- jangan blokir transaksi
+  const terpakai = mlTehTerpakaiDiKeranjang();
+  if(terpakai + mlPerItem > sisa){
+    const sisaCup = Math.max(Math.floor(sisa / (ML_TEH_DEFAULT||150)) - Math.floor(terpakai/(ML_TEH_DEFAULT||150)), 0);
+    showToast(sisa<=0 ? 'Stok teh habis, tidak bisa tambah menu Es Teh Manis lagi' : `Sisa teh tidak cukup (sisa ${(sisa-terpakai).toLocaleString('id-ID')} ml) \u2014 tidak bisa tambah lagi`, false);
+    return false;
+  }
+  return true;
+}
+
 // KALKULATOR TAKARAN TEH -- bukan lagi angka batch tetap, karena Owner
 // meracik dengan takaran air yang BERBEDA-BEDA tiap kali (kadang 500ml,
 // kadang 800ml, dst). Rumus tetapnya:
@@ -2917,6 +2950,7 @@ function openVariantSheet(ci, ii){
 function attachSheetEvents(cat, item, ci, ii){
   el('sheetBody').querySelectorAll('.varOption[data-add]').forEach(row=>{
     row.onclick = ()=>{
+      if(!bolehTambahTeh(cat.kategori, item.nama)) return;
       const k = row.dataset.k; const vi = +k.split('|')[2]; const v = item.varian[vi];
       cart[k] = { nama:item.nama, varian:v.nama, tambahan:v.tambahan||'', harga:v.harga||0, kategori:cat.kategori, qty:1 };
       openVariantSheet(ci, ii); renderMenu(); updateFab();
@@ -2924,7 +2958,10 @@ function attachSheetEvents(cat, item, ci, ii){
   });
   el('sheetBody').querySelectorAll('.qtyStepBar').forEach(bar=>{
     const k = bar.dataset.k;
-    bar.querySelector('.plus').onclick = ()=>{ cart[k].qty++; openVariantSheet(ci, ii); renderMenu(); updateFab(); };
+    bar.querySelector('.plus').onclick = ()=>{
+      if(!bolehTambahTeh(cart[k].kategori, cart[k].nama)) return;
+      cart[k].qty++; openVariantSheet(ci, ii); renderMenu(); updateFab();
+    };
     bar.querySelector('.minus').onclick = ()=>{ cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; openVariantSheet(ci, ii); renderMenu(); updateFab(); };
   });
 }
@@ -2950,7 +2987,10 @@ function renderCartBody(){
     }).join('');
     el('cartBody').querySelectorAll('.cartRow').forEach(row=>{
       const k = row.dataset.k;
-      row.querySelector('.cplus').onclick = ()=>{ cart[k].qty++; renderCartBody(); renderMenu(); updateFab(); };
+      row.querySelector('.cplus').onclick = ()=>{
+        if(!bolehTambahTeh(cart[k].kategori, cart[k].nama)) return;
+        cart[k].qty++; renderCartBody(); renderMenu(); updateFab();
+      };
       row.querySelector('.cminus').onclick = ()=>{ cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; renderCartBody(); renderMenu(); updateFab(); };
       row.querySelector('.cdel').onclick = ()=>{ delete cart[k]; renderCartBody(); renderMenu(); updateFab(); };
     });

@@ -2099,8 +2099,9 @@ function terapkanTampilanJabatan(){
   // Tombol status izin milik karyawan sendiri -- Owner tidak butuh ini karena
   // sudah punya lonceng notifikasi + panel approve/tolak lewat notifBtn di atas.
   el('notifKaryawanBtn').style.display = (SESI && !isOwner && SESI.outlet) ? 'flex' : 'none';
-  el('notifKaryawanTehBtn').style.display = (SESI && !isOwner && SESI.outlet) ? 'flex' : 'none';
-  if(SESI && !isOwner && SESI.outlet) { mulaiPantauNotifKaryawanStokCup(); mulaiPantauNotifKaryawanStokTeh(); } else { hentikanPantauNotifKaryawanStokCup(); hentikanPantauNotifKaryawanStokTeh(); }
+  el('notifKaryawanTehBtn').style.display = 'none';
+  if(SESI && !isOwner && SESI.outlet) { mulaiPantauNotifKaryawanStokCup(); } else { hentikanPantauNotifKaryawanStokCup(); }
+  hentikanPantauNotifKaryawanStokTeh();
   // Popup sukses (5 detik) untuk keputusan izin (stok cup & reject transaksi)
   // -- dipantau SEMUA akun yang punya outlet (Owner maupun karyawan), supaya
   // siapapun yang sedang login di outlet yang sama ikut lihat popupnya.
@@ -5018,7 +5019,6 @@ let stokCupPermintaanMenunggu = null; // dokumen permintaan (permintaan_stok_cup
 let STOKTEH_OUTLET_AKTIF = '';
 let STOKTEH_ML_AKTIF = 0; // angka ml teh outlet yang sedang dibuka
 let PERMINTAAN_TEH_OWNER_LIST = []; // daftar permintaan izin teh "menunggu" utk outlet aktif -- khusus Owner
-let stokTehPermintaanMenunggu = null; // permintaan_stok_teh berstatus "menunggu" milik karyawan yang login, kalau ada
 
 el('stokCupBtn').onclick = async ()=>{
   if(!SESI) return;
@@ -5445,29 +5445,11 @@ function renderStokTehOutletPicker(){
   });
 }
 
-async function cekIzinStokTehKaryawan(){
-  stokTehPermintaanMenunggu = null;
-  if(!SESI || SESI.jabatan === 'Owner' || !SESI.outlet) return;
-  try{
-    const qy = query(collection(db, "permintaan_stok_teh"),
-      where("outlet","==", SESI.outlet),
-      where("pemohonUsername","==", SESI.username),
-      where("status","==","menunggu"));
-    const snap = await getDocs(qy);
-    if(!snap.empty){
-      const docs = snap.docs.map(d=>({id:d.id, ...d.data()}))
-        .sort((a,b)=>{ const ta=a.waktu&&a.waktu.toDate?a.waktu.toDate().getTime():0; const tb=b.waktu&&b.waktu.toDate?b.waktu.toDate().getTime():0; return tb-ta; });
-      stokTehPermintaanMenunggu = docs[0];
-    }
-  }catch(e){ console.error('Gagal cek permintaan stok teh:', e); }
-}
-
 async function muatKelolaStokTeh(){
   el('stokTehBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat data stok teh...</div>';
   try{
     const isOwner = SESI && SESI.jabatan === 'Owner';
-    if(!isOwner) await cekIzinStokTehKaryawan();
-    else await muatPermintaanTehOwner();
+    if(isOwner) await muatPermintaanTehOwner();
     const ref = doc(db, "stok_teh", stokTehDocId(STOKTEH_OUTLET_AKTIF));
     const snap = await getDoc(ref);
     STOKTEH_ML_AKTIF = snap.exists() ? (Number(snap.data().ml)||0) : 0;
@@ -5488,15 +5470,12 @@ async function muatPermintaanTehOwner(){
 
 function renderKelolaStokTeh(){
   const isOwner = SESI && SESI.jabatan === 'Owner';
-  const punyaMenunggu = !isOwner && !!stokTehPermintaanMenunggu;
 
   let keteranganAkses = '';
   if(isOwner){
     keteranganAkses = `Stok teh di bawah adalah TOTAL ml teh cair untuk outlet <b>${STOKTEH_OUTLET_AKTIF}</b> (satu angka, bukan per menu). Setiap menu kategori "Es Teh Manis" yang terjual otomatis mengurangi angka ini (Cup Medium -150ml, Cup Jumbo -190ml, teh rasa buah/susu lainnya -150ml). Ketik ulang angka untuk menimpa langsung, atau gunakan tombol Restock untuk menambah dengan tercatat di histori.`;
-  } else if(punyaMenunggu){
-    keteranganAkses = `Permintaan restock stok teh untuk outlet <b>${STOKTEH_OUTLET_AKTIF}</b> sudah dikirim dan sedang <b>menunggu persetujuan Owner</b>. Begitu disetujui, stok akan bertambah otomatis sesuai jumlah ml yang kamu isi.`;
   } else {
-    keteranganAkses = `Kamu bisa melihat stok teh outlet <b>${STOKTEH_OUTLET_AKTIF}</b>. Untuk menambah stok, isi dulu jumlah ml teh yang mau ditambah lewat tombol di bawah, lalu kirim ke Owner untuk disetujui. Kamu tidak bisa mengubah/reset angka stok secara manual.`;
+    keteranganAkses = `Kamu bisa melihat sisa stok teh outlet <b>${STOKTEH_OUTLET_AKTIF}</b> di bawah ini. Perubahan stok teh hanya bisa dilakukan oleh Owner.`;
   }
   let html = `<div class="empty" style="padding:6px 4px 16px; text-align:left; font-size:12px;">${keteranganAkses}</div>`;
 
@@ -5524,8 +5503,6 @@ function renderKelolaStokTeh(){
 
   if(isOwner){
     html += `<button class="addBtn" id="riwayatRestockTehBtn" style="border-style:solid; background:var(--pine-50);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>Lihat Riwayat Restock Teh</button>`;
-  } else {
-    html += `<button class="addBtn" id="mintaIzinStokTehBtn" ${punyaMenunggu ? 'disabled' : ''} style="border-style:solid; background:${punyaMenunggu ? 'var(--line-soft)' : 'var(--gold-light)'}; color:${punyaMenunggu ? 'var(--muted-soft)' : 'var(--gold-dark)'}; cursor:${punyaMenunggu ? 'not-allowed' : 'pointer'};"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>${punyaMenunggu ? 'Menunggu Persetujuan Owner\u2026' : 'Isi Jumlah & Kirim Izin'}</button>`;
   }
 
   const habis = STOKTEH_ML_AKTIF <= 0;
@@ -5553,8 +5530,6 @@ function renderKelolaStokTeh(){
   el('stokTehBody').appendChild(bodyDiv);
 
   if(isOwner) el('riwayatRestockTehBtn').onclick = ()=> bukaRiwayatRestockTeh();
-  const mintaIzinBtn = document.getElementById('mintaIzinStokTehBtn');
-  if(mintaIzinBtn && !mintaIzinBtn.disabled) mintaIzinBtn.onclick = ()=> bukaFormKirimIzinStokTeh();
 
   if(isOwner){
     el('stokTehBody').querySelectorAll('.notifReqItem').forEach(itemEl=>{
@@ -5584,51 +5559,6 @@ async function simpanStokTehManual(mlBaru){
 }
 
 /* ---------- PERMINTAAN IZIN RESTOCK STOK TEH (karyawan -> Owner) ---------- */
-function bukaFormKirimIzinStokTeh(){
-  if(!SESI || SESI.jabatan === 'Owner' || !SESI.outlet) return;
-
-  el('restockTehBody').innerHTML = `
-    <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Isi takaran teh untuk outlet <b>${SESI.outlet}</b>. Stok sekarang: <b>${STOKTEH_ML_AKTIF.toLocaleString('id-ID')} ml</b>.</div>
-    <div class="formField">
-      <label>Takaran Air/Teh (ml)</label>
-      <input id="izinTehTakaran" type="number" min="1" placeholder="Contoh: 1000">
-    </div>
-    <div id="izinTehPreview" style="padding:10px 12px; border-radius:10px; background:var(--card); border:1.4px dashed var(--line); font-size:12px; color:var(--muted); margin-bottom:4px;">Isi takaran dulu untuk lihat total.</div>
-    <button class="saveFormBtn" id="izinTehSaveBtn">Kirim Izin</button>
-  `;
-
-  const updateIzinTehPreview = ()=>{
-    const x = Number(el('izinTehTakaran').value) || 0;
-    if(x <= 0){ el('izinTehPreview').innerHTML = 'Isi takaran dulu untuk lihat total.'; return; }
-    const h = hitungTotalMlTehDariTakaran(x);
-    el('izinTehPreview').innerHTML = `<b style="color:var(--pine-700);">Total ${h.total.toLocaleString('id-ID')}ml</b> yang akan diminta ditambahkan.`;
-  };
-  el('izinTehTakaran').addEventListener('input', updateIzinTehPreview);
-
-  el('izinTehSaveBtn').onclick = async ()=>{
-    const takaran = Number(el('izinTehTakaran').value) || 0;
-    if(takaran <= 0){ showToast("Isi takaran air/teh yang valid", false); return; }
-    const jumlahMl = hitungTotalMlTehDariTakaran(takaran).total;
-
-    const btn = el('izinTehSaveBtn'); btn.disabled = true; btn.textContent = "Mengirim...";
-    try{
-      const qyCek = query(collection(db, "permintaan_stok_teh"),
-        where("outlet","==", SESI.outlet), where("pemohonUsername","==", SESI.username), where("status","==","menunggu"));
-      const snapCek = await getDocs(qyCek);
-      if(!snapCek.empty){ showToast("Kamu sudah punya permintaan yang masih menunggu Owner.", false); tutupOverlaySmooth(el('restockTehOverlay')); return; }
-
-      await addDoc(collection(db, "permintaan_stok_teh"), {
-        outlet: SESI.outlet, pemohonUsername: SESI.username, pemohonNama: SESI.namaTampilan,
-        status: 'menunggu', dibacaOwner: false, jumlahMl, takaranAirTeh: takaran, waktu: Timestamp.fromDate(new Date())
-      });
-      showToast("Permintaan izin dikirim ke Owner. Tunggu persetujuan ya.");
-      tutupOverlaySmooth(el('restockTehOverlay'));
-      await muatKelolaStokTeh();
-    }catch(e){ showToast("Gagal mengirim permintaan. Cek koneksi.", false); btn.disabled=false; btn.textContent="Kirim Izin"; console.error('Gagal kirim permintaan stok teh:', e); }
-  };
-
-  el('restockTehOverlay').classList.add('show');
-}
 el('restockTehClose').onclick = ()=> tutupOverlaySmooth(el('restockTehOverlay'));
 
 function bukaFormRestockTeh(){

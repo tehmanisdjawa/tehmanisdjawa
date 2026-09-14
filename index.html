@@ -467,29 +467,97 @@
   .toast svg{width:16px;height:16px;flex:0 0 auto; color:var(--gold);}
   .toast.err svg{color:#e2897a;}
 
-  /* ============ ANIMASI SUKSES (POPUP VIDEO) ============ */
+  /* ============ ANIMASI SUKSES / GAGAL (BUATAN SENDIRI, TANPA VIDEO) ============ */
   .animSuksesOverlay{
     position:fixed; inset:0; z-index:250; display:none; align-items:center; justify-content:center;
-    background:rgba(220,214,198,.72); backdrop-filter:blur(2px); opacity:0; transition:opacity .18s ease;
+    background:rgba(12,20,15,.42); backdrop-filter:blur(3px); opacity:0; transition:opacity .2s ease;
     padding:22px;
   }
   .animSuksesOverlay.show{display:flex; opacity:1;}
   .animSuksesBox{
-    position:relative; width:min(280px, 78vw); border-radius:20px; overflow:hidden;
-    transform:scale(.9); transition:transform .18s cubic-bezier(.2,.8,.3,1);
+    position:relative; width:min(260px, 76vw); border-radius:24px; overflow:hidden;
+    background:var(--card); box-shadow:var(--shadow-float); border:1px solid var(--line-soft);
+    padding:36px 22px 26px; display:flex; flex-direction:column; align-items:center; text-align:center;
+    transform:scale(.82) translateY(6px); transition:transform .32s cubic-bezier(.2,.9,.25,1.2);
   }
-  .animSuksesOverlay.show .animSuksesBox{transform:scale(1);}
-  /* mix-blend-mode:screen -- bikin piksel HITAM di video otomatis "hilang" (menyatu
-     dengan warna di baliknya), karena background video ini hitam solid dan video mp4
-     biasa tidak punya channel transparan asli. Bagian video yang terang/cerah tetap
-     kelihatan normal, cuma hitamnya yang lebur. */
-  .animSuksesBox video{display:block; width:100%; height:100%; object-fit:contain; mix-blend-mode:screen;}
+  .animSuksesOverlay.show .animSuksesBox{transform:scale(1) translateY(0);}
   .animSuksesCloseBtn{
-    position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:50%; border:none;
-    background:rgba(12,20,15,.55); color:#f3ede0; display:flex; align-items:center; justify-content:center;
+    position:absolute; top:10px; right:10px; width:26px; height:26px; border-radius:50%; border:none;
+    background:rgba(34,31,25,.08); color:var(--muted); display:flex; align-items:center; justify-content:center;
     cursor:pointer; padding:0; z-index:2;
   }
-  .animSuksesCloseBtn svg{width:15px;height:15px;}
+  .animSuksesCloseBtn svg{width:13px;height:13px;}
+
+  /* --- panggung ikon: cincin ekspansi + burst partikel + badge SVG di tengah --- */
+  .animStage{position:relative; width:88px; height:88px; margin-bottom:16px; flex:0 0 auto;}
+  .animRing{
+    position:absolute; inset:0; border-radius:50%; border:2px solid var(--pine-600);
+    opacity:0; transform:scale(.6);
+  }
+  .animSuksesOverlay.show .animRing{animation:animRingPop .7s cubic-bezier(.2,.8,.25,1) .05s forwards;}
+  .animSuksesOverlay.show.gagal .animRing{border-color:var(--merah); animation-name:animRingPopGagal;}
+  @keyframes animRingPop{
+    0%{opacity:.55; transform:scale(.5);}
+    70%{opacity:.12;}
+    100%{opacity:0; transform:scale(1.55);}
+  }
+  @keyframes animRingPopGagal{
+    0%{opacity:.5; transform:scale(.5);}
+    70%{opacity:.1;}
+    100%{opacity:0; transform:scale(1.35);}
+  }
+  .animBadge{
+    position:absolute; inset:0; border-radius:50%;
+    background:linear-gradient(160deg, var(--pine-600), var(--pine-800));
+    display:flex; align-items:center; justify-content:center;
+    transform:scale(0); opacity:0;
+  }
+  .animSuksesOverlay.show .animBadge{animation:animBadgePop .5s cubic-bezier(.34,1.56,.64,1) .08s forwards;}
+  .animSuksesOverlay.show.gagal .animBadge{background:linear-gradient(160deg, var(--merah), #7c3521);}
+  @keyframes animBadgePop{
+    0%{transform:scale(0) rotate(-8deg); opacity:0;}
+    60%{transform:scale(1.08) rotate(2deg); opacity:1;}
+    100%{transform:scale(1) rotate(0); opacity:1;}
+  }
+  .animBadge svg{width:42px; height:42px; overflow:visible;}
+  .animBadge path{
+    fill:none; stroke:#f3ede0; stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:60; stroke-dashoffset:60;
+  }
+  .animSuksesOverlay.show .animBadge path{animation:animDraw .42s ease-out .38s forwards;}
+  @keyframes animDraw{to{stroke-dashoffset:0;}}
+  /* partikel kecil yang "meletup" keluar dari badge -- ala konfeti brand besar */
+  .animBurst{position:absolute; inset:0; pointer-events:none;}
+  .animBurst i{
+    position:absolute; top:50%; left:50%; width:6px; height:6px; border-radius:50%;
+    background:var(--gold); opacity:0; transform:translate(-50%,-50%);
+  }
+  .animSuksesOverlay.show.gagal .animBurst i{background:var(--merah);}
+  .animSuksesOverlay.show .animBurst i{animation:animParticle .6s cubic-bezier(.2,.7,.3,1) .3s forwards;}
+  .animBurst i:nth-child(1){--tx:34px; --ty:-14px; background:var(--gold-dark);}
+  .animBurst i:nth-child(2){--tx:-30px; --ty:-20px;}
+  .animBurst i:nth-child(3){--tx:26px; --ty:26px; background:var(--pine-500);}
+  .animBurst i:nth-child(4){--tx:-34px; --ty:10px; background:var(--gold-dark);}
+  .animBurst i:nth-child(5){--tx:6px; --ty:-36px;}
+  .animBurst i:nth-child(6){--tx:-8px; --ty:34px; background:var(--pine-500);}
+  .animSuksesOverlay.show.gagal .animBurst i:nth-child(1),
+  .animSuksesOverlay.show.gagal .animBurst i:nth-child(3),
+  .animSuksesOverlay.show.gagal .animBurst i:nth-child(4),
+  .animSuksesOverlay.show.gagal .animBurst i:nth-child(6){background:var(--merah);}
+  @keyframes animParticle{
+    0%{opacity:0; transform:translate(-50%,-50%) scale(.4);}
+    35%{opacity:1;}
+    100%{opacity:0; transform:translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1);}
+  }
+  .animTitle{
+    font-family:"Fraunces",serif; font-size:17px; font-weight:600; color:var(--ink); margin:0 0 4px;
+    opacity:0; transform:translateY(6px); animation:animTextIn .38s ease .32s forwards;
+  }
+  .animMsg{
+    font-size:12.5px; color:var(--muted); margin:0; line-height:1.5;
+    opacity:0; transform:translateY(6px); animation:animTextIn .38s ease .4s forwards;
+  }
+  @keyframes animTextIn{to{opacity:1; transform:translateY(0);}}
 
   /* ============ MOTIVASI NOTIFIKASI ============ */
   .motivToastWrap{position:fixed; top:12px; left:0; right:0; z-index:70; display:flex; justify-content:center; pointer-events:none; padding:0 14px;}
@@ -1358,7 +1426,15 @@
     <button class="animSuksesCloseBtn" id="animSuksesCloseBtn" aria-label="Tutup">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
-    <video id="animSuksesVideo" src="https://files.catbox.moe/hvabht.mp4" muted playsinline autoplay></video>
+    <div class="animStage">
+      <div class="animRing"></div>
+      <div class="animBadge" id="animBadgeIcon">
+        <svg viewBox="0 0 24 24"><path id="animBadgePath" d="M5 13l4.5 4.5L19 7"/></svg>
+      </div>
+      <div class="animBurst"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <h3 class="animTitle" id="animSuksesTitle">Berhasil</h3>
+    <p class="animMsg" id="animSuksesMsg">Transaksi telah diproses.</p>
   </div>
 </div>
 
@@ -1858,29 +1934,45 @@ function showToast(msg, ok=true){
   toastHideTimer = setTimeout(()=>{
     if(tiketSaatIni === toastPanggilanId){ t.classList.remove('show'); toastHideTimer = null; }
   }, 2800);
-  if(ok) tampilkanAnimasiSukses();
+  tampilkanAnimasiSukses(ok, msg);
 }
 
-/* ============ ANIMASI SUKSES (POPUP VIDEO 1.5 DETIK) ============ */
+/* ============ ANIMASI SUKSES / GAGAL (SVG + CSS, TANPA VIDEO) ============ */
+// Ikon berhasil: centang. Ikon gagal: silang. Path digambar via stroke-dasharray
+// (lihat CSS .animBadge path) supaya keliatan "ditulis" ala animasi brand besar
+// (Gojek/GoFood), bukan cuma nongol statis.
+const ANIM_PATH_SUKSES = 'M5 13l4.5 4.5L19 7';
+const ANIM_PATH_GAGAL  = 'M6 6l12 12M18 6L6 18';
 let animSuksesHideTimer = null;
-function tampilkanAnimasiSukses(){
+function tampilkanAnimasiSukses(ok=true, pesan=''){
   if(!ambilPrefNotifikasi().animasiSuksesAktif) return; // toggle di Pengaturan mati -- skip
   const ov = el('animSuksesOverlay');
-  const vid = el('animSuksesVideo');
-  if(!ov || !vid) return;
+  const pathEl = el('animBadgePath');
+  const titleEl = el('animSuksesTitle');
+  const msgEl = el('animSuksesMsg');
+  if(!ov || !pathEl) return;
   if(animSuksesHideTimer){ clearTimeout(animSuksesHideTimer); animSuksesHideTimer = null; }
-  try{ vid.currentTime = 0; vid.play().catch(()=>{}); }catch(e){}
+
+  ov.classList.toggle('gagal', !ok);
+  pathEl.setAttribute('d', ok ? ANIM_PATH_SUKSES : ANIM_PATH_GAGAL);
+  if(titleEl) titleEl.textContent = ok ? 'Berhasil' : 'Gagal';
+  if(msgEl) msgEl.textContent = pesan || (ok ? 'Transaksi telah diproses.' : 'Transaksi tidak dapat diproses.');
+
+  // Reset supaya animasi CSS (stroke draw, ring, partikel) selalu mulai ulang dari awal.
+  ov.classList.remove('show');
+  void ov.offsetWidth; // paksa reflow
   ov.style.display = 'flex';
   requestAnimationFrame(()=> ov.classList.add('show'));
-  animSuksesHideTimer = setTimeout(()=>{ sembunyikanAnimasiSukses(); }, 1500);
+
+  const durasi = ok ? 1700 : 2200; // durasi tampil animasi berhasil/gagal sebelum auto-tutup
+  animSuksesHideTimer = setTimeout(()=>{ sembunyikanAnimasiSukses(); }, durasi);
 }
 function sembunyikanAnimasiSukses(){
   const ov = el('animSuksesOverlay');
-  const vid = el('animSuksesVideo');
   if(!ov) return;
   if(animSuksesHideTimer){ clearTimeout(animSuksesHideTimer); animSuksesHideTimer = null; }
   ov.classList.remove('show');
-  setTimeout(()=>{ ov.style.display = 'none'; try{ if(vid) vid.pause(); }catch(e){} }, 180);
+  setTimeout(()=>{ ov.style.display = 'none'; ov.classList.remove('gagal'); }, 200);
 }
 el('animSuksesCloseBtn').addEventListener('click', ()=>{ sembunyikanAnimasiSukses(); });
 // Jaring pengaman terakhir: kalau karena sebab apapun toast masih kelihatan padahal
@@ -4598,7 +4690,7 @@ function renderHalamanPengaturan(){
     <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
       <div>
         <div style="font-size:13.5px; font-weight:650; color:var(--ink);">Animasi Notifikasi Sukses</div>
-        <div class="hint" style="margin-top:2px;">Popup animasi singkat (1.5 detik) tiap kali aksi berhasil, misalnya simpan, hapus, atau restock.</div>
+        <div class="hint" style="margin-top:2px;">Popup animasi singkat tiap kali aksi berhasil (main sampai selesai), misalnya simpan, hapus, atau restock.</div>
       </div>
       <label class="prefToggle">
         <input type="checkbox" id="pgToggleAnimasiSukses" ${prefNotif.animasiSuksesAktif ? 'checked' : ''}>

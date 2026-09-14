@@ -467,7 +467,7 @@
   .toast svg{width:16px;height:16px;flex:0 0 auto; color:var(--gold);}
   .toast.err svg{color:#e2897a;}
 
-  /* ============ ANIMASI SUKSES / GAGAL v2 (BUATAN SENDIRI, TANPA VIDEO) ============ */
+  /* ============ ANIMASI SUKSES / GAGAL (SVG+CSS, BUATAN SENDIRI, TANPA VIDEO) ============ */
   .animSuksesOverlay{
     position:fixed; inset:0; z-index:250; display:none; align-items:center; justify-content:center;
     background:rgba(12,20,15,.5); backdrop-filter:blur(4px); opacity:0; transition:opacity .25s ease;
@@ -534,6 +534,7 @@
   .animSuksesOverlay.show.gagal .animBadge{
     background:linear-gradient(155deg, #c25b3f, var(--merah));
     box-shadow:0 10px 24px rgba(124,53,33,.4), inset 0 1px 1px rgba(255,255,255,.18);
+    animation-name:animBadgePopGagal;
   }
   @keyframes animBadgePop{
     0%{transform:scale(0) rotate(-10deg);}
@@ -542,7 +543,6 @@
     100%{transform:scale(1) rotate(0);}
   }
   /* shake halus khusus utk gagal, nempel di badge yg sama */
-  .animSuksesOverlay.show.gagal .animBadge{animation-name:animBadgePopGagal;}
   @keyframes animBadgePopGagal{
     0%{transform:scale(0) rotate(-10deg);}
     45%{transform:scale(1.1) rotate(3deg);}
@@ -587,7 +587,6 @@
     position:absolute; top:50%; left:50%; width:5px; height:5px; border-radius:50%;
     background:var(--gold); opacity:0; transform:translate(-50%,-50%);
   }
-  .animBurst i.sq{border-radius:2px;}
   .animSuksesOverlay.show.gagal .animBurst i{background:var(--merah);}
   .animSuksesOverlay.show .animBurst i{animation:animParticle .75s cubic-bezier(.16,.8,.3,1) .28s forwards;}
   .animBurst i:nth-child(1){--tx:40px; --ty:-10px; --rz:70deg; background:var(--gold-dark); width:6px; height:6px;}
@@ -620,7 +619,7 @@
   }
   @keyframes animTextIn{to{opacity:1; transform:translateY(0);}}
 
-  /* progress bar tipis di bawah, ngasih rasa "auto akan tertutup" */
+  /* progress bar tipis di bawah, ngasih rasa "auto akan tertutup" ala toast brand besar */
   .animProgress{
     width:100%; height:3px; background:rgba(34,31,25,.08); border-radius:2px; overflow:hidden; margin-top:18px;
   }
@@ -1889,51 +1888,12 @@ const POLA_ML_TEH = [
 ];
 const ML_TEH_DEFAULT = 150; // dipakai kalau nama menu tidak cocok pola manapun di atas (semua teh rasa buah/susu/dll)
 function mlTehUntukItem(kategori, namaMenu){
-  // Dibuat TIDAK case-sensitive & toleran spasi ganda -- supaya kategori "es teh manis",
-  // "Es Teh Manis ", atau "ES TEH MANIS" tetap dikenali sebagai kategori pemakai teh,
-  // bukan cuma yang persis sama huruf besar/kecilnya. Ini penyebab paling umum kenapa
-  // stok teh (ml) tidak berkurang walau menunya jelas teh manis.
-  const kategoriNormal = String(kategori||'').trim().toLowerCase().replace(/\s+/g,' ');
-  const kategoriTehNormal = KATEGORI_PAKAI_TEH.toLowerCase().replace(/\s+/g,' ');
-  if(kategoriNormal !== kategoriTehNormal) return 0; // kategori lain tidak pakai teh
+  if(String(kategori||'').trim() !== KATEGORI_PAKAI_TEH) return 0; // kategori lain tidak pakai teh
   const teks = String(namaMenu||'').toLowerCase();
   for(const pola of POLA_ML_TEH){
     if(pola.kata.some(k => teks.includes(k))) return pola.ml;
   }
   return ML_TEH_DEFAULT;
-}
-
-/* =====================================================================
-   BATASI TAMBAH KATEGORI "Es Teh Manis" SESUAI SISA STOK TEH (ml)
-   Dipakai di 3 titik penambahan qty: buka varian sheet ("+"), stepper qty
-   di sheet ("+"), dan stepper qty di keranjang ("+"). Kalau menambah 1 lagi
-   bikin total ml teh yang dibutuhkan keranjang saat ini melebihi sisa ml
-   teh outlet berjalan, penambahan dibatalkan + toast peringatan muncul.
-   ===================================================================== */
-function sisaMlTehSaatIni(){
-  if(!SESI) return null;
-  const doc = stokTehMenipisTerakhir[stokTehDocId(SESI.outlet)];
-  if(!doc) return null; // data belum sempat kemuat dari listener realtime -- jangan blokir, anggap belum tahu
-  return Number(doc.ml)||0;
-}
-// Total ml teh yang sudah "dipesan" oleh isi keranjang saat ini (semua item kategori Es Teh Manis).
-function mlTehTerpakaiDiKeranjang(){
-  return Object.values(cart).reduce((s,c)=> s + mlTehUntukItem(c.kategori, c.nama)*(c.qty||0), 0);
-}
-// Cek boleh/tidaknya menambah 1 item lagi (kategori+nama menu tertentu) ke keranjang.
-// Return true kalau boleh; kalau tidak boleh, otomatis tampilkan toast peringatan lalu return false.
-function bolehTambahTeh(kategori, namaMenu){
-  const mlPerItem = mlTehUntukItem(kategori, namaMenu);
-  if(mlPerItem <= 0) return true; // bukan kategori Es Teh Manis -- tidak dibatasi
-  const sisa = sisaMlTehSaatIni();
-  if(sisa === null) return true; // data stok teh belum tersedia -- jangan blokir transaksi
-  const terpakai = mlTehTerpakaiDiKeranjang();
-  if(terpakai + mlPerItem > sisa){
-    const sisaCup = Math.max(Math.floor(sisa / (ML_TEH_DEFAULT||150)) - Math.floor(terpakai/(ML_TEH_DEFAULT||150)), 0);
-    showToast(sisa<=0 ? 'Stok teh habis, tidak bisa tambah menu Es Teh Manis lagi' : `Sisa teh tidak cukup (sisa ${(sisa-terpakai).toLocaleString('id-ID')} ml) \u2014 tidak bisa tambah lagi`, false);
-    return false;
-  }
-  return true;
 }
 
 // KALKULATOR TAKARAN TEH -- bukan lagi angka batch tetap, karena Owner
@@ -2060,9 +2020,9 @@ function showToast(msg, ok=true){
 }
 
 /* ============ ANIMASI SUKSES / GAGAL v2 (SVG + CSS, TANPA VIDEO) ============ */
-// Ikon berhasil: centang (satu path). Ikon gagal: silang (dua path independen,
-// digambar berurutan). Path digambar via stroke-dasharray (lihat CSS .animBadge
-// path) supaya keliatan "ditulis" ala animasi brand besar, bukan cuma nongol statis.
+// Ikon berhasil: centang (1 path). Ikon gagal: silang (2 path independen, digambar
+// berurutan). Ring ganda + glow + shine + partikel + progress bar, ala brand besar
+// (Gojek/GoFood) -- lihat blok CSS ".animSuksesOverlay" utk detail animasinya.
 let animSuksesHideTimer = null;
 function tampilkanAnimasiSukses(ok=true, pesan=''){
   if(!ambilPrefNotifikasi().animasiSuksesAktif) return; // toggle di Pengaturan mati -- skip
@@ -2071,7 +2031,7 @@ function tampilkanAnimasiSukses(ok=true, pesan=''){
   const msgEl = el('animSuksesMsg');
   const pCheck = el('pCheck'), pX1 = el('pX1'), pX2 = el('pX2');
   const progFill = el('animProgressFill');
-  if(!ov) return;
+  if(!ov || !pCheck) return;
   if(animSuksesHideTimer){ clearTimeout(animSuksesHideTimer); animSuksesHideTimer = null; }
 
   ov.classList.toggle('gagal', !ok);
@@ -2082,9 +2042,9 @@ function tampilkanAnimasiSukses(ok=true, pesan=''){
   if(msgEl) msgEl.textContent = pesan || (ok ? 'Transaksi telah diproses.' : 'Transaksi tidak dapat diproses.');
 
   const durasi = ok ? 1900 : 2400; // durasi tampil animasi berhasil/gagal sebelum auto-tutup
-  progFill.style.animationDuration = durasi + 'ms';
+  if(progFill) progFill.style.animationDuration = durasi + 'ms';
 
-  // Reset supaya animasi CSS (stroke draw, ring, partikel, progress bar) selalu mulai ulang dari awal.
+  // Reset supaya semua animasi CSS (ring, glow, badge, stroke draw, partikel, progress) selalu mulai ulang dari awal.
   ov.classList.remove('show');
   void ov.offsetWidth; // paksa reflow
   ov.style.display = 'flex';
@@ -2857,7 +2817,7 @@ function gabungkanMenuDanStok(){
       // Cek stok teh (ml, total per outlet, bukan per menu/ukuran): kalau kategorinya
       // "Es Teh Manis" dan stok teh cair sudah 0, SEMUA varian di kategori ini otomatis
       // ditandai habis juga -- terlepas dari status habis manual atau stok menu lainnya.
-      if(mlTehUntukItem(kategori, nama) > 0 && STOKTEH_ML_KASIR_AKTIF !== null && STOKTEH_ML_KASIR_AKTIF <= 0) habis = true;
+      if(kategori === KATEGORI_PAKAI_TEH && STOKTEH_ML_KASIR_AKTIF !== null && STOKTEH_ML_KASIR_AKTIF <= 0) habis = true;
       catMap[kategori][nama].varian.push({ nama: v.ukuran, harga: v.harga||0, tambahan: v.tambahan||'', habis, stok: stokSisa });
     });
   });
@@ -2956,7 +2916,6 @@ function openVariantSheet(ci, ii){
 function attachSheetEvents(cat, item, ci, ii){
   el('sheetBody').querySelectorAll('.varOption[data-add]').forEach(row=>{
     row.onclick = ()=>{
-      if(!bolehTambahTeh(cat.kategori, item.nama)) return;
       const k = row.dataset.k; const vi = +k.split('|')[2]; const v = item.varian[vi];
       cart[k] = { nama:item.nama, varian:v.nama, tambahan:v.tambahan||'', harga:v.harga||0, kategori:cat.kategori, qty:1 };
       openVariantSheet(ci, ii); renderMenu(); updateFab();
@@ -2964,10 +2923,7 @@ function attachSheetEvents(cat, item, ci, ii){
   });
   el('sheetBody').querySelectorAll('.qtyStepBar').forEach(bar=>{
     const k = bar.dataset.k;
-    bar.querySelector('.plus').onclick = ()=>{
-      if(!bolehTambahTeh(cart[k].kategori, cart[k].nama)) return;
-      cart[k].qty++; openVariantSheet(ci, ii); renderMenu(); updateFab();
-    };
+    bar.querySelector('.plus').onclick = ()=>{ cart[k].qty++; openVariantSheet(ci, ii); renderMenu(); updateFab(); };
     bar.querySelector('.minus').onclick = ()=>{ cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; openVariantSheet(ci, ii); renderMenu(); updateFab(); };
   });
 }
@@ -2993,10 +2949,7 @@ function renderCartBody(){
     }).join('');
     el('cartBody').querySelectorAll('.cartRow').forEach(row=>{
       const k = row.dataset.k;
-      row.querySelector('.cplus').onclick = ()=>{
-        if(!bolehTambahTeh(cart[k].kategori, cart[k].nama)) return;
-        cart[k].qty++; renderCartBody(); renderMenu(); updateFab();
-      };
+      row.querySelector('.cplus').onclick = ()=>{ cart[k].qty++; renderCartBody(); renderMenu(); updateFab(); };
       row.querySelector('.cminus').onclick = ()=>{ cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; renderCartBody(); renderMenu(); updateFab(); };
       row.querySelector('.cdel').onclick = ()=>{ delete cart[k]; renderCartBody(); renderMenu(); updateFab(); };
     });
@@ -3079,27 +3032,23 @@ el('checkoutBtn').onclick = async ()=>{
       let totalMlTehDipakai = 0;
       for(const it of items){
         const mlPerCup = mlTehUntukItem(it.kategori, it.nama);
+        console.log('[DEBUG stok teh] item:', it.nama, '| kategori:', JSON.stringify(it.kategori), '| qty:', it.qty, '| mlPerCup:', mlPerCup);
         if(mlPerCup > 0) totalMlTehDipakai += mlPerCup * it.qty;
       }
+      console.log('[DEBUG stok teh] outlet:', SESI.outlet, '| docId:', stokTehDocId(SESI.outlet), '| totalMlTehDipakai:', totalMlTehDipakai);
       if(totalMlTehDipakai > 0){
         const tehRef = doc(db, "stok_teh", stokTehDocId(SESI.outlet));
         try{
           await runTransaction(db, async (tx)=>{
             const snap = await tx.get(tehRef);
-            // PENTING: dulu kalau dokumen stok_teh outlet ini belum pernah dibuat
-            // (misal Owner belum sempat restock/setup awal), baris ini langsung
-            // "return" alias DIAM-DIAM DILEWATI -- akibatnya ml teh kelihatan tidak
-            // pernah berkurang walau tehnya laku terus, tanpa ada error/toast apapun.
-            // Sekarang: kalau dokumennya belum ada, BUAT dulu dengan ml=0 (dianggap
-            // belum ada stok tercatat), baru pengurangan tetap dihitung dari 0 -- supaya
-            // pemakaian tetap konsisten TERCATAT (walau hasilnya jadi negatif/0), dan
-            // Owner langsung sadar dari kartu Kelola Stok Teh bahwa outlet ini perlu direstock.
-            const skrgMentah = snap.exists() ? (Number(snap.data().ml)||0) : 0;
-            const baru = Math.max(0, skrgMentah - totalMlTehDipakai);
-            if(snap.exists()) tx.update(tehRef, { ml: baru });
-            else tx.set(tehRef, { outlet: SESI.outlet, ml: baru });
+            console.log('[DEBUG stok teh] dokumen exists?', snap.exists(), '| data:', snap.exists() ? snap.data() : null);
+            if(!snap.exists()) return; // outlet ini belum kelola stok teh, lewati
+            const skrg = Number(snap.data().ml)||0;
+            const baru = Math.max(0, skrg - totalMlTehDipakai);
+            console.log('[DEBUG stok teh] ml sebelum:', skrg, '-> sesudah:', baru);
+            tx.update(tehRef, { ml: baru });
           });
-        }catch(e){ console.error('Gagal kurangi stok teh saat checkout:', e); /* jangan batalkan seluruh transaksi krn stok teh gagal dicatat */ }
+        }catch(e){ console.error('[DEBUG stok teh] ERROR runTransaction:', e); /* gagal kurangi stok teh, jangan batalkan seluruh transaksi */ }
       }
     }
 

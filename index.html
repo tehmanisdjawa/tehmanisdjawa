@@ -1883,12 +1883,16 @@ const DEFAULT_ISI_ROLL = 50; // default 1 roll = 50 cup, bisa diubah manual saat
    tetap konsisten berkurang walau Owner lupa mendaftarkan pola barunya.
    ===================================================================== */
 const KATEGORI_PAKAI_TEH = "Es Teh Manis";
-const POLA_ML_TEH = [
-  { kata: ["cup medium"], ml: 150 },
-  { kata: ["cup jumbo"], ml: 190 }
+const ML_TEH_DEFAULT = 150; // dipakai utk ukuran Small/Large atau ukuran lain yang tidak match Medium/Jumbo di bawah
+// Ml teh ditentukan dari UKURAN/VARIAN (bukan dari nama menu) -- ini yang PALING AKURAT
+// sesuai aturan resmi: Cup Medium 16oz = 150ml, Cup Jumbo 22oz = 190ml, semua teh
+// rasa buah/susu (Leci, Mangga, Strawberry, dst) tetap 150ml sebagai default kalau
+// ukurannya bukan salah satu dari dua ukuran khusus itu.
+const POLA_ML_TEH_PER_UKURAN = [
+  { kata: ["medium", "16oz", "16 oz"], ml: 150 },
+  { kata: ["jumbo", "22oz", "22 oz"], ml: 190 }
 ];
-const ML_TEH_DEFAULT = 150; // dipakai kalau nama menu tidak cocok pola manapun di atas (semua teh rasa buah/susu/dll)
-function mlTehUntukItem(kategori, namaMenu){
+function mlTehUntukItem(kategori, namaMenu, ukuranVarian){
   // Dibuat TIDAK case-sensitive & toleran spasi ganda -- supaya kategori "es teh manis",
   // "Es Teh Manis ", atau "ES TEH MANIS" tetap dikenali sebagai kategori pemakai teh,
   // bukan cuma yang persis sama huruf besar/kecilnya. Ini penyebab paling umum kenapa
@@ -1896,11 +1900,11 @@ function mlTehUntukItem(kategori, namaMenu){
   const kategoriNormal = String(kategori||'').trim().toLowerCase().replace(/\s+/g,' ');
   const kategoriTehNormal = KATEGORI_PAKAI_TEH.toLowerCase().replace(/\s+/g,' ');
   if(kategoriNormal !== kategoriTehNormal) return 0; // kategori lain tidak pakai teh
-  const teks = String(namaMenu||'').toLowerCase();
-  for(const pola of POLA_ML_TEH){
-    if(pola.kata.some(k => teks.includes(k))) return pola.ml;
+  const teksUkuran = String(ukuranVarian||'').toLowerCase();
+  for(const pola of POLA_ML_TEH_PER_UKURAN){
+    if(pola.kata.some(k => teksUkuran.includes(k))) return pola.ml;
   }
-  return ML_TEH_DEFAULT;
+  return ML_TEH_DEFAULT; // Small/Large/ukuran lain -> default 150ml
 }
 
 /* =====================================================================

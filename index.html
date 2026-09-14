@@ -467,171 +467,6 @@
   .toast svg{width:16px;height:16px;flex:0 0 auto; color:var(--gold);}
   .toast.err svg{color:#e2897a;}
 
-  /* ============ ANIMASI SUKSES / GAGAL v2 (BUATAN SENDIRI, TANPA VIDEO) ============ */
-  .animSuksesOverlay{
-    position:fixed; inset:0; z-index:250; display:none; align-items:center; justify-content:center;
-    background:rgba(12,20,15,.5); backdrop-filter:blur(4px); opacity:0; transition:opacity .25s ease;
-    padding:22px;
-  }
-  .animSuksesOverlay.show{display:flex; opacity:1;}
-  .animSuksesBox{
-    position:relative; width:min(272px, 78vw); border-radius:26px; overflow:hidden;
-    background:var(--card); box-shadow:0 20px 60px rgba(12,20,15,.35), 0 2px 8px rgba(12,20,15,.1);
-    border:1px solid var(--line-soft);
-    padding:40px 24px 28px; display:flex; flex-direction:column; align-items:center; text-align:center;
-    transform:scale(.75) translateY(14px); transition:transform .5s cubic-bezier(.16,1,.3,1);
-  }
-  .animSuksesOverlay.show .animSuksesBox{transform:scale(1) translateY(0);}
-  .animSuksesCloseBtn{
-    position:absolute; top:12px; right:12px; width:26px; height:26px; border-radius:50%; border:none;
-    background:rgba(34,31,25,.07); color:var(--muted); display:flex; align-items:center; justify-content:center;
-    cursor:pointer; padding:0; z-index:3; transition:background .15s;
-  }
-  .animSuksesCloseBtn:hover{background:rgba(34,31,25,.14);}
-  .animSuksesCloseBtn svg{width:13px;height:13px;}
-
-  /* --- panggung ikon --- */
-  .animStage{position:relative; width:96px; height:96px; margin-bottom:18px; flex:0 0 auto;}
-
-  /* glow lembut di belakang badge */
-  .animGlow{
-    position:absolute; inset:-14px; border-radius:50%;
-    background:radial-gradient(circle, rgba(58,107,71,.35) 0%, rgba(58,107,71,0) 70%);
-    opacity:0; transform:scale(.4);
-  }
-  .animSuksesOverlay.show .animGlow{animation:animGlowIn .9s cubic-bezier(.16,1,.3,1) forwards;}
-  .animSuksesOverlay.show.gagal .animGlow{background:radial-gradient(circle, rgba(168,69,47,.32) 0%, rgba(168,69,47,0) 70%);}
-  @keyframes animGlowIn{
-    0%{opacity:0; transform:scale(.4);}
-    40%{opacity:1;}
-    100%{opacity:.8; transform:scale(1.15);}
-  }
-
-  /* dua ring gelombang, susul menyusul */
-  .animRing{
-    position:absolute; inset:0; border-radius:50%; border:2px solid var(--pine-600);
-    opacity:0; transform:scale(.55);
-  }
-  .animRing.r2{border-width:1.5px;}
-  .animSuksesOverlay.show .animRing.r1{animation:animRingPop .85s cubic-bezier(.16,1,.3,1) .06s forwards;}
-  .animSuksesOverlay.show .animRing.r2{animation:animRingPop .95s cubic-bezier(.16,1,.3,1) .22s forwards;}
-  .animSuksesOverlay.show.gagal .animRing{border-color:var(--merah);}
-  @keyframes animRingPop{
-    0%{opacity:.6; transform:scale(.55);}
-    65%{opacity:.16;}
-    100%{opacity:0; transform:scale(1.7);}
-  }
-
-  /* badge lingkaran dengan micro squash & bounce dua tahap */
-  .animBadge{
-    position:absolute; inset:6px; border-radius:50%;
-    background:linear-gradient(155deg, var(--pine-500), var(--pine-800));
-    box-shadow:0 10px 24px rgba(27,56,38,.4), inset 0 1px 1px rgba(255,255,255,.18);
-    display:flex; align-items:center; justify-content:center;
-    transform:scale(0);
-  }
-  .animSuksesOverlay.show .animBadge{animation:animBadgePop .62s cubic-bezier(.34,1.56,.64,1) .1s forwards;}
-  .animSuksesOverlay.show.gagal .animBadge{
-    background:linear-gradient(155deg, #c25b3f, var(--merah));
-    box-shadow:0 10px 24px rgba(124,53,33,.4), inset 0 1px 1px rgba(255,255,255,.18);
-  }
-  @keyframes animBadgePop{
-    0%{transform:scale(0) rotate(-10deg);}
-    50%{transform:scale(1.12) rotate(3deg);}
-    72%{transform:scale(.94) rotate(-1deg);}
-    100%{transform:scale(1) rotate(0);}
-  }
-  /* shake halus khusus utk gagal, nempel di badge yg sama */
-  .animSuksesOverlay.show.gagal .animBadge{animation-name:animBadgePopGagal;}
-  @keyframes animBadgePopGagal{
-    0%{transform:scale(0) rotate(-10deg);}
-    45%{transform:scale(1.1) rotate(3deg);}
-    60%{transform:scale(.96) rotate(-6deg);}
-    72%{transform:scale(1.03) rotate(5deg);}
-    84%{transform:scale(.99) rotate(-2deg);}
-    100%{transform:scale(1) rotate(0);}
-  }
-
-  .animBadge svg{width:46px; height:46px; overflow:visible;}
-  .animBadge path{
-    fill:none; stroke:#f8f4e8; stroke-width:3.6; stroke-linecap:round; stroke-linejoin:round;
-  }
-  /* centang: satu path, digambar progresif */
-  .animBadge path.pCheck{stroke-dasharray:26; stroke-dashoffset:26;}
-  .animSuksesOverlay.show .pCheck{animation:animDraw .38s cubic-bezier(.2,.7,.2,1) .42s forwards;}
-  /* silang: dua garis independen, digambar berurutan biar berasa "ditulis" beneran */
-  .animBadge path.pX1, .animBadge path.pX2{stroke-dasharray:17; stroke-dashoffset:17;}
-  .animSuksesOverlay.show .pX1{animation:animDraw .22s ease-out .42s forwards;}
-  .animSuksesOverlay.show .pX2{animation:animDraw .22s ease-out .60s forwards;}
-  @keyframes animDraw{to{stroke-dashoffset:0;}}
-
-  /* highlight kecil "kilau" yang lewat di atas badge setelah selesai muncul (khusus sukses) */
-  .animShine{
-    position:absolute; inset:6px; border-radius:50%; overflow:hidden; pointer-events:none;
-  }
-  .animShine::after{
-    content:''; position:absolute; top:-40%; left:-60%; width:40%; height:180%;
-    background:linear-gradient(75deg, transparent, rgba(255,255,255,.55), transparent);
-    transform:rotate(20deg) translateX(-40px); opacity:0;
-  }
-  .animSuksesOverlay.show:not(.gagal) .animShine::after{animation:animShineSweep .7s ease .68s forwards;}
-  @keyframes animShineSweep{
-    0%{transform:rotate(20deg) translateX(-60px); opacity:0;}
-    15%{opacity:.9;}
-    100%{transform:rotate(20deg) translateX(160px); opacity:0;}
-  }
-
-  /* partikel: lebih banyak, ukuran variatif, sedikit rotasi & fade lebih hidup */
-  .animBurst{position:absolute; inset:0; pointer-events:none;}
-  .animBurst i{
-    position:absolute; top:50%; left:50%; width:5px; height:5px; border-radius:50%;
-    background:var(--gold); opacity:0; transform:translate(-50%,-50%);
-  }
-  .animBurst i.sq{border-radius:2px;}
-  .animSuksesOverlay.show.gagal .animBurst i{background:var(--merah);}
-  .animSuksesOverlay.show .animBurst i{animation:animParticle .75s cubic-bezier(.16,.8,.3,1) .28s forwards;}
-  .animBurst i:nth-child(1){--tx:40px; --ty:-10px; --rz:70deg; background:var(--gold-dark); width:6px; height:6px;}
-  .animBurst i:nth-child(2){--tx:-36px; --ty:-22px; --rz:-40deg;}
-  .animBurst i:nth-child(3){--tx:30px; --ty:32px; --rz:120deg; background:var(--pine-500);}
-  .animBurst i:nth-child(4){--tx:-38px; --ty:14px; --rz:-90deg; background:var(--gold-dark); width:4px; height:4px;}
-  .animBurst i:nth-child(5){--tx:8px; --ty:-42px; --rz:30deg;}
-  .animBurst i:nth-child(6){--tx:-10px; --ty:40px; --rz:-60deg; background:var(--pine-500); width:6px; height:6px;}
-  .animBurst i:nth-child(7){--tx:24px; --ty:-34px; --rz:100deg; width:4px; height:4px;}
-  .animBurst i:nth-child(8){--tx:-28px; --ty:-6px; --rz:-20deg; background:var(--pine-500);}
-  .animSuksesOverlay.show.gagal .animBurst i:nth-child(2),
-  .animSuksesOverlay.show.gagal .animBurst i:nth-child(5),
-  .animSuksesOverlay.show.gagal .animBurst i:nth-child(7){background:#d9836a;}
-  .animSuksesOverlay.show.gagal .animBurst i:nth-child(3),
-  .animSuksesOverlay.show.gagal .animBurst i:nth-child(6),
-  .animSuksesOverlay.show.gagal .animBurst i:nth-child(8){background:#7c3521;}
-  @keyframes animParticle{
-    0%{opacity:0; transform:translate(-50%,-50%) scale(.3) rotate(0);}
-    30%{opacity:1;}
-    100%{opacity:0; transform:translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1) rotate(var(--rz));}
-  }
-
-  .animTitle{
-    font-family:"Fraunces",serif; font-size:18px; font-weight:600; color:var(--ink); margin:0 0 5px;
-    opacity:0; transform:translateY(8px); animation:animTextIn .4s cubic-bezier(.16,1,.3,1) .5s forwards;
-  }
-  .animMsg{
-    font-size:12.5px; color:var(--muted); margin:0; line-height:1.55; max-width:210px;
-    opacity:0; transform:translateY(8px); animation:animTextIn .4s cubic-bezier(.16,1,.3,1) .58s forwards;
-  }
-  @keyframes animTextIn{to{opacity:1; transform:translateY(0);}}
-
-  /* progress bar tipis di bawah, ngasih rasa "auto akan tertutup" */
-  .animProgress{
-    width:100%; height:3px; background:rgba(34,31,25,.08); border-radius:2px; overflow:hidden; margin-top:18px;
-  }
-  .animProgress i{
-    display:block; height:100%; width:100%; background:var(--pine-600); border-radius:2px;
-    transform:translateX(-100%); transform-origin:left;
-  }
-  .animSuksesOverlay.show.gagal .animProgress i{background:var(--merah);}
-  .animSuksesOverlay.show .animProgress i{animation:animProgressFill linear forwards;}
-  @keyframes animProgressFill{from{transform:translateX(-100%);} to{transform:translateX(0);}}
-
   /* ============ MOTIVASI NOTIFIKASI ============ */
   .motivToastWrap{position:fixed; top:12px; left:0; right:0; z-index:70; display:flex; justify-content:center; pointer-events:none; padding:0 14px;}
   .motivToast{
@@ -1494,32 +1329,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div class="animSuksesOverlay" id="animSuksesOverlay">
-  <div class="animSuksesBox">
-    <button class="animSuksesCloseBtn" id="animSuksesCloseBtn" aria-label="Tutup">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-    </button>
-    <div class="animStage">
-      <div class="animGlow"></div>
-      <div class="animRing r1"></div>
-      <div class="animRing r2"></div>
-      <div class="animBadge" id="animBadgeIcon">
-        <svg viewBox="0 0 24 24" id="animBadgeSvg">
-          <path class="pCheck" id="pCheck" d="M5 13l4.5 4.5L19 7" style="display:none"/>
-          <path class="pX1" id="pX1" d="M6 6l12 12" style="display:none"/>
-          <path class="pX2" id="pX2" d="M18 6L6 18" style="display:none"/>
-        </svg>
-      </div>
-      <div class="animShine"></div>
-      <div class="animBurst">
-        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-      </div>
-    </div>
-    <h3 class="animTitle" id="animSuksesTitle">Berhasil</h3>
-    <p class="animMsg" id="animSuksesMsg">Transaksi telah diproses.</p>
-    <div class="animProgress"><i id="animProgressFill"></i></div>
-  </div>
-</div>
 
 <div class="motivToastWrap" id="motivToastWrap">
   <div class="motivToast" id="motivToast">
@@ -1883,61 +1692,18 @@ const DEFAULT_ISI_ROLL = 50; // default 1 roll = 50 cup, bisa diubah manual saat
    tetap konsisten berkurang walau Owner lupa mendaftarkan pola barunya.
    ===================================================================== */
 const KATEGORI_PAKAI_TEH = "Es Teh Manis";
-const ML_TEH_DEFAULT = 150; // dipakai utk ukuran Small/Large atau ukuran lain yang tidak match Medium/Jumbo di bawah
-// Ml teh ditentukan dari UKURAN/VARIAN (bukan dari nama menu) -- ini yang PALING AKURAT
-// sesuai aturan resmi: Cup Medium 16oz = 150ml, Cup Jumbo 22oz = 190ml, semua teh
-// rasa buah/susu (Leci, Mangga, Strawberry, dst) tetap 150ml sebagai default kalau
-// ukurannya bukan salah satu dari dua ukuran khusus itu.
-const POLA_ML_TEH_PER_UKURAN = [
-  { kata: ["medium", "16oz", "16 oz"], ml: 150 },
-  { kata: ["jumbo", "22oz", "22 oz"], ml: 190 }
+const POLA_ML_TEH = [
+  { kata: ["cup medium"], ml: 150 },
+  { kata: ["cup jumbo"], ml: 190 }
 ];
-function mlTehUntukItem(kategori, namaMenu, ukuranVarian){
-  // Dibuat TIDAK case-sensitive & toleran spasi ganda -- supaya kategori "es teh manis",
-  // "Es Teh Manis ", atau "ES TEH MANIS" tetap dikenali sebagai kategori pemakai teh,
-  // bukan cuma yang persis sama huruf besar/kecilnya. Ini penyebab paling umum kenapa
-  // stok teh (ml) tidak berkurang walau menunya jelas teh manis.
-  const kategoriNormal = String(kategori||'').trim().toLowerCase().replace(/\s+/g,' ');
-  const kategoriTehNormal = KATEGORI_PAKAI_TEH.toLowerCase().replace(/\s+/g,' ');
-  if(kategoriNormal !== kategoriTehNormal) return 0; // kategori lain tidak pakai teh
-  const teksUkuran = String(ukuranVarian||'').toLowerCase();
-  for(const pola of POLA_ML_TEH_PER_UKURAN){
-    if(pola.kata.some(k => teksUkuran.includes(k))) return pola.ml;
+const ML_TEH_DEFAULT = 150; // dipakai kalau nama menu tidak cocok pola manapun di atas (semua teh rasa buah/susu/dll)
+function mlTehUntukItem(kategori, namaMenu){
+  if(String(kategori||'').trim() !== KATEGORI_PAKAI_TEH) return 0; // kategori lain tidak pakai teh
+  const teks = String(namaMenu||'').toLowerCase();
+  for(const pola of POLA_ML_TEH){
+    if(pola.kata.some(k => teks.includes(k))) return pola.ml;
   }
-  return ML_TEH_DEFAULT; // Small/Large/ukuran lain -> default 150ml
-}
-
-/* =====================================================================
-   BATASI TAMBAH KATEGORI "Es Teh Manis" SESUAI SISA STOK TEH (ml)
-   Dipakai di 3 titik penambahan qty: buka varian sheet ("+"), stepper qty
-   di sheet ("+"), dan stepper qty di keranjang ("+"). Kalau menambah 1 lagi
-   bikin total ml teh yang dibutuhkan keranjang saat ini melebihi sisa ml
-   teh outlet berjalan, penambahan dibatalkan + toast peringatan muncul.
-   ===================================================================== */
-function sisaMlTehSaatIni(){
-  if(!SESI) return null;
-  const doc = stokTehMenipisTerakhir[stokTehDocId(SESI.outlet)];
-  if(!doc) return null; // data belum sempat kemuat dari listener realtime -- jangan blokir, anggap belum tahu
-  return Number(doc.ml)||0;
-}
-// Total ml teh yang sudah "dipesan" oleh isi keranjang saat ini (semua item kategori Es Teh Manis).
-function mlTehTerpakaiDiKeranjang(){
-  return Object.values(cart).reduce((s,c)=> s + mlTehUntukItem(c.kategori, c.nama)*(c.qty||0), 0);
-}
-// Cek boleh/tidaknya menambah 1 item lagi (kategori+nama menu tertentu) ke keranjang.
-// Return true kalau boleh; kalau tidak boleh, otomatis tampilkan toast peringatan lalu return false.
-function bolehTambahTeh(kategori, namaMenu){
-  const mlPerItem = mlTehUntukItem(kategori, namaMenu);
-  if(mlPerItem <= 0) return true; // bukan kategori Es Teh Manis -- tidak dibatasi
-  const sisa = sisaMlTehSaatIni();
-  if(sisa === null) return true; // data stok teh belum tersedia -- jangan blokir transaksi
-  const terpakai = mlTehTerpakaiDiKeranjang();
-  if(terpakai + mlPerItem > sisa){
-    const sisaCup = Math.max(Math.floor(sisa / (ML_TEH_DEFAULT||150)) - Math.floor(terpakai/(ML_TEH_DEFAULT||150)), 0);
-    showToast(sisa<=0 ? 'Stok teh habis, tidak bisa tambah menu Es Teh Manis lagi' : `Sisa teh tidak cukup (sisa ${(sisa-terpakai).toLocaleString('id-ID')} ml) \u2014 tidak bisa tambah lagi`, false);
-    return false;
-  }
-  return true;
+  return ML_TEH_DEFAULT;
 }
 
 // KALKULATOR TAKARAN TEH -- bukan lagi angka batch tetap, karena Owner
@@ -2002,8 +1768,8 @@ const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov'
 function ambilPrefNotifikasi(){
   try{
     const raw = JSON.parse(localStorage.getItem('etd_prefNotif') || '{}');
-    return { suaraCheckout: raw.suaraCheckout !== false, motivasiAktif: raw.motivasiAktif !== false, animasiSuksesAktif: raw.animasiSuksesAktif !== false };
-  }catch(e){ return { suaraCheckout: true, motivasiAktif: true, animasiSuksesAktif: true }; }
+    return { suaraCheckout: raw.suaraCheckout !== false, motivasiAktif: raw.motivasiAktif !== false };
+  }catch(e){ return { suaraCheckout: true, motivasiAktif: true }; }
 }
 function simpanPrefNotifikasi(pref){
   try{ localStorage.setItem('etd_prefNotif', JSON.stringify(pref)); }catch(e){}
@@ -2060,50 +1826,7 @@ function showToast(msg, ok=true){
   toastHideTimer = setTimeout(()=>{
     if(tiketSaatIni === toastPanggilanId){ t.classList.remove('show'); toastHideTimer = null; }
   }, 2800);
-  tampilkanAnimasiSukses(ok, msg);
 }
-
-/* ============ ANIMASI SUKSES / GAGAL v2 (SVG + CSS, TANPA VIDEO) ============ */
-// Ikon berhasil: centang (satu path). Ikon gagal: silang (dua path independen,
-// digambar berurutan). Path digambar via stroke-dasharray (lihat CSS .animBadge
-// path) supaya keliatan "ditulis" ala animasi brand besar, bukan cuma nongol statis.
-let animSuksesHideTimer = null;
-function tampilkanAnimasiSukses(ok=true, pesan=''){
-  if(!ambilPrefNotifikasi().animasiSuksesAktif) return; // toggle di Pengaturan mati -- skip
-  const ov = el('animSuksesOverlay');
-  const titleEl = el('animSuksesTitle');
-  const msgEl = el('animSuksesMsg');
-  const pCheck = el('pCheck'), pX1 = el('pX1'), pX2 = el('pX2');
-  const progFill = el('animProgressFill');
-  if(!ov) return;
-  if(animSuksesHideTimer){ clearTimeout(animSuksesHideTimer); animSuksesHideTimer = null; }
-
-  ov.classList.toggle('gagal', !ok);
-  pCheck.style.display = ok ? '' : 'none';
-  pX1.style.display = ok ? 'none' : '';
-  pX2.style.display = ok ? 'none' : '';
-  if(titleEl) titleEl.textContent = ok ? 'Berhasil' : 'Gagal';
-  if(msgEl) msgEl.textContent = pesan || (ok ? 'Transaksi telah diproses.' : 'Transaksi tidak dapat diproses.');
-
-  const durasi = ok ? 1900 : 2400; // durasi tampil animasi berhasil/gagal sebelum auto-tutup
-  progFill.style.animationDuration = durasi + 'ms';
-
-  // Reset supaya animasi CSS (stroke draw, ring, partikel, progress bar) selalu mulai ulang dari awal.
-  ov.classList.remove('show');
-  void ov.offsetWidth; // paksa reflow
-  ov.style.display = 'flex';
-  requestAnimationFrame(()=> ov.classList.add('show'));
-
-  animSuksesHideTimer = setTimeout(()=>{ sembunyikanAnimasiSukses(); }, durasi);
-}
-function sembunyikanAnimasiSukses(){
-  const ov = el('animSuksesOverlay');
-  if(!ov) return;
-  if(animSuksesHideTimer){ clearTimeout(animSuksesHideTimer); animSuksesHideTimer = null; }
-  ov.classList.remove('show');
-  setTimeout(()=>{ ov.style.display = 'none'; ov.classList.remove('gagal'); }, 220);
-}
-el('animSuksesCloseBtn').addEventListener('click', ()=>{ sembunyikanAnimasiSukses(); });
 // Jaring pengaman terakhir: kalau karena sebab apapun toast masih kelihatan padahal
 // harusnya sudah lewat waktunya, pencet toast-nya langsung menutup manual.
 el('toast').addEventListener('click', ()=>{ el('toast').classList.remove('show'); if(toastHideTimer){ clearTimeout(toastHideTimer); toastHideTimer = null; } });
@@ -2376,9 +2099,8 @@ function terapkanTampilanJabatan(){
   // Tombol status izin milik karyawan sendiri -- Owner tidak butuh ini karena
   // sudah punya lonceng notifikasi + panel approve/tolak lewat notifBtn di atas.
   el('notifKaryawanBtn').style.display = (SESI && !isOwner && SESI.outlet) ? 'flex' : 'none';
-  el('notifKaryawanTehBtn').style.display = 'none';
-  if(SESI && !isOwner && SESI.outlet) { mulaiPantauNotifKaryawanStokCup(); } else { hentikanPantauNotifKaryawanStokCup(); }
-  hentikanPantauNotifKaryawanStokTeh();
+  el('notifKaryawanTehBtn').style.display = (SESI && !isOwner && SESI.outlet) ? 'flex' : 'none';
+  if(SESI && !isOwner && SESI.outlet) { mulaiPantauNotifKaryawanStokCup(); mulaiPantauNotifKaryawanStokTeh(); } else { hentikanPantauNotifKaryawanStokCup(); hentikanPantauNotifKaryawanStokTeh(); }
   // Popup sukses (5 detik) untuk keputusan izin (stok cup & reject transaksi)
   // -- dipantau SEMUA akun yang punya outlet (Owner maupun karyawan), supaya
   // siapapun yang sedang login di outlet yang sama ikut lihat popupnya.
@@ -2780,19 +2502,12 @@ el('motivClose').onclick = ()=>{ if(motivHideTimer){ clearTimeout(motivHideTimer
    ===================================================================== */
 let MENU_MENTAH = [];       // data mentah dari collection "menu" (belum digabung stok)
 let STOK_MAP_AKTIF = {};    // "kategori|nama|ukuran" -> jumlah stok, khusus outlet SESI aktif
-let unsubStokMenu = null, unsubStokCupMenu = null, unsubStokTehMenu = null;
-// Stok teh (ml) khusus untuk outlet SESI yang sedang login di layar kasir -- BEDA
-// dari STOKTEH_ML_AKTIF yang dipakai di panel "Kelola Stok Teh" (itu bisa outlet
-// lain kalau Owner sedang lihat outlet lain). Dipakai supaya kategori "Es Teh
-// Manis" otomatis kekunci/habis di layar kasir begitu stok ml-nya 0, TANPA perlu
-// buka panel Kelola Stok Teh dulu.
-let STOKTEH_ML_KASIR_AKTIF = null; // null = belum termuat (jangan anggap habis dulu)
+let unsubStokMenu = null, unsubStokCupMenu = null;
 
 function loadMenuRealtime(){
   if(unsubMenu) unsubMenu();
   if(unsubStokMenu) unsubStokMenu();
   if(unsubStokCupMenu) unsubStokCupMenu();
-  if(unsubStokTehMenu) unsubStokTehMenu();
 
   unsubMenu = onSnapshot(collection(db, "menu"), (snap)=>{
     MENU_MENTAH = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -2817,16 +2532,9 @@ function loadMenuRealtime(){
       STOK_CUP_UKURAN_MAP_AKTIF = map;
       gabungkanMenuDanStok();
     }, (err)=> console.error('Gagal memantau stok cup:', err));
-
-    const tehRefKasir = doc(db, "stok_teh", stokTehDocId(SESI.outlet));
-    unsubStokTehMenu = onSnapshot(tehRefKasir, (snap)=>{
-      STOKTEH_ML_KASIR_AKTIF = snap.exists() ? (Number(snap.data().ml)||0) : 0;
-      gabungkanMenuDanStok();
-    }, (err)=> console.error('Gagal memantau stok teh (kasir):', err));
   } else {
     STOK_MAP_AKTIF = {};
     STOK_CUP_UKURAN_MAP_AKTIF = {};
-    STOKTEH_ML_KASIR_AKTIF = null;
   }
 }
 
@@ -2858,10 +2566,6 @@ function gabungkanMenuDanStok(){
       // dan stoknya 0, varian ukuran ini ditandai habis TERLEPAS dari stok menu di atas.
       const ukuranNormal = normalisasiUkuran(v.ukuran, nama);
       if(ukuranNormal in cupUkuranMap && cupUkuranMap[ukuranNormal] <= 0) habis = true;
-      // Cek stok teh (ml, total per outlet, bukan per menu/ukuran): kalau kategorinya
-      // "Es Teh Manis" dan stok teh cair sudah 0, SEMUA varian di kategori ini otomatis
-      // ditandai habis juga -- terlepas dari status habis manual atau stok menu lainnya.
-      if(mlTehUntukItem(kategori, nama) > 0 && STOKTEH_ML_KASIR_AKTIF !== null && STOKTEH_ML_KASIR_AKTIF <= 0) habis = true;
       catMap[kategori][nama].varian.push({ nama: v.ukuran, harga: v.harga||0, tambahan: v.tambahan||'', habis, stok: stokSisa });
     });
   });
@@ -2960,7 +2664,6 @@ function openVariantSheet(ci, ii){
 function attachSheetEvents(cat, item, ci, ii){
   el('sheetBody').querySelectorAll('.varOption[data-add]').forEach(row=>{
     row.onclick = ()=>{
-      if(!bolehTambahTeh(cat.kategori, item.nama)) return;
       const k = row.dataset.k; const vi = +k.split('|')[2]; const v = item.varian[vi];
       cart[k] = { nama:item.nama, varian:v.nama, tambahan:v.tambahan||'', harga:v.harga||0, kategori:cat.kategori, qty:1 };
       openVariantSheet(ci, ii); renderMenu(); updateFab();
@@ -2968,10 +2671,7 @@ function attachSheetEvents(cat, item, ci, ii){
   });
   el('sheetBody').querySelectorAll('.qtyStepBar').forEach(bar=>{
     const k = bar.dataset.k;
-    bar.querySelector('.plus').onclick = ()=>{
-      if(!bolehTambahTeh(cart[k].kategori, cart[k].nama)) return;
-      cart[k].qty++; openVariantSheet(ci, ii); renderMenu(); updateFab();
-    };
+    bar.querySelector('.plus').onclick = ()=>{ cart[k].qty++; openVariantSheet(ci, ii); renderMenu(); updateFab(); };
     bar.querySelector('.minus').onclick = ()=>{ cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; openVariantSheet(ci, ii); renderMenu(); updateFab(); };
   });
 }
@@ -2997,10 +2697,7 @@ function renderCartBody(){
     }).join('');
     el('cartBody').querySelectorAll('.cartRow').forEach(row=>{
       const k = row.dataset.k;
-      row.querySelector('.cplus').onclick = ()=>{
-        if(!bolehTambahTeh(cart[k].kategori, cart[k].nama)) return;
-        cart[k].qty++; renderCartBody(); renderMenu(); updateFab();
-      };
+      row.querySelector('.cplus').onclick = ()=>{ cart[k].qty++; renderCartBody(); renderMenu(); updateFab(); };
       row.querySelector('.cminus').onclick = ()=>{ cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; renderCartBody(); renderMenu(); updateFab(); };
       row.querySelector('.cdel').onclick = ()=>{ delete cart[k]; renderCartBody(); renderMenu(); updateFab(); };
     });
@@ -3090,20 +2787,12 @@ el('checkoutBtn').onclick = async ()=>{
         try{
           await runTransaction(db, async (tx)=>{
             const snap = await tx.get(tehRef);
-            // PENTING: dulu kalau dokumen stok_teh outlet ini belum pernah dibuat
-            // (misal Owner belum sempat restock/setup awal), baris ini langsung
-            // "return" alias DIAM-DIAM DILEWATI -- akibatnya ml teh kelihatan tidak
-            // pernah berkurang walau tehnya laku terus, tanpa ada error/toast apapun.
-            // Sekarang: kalau dokumennya belum ada, BUAT dulu dengan ml=0 (dianggap
-            // belum ada stok tercatat), baru pengurangan tetap dihitung dari 0 -- supaya
-            // pemakaian tetap konsisten TERCATAT (walau hasilnya jadi negatif/0), dan
-            // Owner langsung sadar dari kartu Kelola Stok Teh bahwa outlet ini perlu direstock.
-            const skrgMentah = snap.exists() ? (Number(snap.data().ml)||0) : 0;
-            const baru = Math.max(0, skrgMentah - totalMlTehDipakai);
-            if(snap.exists()) tx.update(tehRef, { ml: baru });
-            else tx.set(tehRef, { outlet: SESI.outlet, ml: baru });
+            if(!snap.exists()) return; // outlet ini belum kelola stok teh, lewati
+            const skrg = Number(snap.data().ml)||0;
+            const baru = Math.max(0, skrg - totalMlTehDipakai);
+            tx.update(tehRef, { ml: baru });
           });
-        }catch(e){ console.error('Gagal kurangi stok teh saat checkout:', e); /* jangan batalkan seluruh transaksi krn stok teh gagal dicatat */ }
+        }catch(e){ /* gagal kurangi stok teh, jangan batalkan seluruh transaksi */ }
       }
     }
 
@@ -3613,9 +3302,8 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
   const ringkasan = { total:0, jumlahTrx:transaksiArr.length, jumlahItem:0, cash:0, qris:0, transfer:0, cashTrx:0, qrisTrx:0, transferTrx:0 };
   const perKaryawan = {};
   const SHIFT_URUTAN = ["Pagi","Siang","Sore","Malam","Luar Jam Operasional"];
-  const perShift = {}; SHIFT_URUTAN.forEach(s=> perShift[s] = { shift:s, total:0, jumlahTrx:0, jumlahItem:0, mlTeh:0 });
+  const perShift = {}; SHIFT_URUTAN.forEach(s=> perShift[s] = { shift:s, total:0, jumlahTrx:0, jumlahItem:0 });
   const perItem = {}; const perUkuran = {};
-  let mlTehTerpakaiTotal = 0;
 
   transaksiArr.forEach(t=>{
     ringkasan.total += t.total || 0;
@@ -3638,12 +3326,7 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
       if(!perShift[shift].ukuran[ukr]) perShift[shift].ukuran[ukr] = { ukuran:ukr, qty:0, subtotal:0 };
       perShift[shift].ukuran[ukr].qty += it.qty||0;
       perShift[shift].ukuran[ukr].subtotal += it.subtotal||0;
-      // Ml teh terpakai -- HANYA menu kategori "Es Teh Manis" yang menghitung (lihat mlTehUntukItem).
-      const mlItem = mlTehUntukItem(it.kategori, it.nama) * (it.qty||0);
-      perShift[shift].mlTeh += mlItem;
-      mlTehTerpakaiTotal += mlItem;
     });
-
 
     (t.items||[]).forEach(it=>{
       const key = namaTampilItem(it);
@@ -3671,7 +3354,6 @@ function susunLaporanDariTransaksi(transaksiArr, tanggal, outlet){
     })).filter(s=>s.jumlahTrx>0 || s.shift!=='Luar Jam Operasional'),
     itemTerlaris: Object.values(perItem).sort((a,b)=>b.qty-a.qty),
     perUkuranCup: Object.values(perUkuran).sort((a,b)=>b.qty-a.qty),
-    mlTehTerpakaiTotal,
     transaksi: daftarTrx
   };
 }
@@ -3703,15 +3385,6 @@ async function muatLaporanTanggal(tanggal, diam){
     } else {
       const arr = await ambilTransaksiUntukLaporan(tanggal, lapOutletAktif);
       data = Object.assign({ status:'ok' }, susunLaporanDariTransaksi(arr, tanggal, lapOutletAktif));
-      // Sisa stok teh SAAT INI hanya relevan kalau laporan yang dibuka adalah hari ini
-      // (angka "sisa" berubah tiap saat, jadi untuk tanggal lampau tidak ditampilkan).
-      if(lapOutletAktif && tanggal === tanggalHariIniStr()){
-        try{
-          const ref = doc(db, "stok_teh", stokTehDocId(lapOutletAktif));
-          const snap = await getDoc(ref);
-          data.stokTehSisaSaatIni = snap.exists() ? (Number(snap.data().ml)||0) : 0;
-        }catch(e){ console.error('Gagal ambil sisa stok teh untuk laporan:', e); }
-      }
     }
     const dataBaru = JSON.stringify(data);
     if(!diam || dataBaru !== JSON.stringify(lapDataTerakhir)){ lapDataTerakhir = data; renderLaporan(data); }
@@ -3812,18 +3485,6 @@ function renderLaporanSatuOutlet(data){
     html += `<div class="lapSection"><h4>Penjualan per Shift</h4><div class="shiftGrid">`;
     data.perShift.forEach((s, idx)=>{ html += `<div class="shiftCard" data-shiftidx="${idx}"><div class="scLbl">${SHIFT_ICON[s.shift]||''} ${s.shift}</div>${SHIFT_JAM[s.shift] ? `<div class="scJam">${SHIFT_JAM[s.shift]}</div>` : ''}<div class="scVal">${rupiah(s.total)}</div><div class="scSub">${s.jumlahTrx} transaksi \u00b7 ${s.jumlahItem} item</div></div>`; });
     html += `</div></div>`;
-  }
-  if(typeof data.mlTehTerpakaiTotal === 'number'){
-    html += `<div class="lapSection"><h4>Stok Teh</h4>`;
-    data.perShift.forEach(s=>{
-      if(s.shift === 'Luar Jam Operasional' && !s.mlTeh) return;
-      html += `<div class="lapRow"><div class="lrn">${SHIFT_ICON[s.shift]||''} ${s.shift}</div><div class="lrv">${(s.mlTeh||0).toLocaleString('id-ID')} ml</div></div>`;
-    });
-    html += `<div class="lapRow" style="font-weight:700;"><div class="lrn">Total Terpakai</div><div class="lrv">${data.mlTehTerpakaiTotal.toLocaleString('id-ID')} ml</div></div>`;
-    if(typeof data.stokTehSisaSaatIni === 'number'){
-      html += `<div class="lapRow" style="font-weight:700;"><div class="lrn">Sisa Saat Ini</div><div class="lrv">${data.stokTehSisaSaatIni.toLocaleString('id-ID')} ml</div></div>`;
-    }
-    html += `</div>`;
   }
   if(data.perUkuranCup){
     html += `<div class="lapSection"><h4>Terjual per Ukuran</h4>`;
@@ -4303,16 +3964,6 @@ function susunTeksLaporan(data){
   t += `Total Penjualan: ${rupiah(r.total)}\nJumlah Transaksi: ${r.jumlahTrx}\nItem Terjual: ${r.jumlahItem}\n\n`;
   t += `*Metode Bayar*\nCash: ${rupiah(r.cash)} (${r.cashTrx||0} trx)\nQRIS: ${rupiah(r.qris)} (${r.qrisTrx||0} trx)\nTransfer: ${rupiah(r.transfer)} (${r.transferTrx||0} trx)\n\n`;
   if(data.perShift && data.perShift.length){ t += `*Per Shift*\n`; data.perShift.forEach(s=>{ t += `${s.shift}: ${rupiah(s.total)} (${s.jumlahTrx} trx)\n`; }); t += `\n`; }
-  if(typeof data.mlTehTerpakaiTotal === 'number'){
-    t += `*Stok Teh*\n`;
-    data.perShift.forEach(s=>{
-      if(s.shift === 'Luar Jam Operasional' && !s.mlTeh) return;
-      t += `${s.shift}: ${(s.mlTeh||0).toLocaleString('id-ID')} ml\n`;
-    });
-    t += `Total Terpakai: ${data.mlTehTerpakaiTotal.toLocaleString('id-ID')} ml\n`;
-    if(typeof data.stokTehSisaSaatIni === 'number'){ t += `Sisa Saat Ini: ${data.stokTehSisaSaatIni.toLocaleString('id-ID')} ml\n`; }
-    t += `\n`;
-  }
   if(data.perUkuranCup && data.perUkuranCup.length){ t += `*Terjual per Ukuran*\n`; data.perUkuranCup.forEach(u=>{ t += `${u.ukuran}: ${u.qty} cup\n`; }); t += `\n`; }
   if(data.perKaryawan && data.perKaryawan.length){ t += `*Per Karyawan*\n`; data.perKaryawan.forEach(k=>{ t += `${k.karyawan}: ${rupiah(k.total)}\n`; }); t += `\n`; }
   if(data.itemTerlaris && data.itemTerlaris.length){ t += `*Menu Terlaris*\n`; data.itemTerlaris.slice(0,10).forEach((it,idx)=>{ t += `${idx+1}. ${it.nama} \u2014 ${it.qty}x (${rupiah(it.subtotal)})\n`; }); t += `\n`; }
@@ -4831,16 +4482,6 @@ function renderHalamanPengaturan(){
         <span class="prefToggleSlider"></span>
       </label>
     </div>
-    <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-      <div>
-        <div style="font-size:13.5px; font-weight:650; color:var(--ink);">Animasi Notifikasi Sukses</div>
-        <div class="hint" style="margin-top:2px;">Popup animasi singkat tiap kali aksi berhasil (main sampai selesai), misalnya simpan, hapus, atau restock.</div>
-      </div>
-      <label class="prefToggle">
-        <input type="checkbox" id="pgToggleAnimasiSukses" ${prefNotif.animasiSuksesAktif ? 'checked' : ''}>
-        <span class="prefToggleSlider"></span>
-      </label>
-    </div>
 
     <div class="catLabelAdmin">Santai Sebentar</div>
     <div class="hint" style="margin-bottom:12px;">Lagi nunggu pembeli? Main game kecil dulu, yuk.</div>
@@ -5002,12 +4643,6 @@ function renderHalamanPengaturan(){
     simpanPrefMataNyaman(aktif);
     terapkanModeMataNyaman(aktif);
     showToast(aktif ? "Mode Perlindungan Mata diaktifkan" : "Mode Perlindungan Mata dimatikan");
-  });
-  el('pgToggleAnimasiSukses').addEventListener('change', ()=>{
-    const pref = ambilPrefNotifikasi();
-    pref.animasiSuksesAktif = el('pgToggleAnimasiSukses').checked;
-    simpanPrefNotifikasi(pref);
-    showToast(pref.animasiSuksesAktif ? "Animasi notifikasi sukses diaktifkan" : "Animasi notifikasi sukses dimatikan");
   });
 
   // --- Bagian Santai Sebentar (game) ---
@@ -5383,6 +5018,7 @@ let stokCupPermintaanMenunggu = null; // dokumen permintaan (permintaan_stok_cup
 let STOKTEH_OUTLET_AKTIF = '';
 let STOKTEH_ML_AKTIF = 0; // angka ml teh outlet yang sedang dibuka
 let PERMINTAAN_TEH_OWNER_LIST = []; // daftar permintaan izin teh "menunggu" utk outlet aktif -- khusus Owner
+let stokTehPermintaanMenunggu = null; // permintaan_stok_teh berstatus "menunggu" milik karyawan yang login, kalau ada
 
 el('stokCupBtn').onclick = async ()=>{
   if(!SESI) return;
@@ -5809,11 +5445,29 @@ function renderStokTehOutletPicker(){
   });
 }
 
+async function cekIzinStokTehKaryawan(){
+  stokTehPermintaanMenunggu = null;
+  if(!SESI || SESI.jabatan === 'Owner' || !SESI.outlet) return;
+  try{
+    const qy = query(collection(db, "permintaan_stok_teh"),
+      where("outlet","==", SESI.outlet),
+      where("pemohonUsername","==", SESI.username),
+      where("status","==","menunggu"));
+    const snap = await getDocs(qy);
+    if(!snap.empty){
+      const docs = snap.docs.map(d=>({id:d.id, ...d.data()}))
+        .sort((a,b)=>{ const ta=a.waktu&&a.waktu.toDate?a.waktu.toDate().getTime():0; const tb=b.waktu&&b.waktu.toDate?b.waktu.toDate().getTime():0; return tb-ta; });
+      stokTehPermintaanMenunggu = docs[0];
+    }
+  }catch(e){ console.error('Gagal cek permintaan stok teh:', e); }
+}
+
 async function muatKelolaStokTeh(){
   el('stokTehBody').innerHTML = '<div class="lapLoading"><div class="spinner"></div>Memuat data stok teh...</div>';
   try{
     const isOwner = SESI && SESI.jabatan === 'Owner';
-    if(isOwner) await muatPermintaanTehOwner();
+    if(!isOwner) await cekIzinStokTehKaryawan();
+    else await muatPermintaanTehOwner();
     const ref = doc(db, "stok_teh", stokTehDocId(STOKTEH_OUTLET_AKTIF));
     const snap = await getDoc(ref);
     STOKTEH_ML_AKTIF = snap.exists() ? (Number(snap.data().ml)||0) : 0;
@@ -5834,12 +5488,15 @@ async function muatPermintaanTehOwner(){
 
 function renderKelolaStokTeh(){
   const isOwner = SESI && SESI.jabatan === 'Owner';
+  const punyaMenunggu = !isOwner && !!stokTehPermintaanMenunggu;
 
   let keteranganAkses = '';
   if(isOwner){
     keteranganAkses = `Stok teh di bawah adalah TOTAL ml teh cair untuk outlet <b>${STOKTEH_OUTLET_AKTIF}</b> (satu angka, bukan per menu). Setiap menu kategori "Es Teh Manis" yang terjual otomatis mengurangi angka ini (Cup Medium -150ml, Cup Jumbo -190ml, teh rasa buah/susu lainnya -150ml). Ketik ulang angka untuk menimpa langsung, atau gunakan tombol Restock untuk menambah dengan tercatat di histori.`;
+  } else if(punyaMenunggu){
+    keteranganAkses = `Permintaan restock stok teh untuk outlet <b>${STOKTEH_OUTLET_AKTIF}</b> sudah dikirim dan sedang <b>menunggu persetujuan Owner</b>. Begitu disetujui, stok akan bertambah otomatis sesuai jumlah ml yang kamu isi.`;
   } else {
-    keteranganAkses = `Kamu bisa melihat sisa stok teh outlet <b>${STOKTEH_OUTLET_AKTIF}</b> di bawah ini. Perubahan stok teh hanya bisa dilakukan oleh Owner.`;
+    keteranganAkses = `Kamu bisa melihat stok teh outlet <b>${STOKTEH_OUTLET_AKTIF}</b>. Untuk menambah stok, isi dulu jumlah ml teh yang mau ditambah lewat tombol di bawah, lalu kirim ke Owner untuk disetujui. Kamu tidak bisa mengubah/reset angka stok secara manual.`;
   }
   let html = `<div class="empty" style="padding:6px 4px 16px; text-align:left; font-size:12px;">${keteranganAkses}</div>`;
 
@@ -5867,6 +5524,8 @@ function renderKelolaStokTeh(){
 
   if(isOwner){
     html += `<button class="addBtn" id="riwayatRestockTehBtn" style="border-style:solid; background:var(--pine-50);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>Lihat Riwayat Restock Teh</button>`;
+  } else {
+    html += `<button class="addBtn" id="mintaIzinStokTehBtn" ${punyaMenunggu ? 'disabled' : ''} style="border-style:solid; background:${punyaMenunggu ? 'var(--line-soft)' : 'var(--gold-light)'}; color:${punyaMenunggu ? 'var(--muted-soft)' : 'var(--gold-dark)'}; cursor:${punyaMenunggu ? 'not-allowed' : 'pointer'};"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>${punyaMenunggu ? 'Menunggu Persetujuan Owner\u2026' : 'Isi Jumlah & Kirim Izin'}</button>`;
   }
 
   const habis = STOKTEH_ML_AKTIF <= 0;
@@ -5894,6 +5553,8 @@ function renderKelolaStokTeh(){
   el('stokTehBody').appendChild(bodyDiv);
 
   if(isOwner) el('riwayatRestockTehBtn').onclick = ()=> bukaRiwayatRestockTeh();
+  const mintaIzinBtn = document.getElementById('mintaIzinStokTehBtn');
+  if(mintaIzinBtn && !mintaIzinBtn.disabled) mintaIzinBtn.onclick = ()=> bukaFormKirimIzinStokTeh();
 
   if(isOwner){
     el('stokTehBody').querySelectorAll('.notifReqItem').forEach(itemEl=>{
@@ -5923,6 +5584,51 @@ async function simpanStokTehManual(mlBaru){
 }
 
 /* ---------- PERMINTAAN IZIN RESTOCK STOK TEH (karyawan -> Owner) ---------- */
+function bukaFormKirimIzinStokTeh(){
+  if(!SESI || SESI.jabatan === 'Owner' || !SESI.outlet) return;
+
+  el('restockTehBody').innerHTML = `
+    <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Isi takaran teh untuk outlet <b>${SESI.outlet}</b>. Stok sekarang: <b>${STOKTEH_ML_AKTIF.toLocaleString('id-ID')} ml</b>.</div>
+    <div class="formField">
+      <label>Takaran Air/Teh (ml)</label>
+      <input id="izinTehTakaran" type="number" min="1" placeholder="Contoh: 1000">
+    </div>
+    <div id="izinTehPreview" style="padding:10px 12px; border-radius:10px; background:var(--card); border:1.4px dashed var(--line); font-size:12px; color:var(--muted); margin-bottom:4px;">Isi takaran dulu untuk lihat total.</div>
+    <button class="saveFormBtn" id="izinTehSaveBtn">Kirim Izin</button>
+  `;
+
+  const updateIzinTehPreview = ()=>{
+    const x = Number(el('izinTehTakaran').value) || 0;
+    if(x <= 0){ el('izinTehPreview').innerHTML = 'Isi takaran dulu untuk lihat total.'; return; }
+    const h = hitungTotalMlTehDariTakaran(x);
+    el('izinTehPreview').innerHTML = `<b style="color:var(--pine-700);">Total ${h.total.toLocaleString('id-ID')}ml</b> yang akan diminta ditambahkan.`;
+  };
+  el('izinTehTakaran').addEventListener('input', updateIzinTehPreview);
+
+  el('izinTehSaveBtn').onclick = async ()=>{
+    const takaran = Number(el('izinTehTakaran').value) || 0;
+    if(takaran <= 0){ showToast("Isi takaran air/teh yang valid", false); return; }
+    const jumlahMl = hitungTotalMlTehDariTakaran(takaran).total;
+
+    const btn = el('izinTehSaveBtn'); btn.disabled = true; btn.textContent = "Mengirim...";
+    try{
+      const qyCek = query(collection(db, "permintaan_stok_teh"),
+        where("outlet","==", SESI.outlet), where("pemohonUsername","==", SESI.username), where("status","==","menunggu"));
+      const snapCek = await getDocs(qyCek);
+      if(!snapCek.empty){ showToast("Kamu sudah punya permintaan yang masih menunggu Owner.", false); tutupOverlaySmooth(el('restockTehOverlay')); return; }
+
+      await addDoc(collection(db, "permintaan_stok_teh"), {
+        outlet: SESI.outlet, pemohonUsername: SESI.username, pemohonNama: SESI.namaTampilan,
+        status: 'menunggu', dibacaOwner: false, jumlahMl, takaranAirTeh: takaran, waktu: Timestamp.fromDate(new Date())
+      });
+      showToast("Permintaan izin dikirim ke Owner. Tunggu persetujuan ya.");
+      tutupOverlaySmooth(el('restockTehOverlay'));
+      await muatKelolaStokTeh();
+    }catch(e){ showToast("Gagal mengirim permintaan. Cek koneksi.", false); btn.disabled=false; btn.textContent="Kirim Izin"; console.error('Gagal kirim permintaan stok teh:', e); }
+  };
+
+  el('restockTehOverlay').classList.add('show');
+}
 el('restockTehClose').onclick = ()=> tutupOverlaySmooth(el('restockTehOverlay'));
 
 function bukaFormRestockTeh(){

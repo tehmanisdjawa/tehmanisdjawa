@@ -2503,12 +2503,19 @@ el('motivClose').onclick = ()=>{ if(motivHideTimer){ clearTimeout(motivHideTimer
    ===================================================================== */
 let MENU_MENTAH = [];       // data mentah dari collection "menu" (belum digabung stok)
 let STOK_MAP_AKTIF = {};    // "kategori|nama|ukuran" -> jumlah stok, khusus outlet SESI aktif
-let unsubStokMenu = null, unsubStokCupMenu = null;
+let unsubStokMenu = null, unsubStokCupMenu = null, unsubStokTehMenu = null;
+// Stok teh (ml) khusus untuk outlet SESI yang sedang login di layar kasir -- BEDA
+// dari STOKTEH_ML_AKTIF yang dipakai di panel "Kelola Stok Teh" (itu bisa outlet
+// lain kalau Owner sedang lihat outlet lain). Dipakai supaya kategori "Es Teh
+// Manis" otomatis kekunci/habis di layar kasir begitu stok ml-nya 0, TANPA perlu
+// buka panel Kelola Stok Teh dulu.
+let STOKTEH_ML_KASIR_AKTIF = null; // null = belum termuat (jangan anggap habis dulu)
 
 function loadMenuRealtime(){
   if(unsubMenu) unsubMenu();
   if(unsubStokMenu) unsubStokMenu();
   if(unsubStokCupMenu) unsubStokCupMenu();
+  if(unsubStokTehMenu) unsubStokTehMenu();
 
   unsubMenu = onSnapshot(collection(db, "menu"), (snap)=>{
     MENU_MENTAH = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -2533,9 +2540,16 @@ function loadMenuRealtime(){
       STOK_CUP_UKURAN_MAP_AKTIF = map;
       gabungkanMenuDanStok();
     }, (err)=> console.error('Gagal memantau stok cup:', err));
+
+    const tehRefKasir = doc(db, "stok_teh", stokTehDocId(SESI.outlet));
+    unsubStokTehMenu = onSnapshot(tehRefKasir, (snap)=>{
+      STOKTEH_ML_KASIR_AKTIF = snap.exists() ? (Number(snap.data().ml)||0) : 0;
+      gabungkanMenuDanStok();
+    }, (err)=> console.error('Gagal memantau stok teh (kasir):', err));
   } else {
     STOK_MAP_AKTIF = {};
     STOK_CUP_UKURAN_MAP_AKTIF = {};
+    STOKTEH_ML_KASIR_AKTIF = null;
   }
 }
 
@@ -2567,6 +2581,10 @@ function gabungkanMenuDanStok(){
       // dan stoknya 0, varian ukuran ini ditandai habis TERLEPAS dari stok menu di atas.
       const ukuranNormal = normalisasiUkuran(v.ukuran, nama);
       if(ukuranNormal in cupUkuranMap && cupUkuranMap[ukuranNormal] <= 0) habis = true;
+      // Cek stok teh (ml, total per outlet, bukan per menu/ukuran): kalau kategorinya
+      // "Es Teh Manis" dan stok teh cair sudah 0, SEMUA varian di kategori ini otomatis
+      // ditandai habis juga -- terlepas dari status habis manual atau stok menu lainnya.
+      if(kategori === KATEGORI_PAKAI_TEH && STOKTEH_ML_KASIR_AKTIF !== null && STOKTEH_ML_KASIR_AKTIF <= 0) habis = true;
       catMap[kategori][nama].varian.push({ nama: v.ukuran, harga: v.harga||0, tambahan: v.tambahan||'', habis, stok: stokSisa });
     });
   });

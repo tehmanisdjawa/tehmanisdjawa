@@ -5658,13 +5658,10 @@ function bukaFormRestockCup(ukuran){
     try{
       const id = stokCupUkuranDocId(STOKCUP_OUTLET_AKTIF, ukuran);
       const ref = doc(db, "stok_cup_ukuran", id);
-      let stokSesudah = totalCupDitambah;
-      await runTransaction(db, async (tx)=>{
-        const snap = await tx.get(ref);
-        const skrg = snap.exists() ? (Number(snap.data().jumlah)||0) : 0;
-        stokSesudah = skrg + totalCupDitambah;
-        tx.set(ref, { outlet: STOKCUP_OUTLET_AKTIF, ukuran, jumlah: stokSesudah }, { merge: true });
-      });
+      const snap = await getDoc(ref);
+      const skrg = snap.exists() ? (Number(snap.data().jumlah)||0) : 0;
+      const stokSesudah = skrg + totalCupDitambah;
+      await setDoc(ref, { outlet: STOKCUP_OUTLET_AKTIF, ukuran, jumlah: stokSesudah }, { merge: true });
       await addDoc(collection(db, "riwayat_restock_cup"), {
         waktu: Timestamp.fromDate(new Date()), outlet: STOKCUP_OUTLET_AKTIF, ukuran,
         satuan: restockCupSatuanAktif, jumlahInput, isiRoll: restockCupSatuanAktif==='roll' ? (Number(el('restockCupIsiRoll').value)||DEFAULT_ISI_ROLL) : null,
@@ -5673,7 +5670,7 @@ function bukaFormRestockCup(ukuran){
       showToast(`Restock cup berhasil \u2014 +${catatanSatuan}, stok sekarang ${stokSesudah} cup`);
       tutupOverlaySmooth(el('restockOverlay'));
       await muatKelolaStokCup();
-    }catch(e){ showToast("Gagal restock. Cek koneksi.", false); btn.disabled=false; btn.textContent="Simpan Restock"; }
+    }catch(e){ showToast("Gagal restock. Cek koneksi/kuota Firestore.", false); btn.disabled=false; btn.textContent="Simpan Restock"; }
   };
   el('restockOverlay').classList.add('show');
 }
@@ -5903,13 +5900,10 @@ function bukaFormRestockTeh(){
     const btn = el('restockTehSaveBtn'); btn.disabled = true; btn.textContent = "Menyimpan...";
     try{
       const ref = doc(db, "stok_teh", stokTehDocId(STOKTEH_OUTLET_AKTIF));
-      let mlSesudah = jumlahMl;
-      await runTransaction(db, async (tx)=>{
-        const snap = await tx.get(ref);
-        const skrg = snap.exists() ? (Number(snap.data().ml)||0) : 0;
-        mlSesudah = skrg + jumlahMl;
-        tx.set(ref, { outlet: STOKTEH_OUTLET_AKTIF, ml: mlSesudah }, { merge: true });
-      });
+      const snap = await getDoc(ref);
+      const skrg = snap.exists() ? (Number(snap.data().ml)||0) : 0;
+      const mlSesudah = skrg + jumlahMl;
+      await setDoc(ref, { outlet: STOKTEH_OUTLET_AKTIF, ml: mlSesudah }, { merge: true });
       await addDoc(collection(db, "riwayat_restock_teh"), {
         waktu: Timestamp.fromDate(new Date()), outlet: STOKTEH_OUTLET_AKTIF,
         jumlahMlDitambah: jumlahMl, mlSesudah, oleh: SESI.namaTampilan, takaranAirTeh: takaran
@@ -5917,7 +5911,7 @@ function bukaFormRestockTeh(){
       showToast(`Restock teh berhasil \u2014 +${jumlahMl} ml, stok sekarang ${mlSesudah.toLocaleString('id-ID')} ml`);
       tutupOverlaySmooth(el('restockTehOverlay'));
       await muatKelolaStokTeh();
-    }catch(e){ showToast("Gagal restock. Cek koneksi.", false); btn.disabled=false; btn.textContent="Simpan Restock"; }
+    }catch(e){ showToast("Gagal restock. Cek koneksi/kuota Firestore.", false); btn.disabled=false; btn.textContent="Simpan Restock"; }
   };
   el('restockTehOverlay').classList.add('show');
 }
@@ -6850,15 +6844,10 @@ function bukaFormRestock(kategori, nama, ukuran){
     try{
       const id = stokDocId(STOK_OUTLET_AKTIF, kategori, nama, ukuran);
       const ref = doc(db, "stok", id);
-      let stokSebelum = 0;
-      let stokSesudah = totalSasetDitambah;
-      await runTransaction(db, async (tx)=>{
-        const snap = await tx.get(ref);
-        const skrg = snap.exists() ? (Number(snap.data().jumlah)||0) : 0;
-        stokSebelum = skrg;
-        stokSesudah = skrg + totalSasetDitambah;
-        tx.set(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran, jumlah: stokSesudah }, { merge: true });
-      });
+      const snap = await getDoc(ref);
+      const stokSebelum = snap.exists() ? (Number(snap.data().jumlah)||0) : 0;
+      const stokSesudah = stokSebelum + totalSasetDitambah;
+      await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran, jumlah: stokSesudah }, { merge: true });
       const riwayatRef = await addDoc(collection(db, "riwayat_restock"), {
         waktu: Timestamp.fromDate(new Date()), outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran,
         satuan: restockSatuanAktif, jumlahInput, isiRoll: isiRollDipakai,
@@ -6872,7 +6861,7 @@ function bukaFormRestock(kategori, nama, ukuran){
         async ()=>{ await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran, jumlah: stokSebelum }, { merge: true }); await deleteDoc(riwayatRef); await muatKelolaStok(); },
         async ()=>{ await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran, jumlah: stokSesudah }, { merge: true }); await muatKelolaStok(); }
       );
-    }catch(e){ showToast("Gagal restock. Cek koneksi.", false); btn.disabled=false; btn.textContent="Simpan Restock"; }
+    }catch(e){ showToast("Gagal restock. Cek koneksi/kuota Firestore.", false); btn.disabled=false; btn.textContent="Simpan Restock"; }
   };
   el('restockOverlay').classList.add('show');
 }

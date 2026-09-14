@@ -467,6 +467,27 @@
   .toast svg{width:16px;height:16px;flex:0 0 auto; color:var(--gold);}
   .toast.err svg{color:#e2897a;}
 
+  /* ============ ANIMASI SUKSES (POPUP VIDEO) ============ */
+  .animSuksesOverlay{
+    position:fixed; inset:0; z-index:250; display:none; align-items:center; justify-content:center;
+    background:rgba(12,20,15,.55); backdrop-filter:blur(2px); opacity:0; transition:opacity .18s ease;
+    padding:22px;
+  }
+  .animSuksesOverlay.show{display:flex; opacity:1;}
+  .animSuksesBox{
+    position:relative; width:min(280px, 78vw); border-radius:20px; overflow:hidden;
+    box-shadow:var(--shadow-float); background:var(--pine-950);
+    transform:scale(.9); transition:transform .18s cubic-bezier(.2,.8,.3,1);
+  }
+  .animSuksesOverlay.show .animSuksesBox{transform:scale(1);}
+  .animSuksesBox video{display:block; width:100%; height:100%; object-fit:cover;}
+  .animSuksesCloseBtn{
+    position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:50%; border:none;
+    background:rgba(12,20,15,.55); color:#f3ede0; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; padding:0; z-index:2;
+  }
+  .animSuksesCloseBtn svg{width:15px;height:15px;}
+
   /* ============ MOTIVASI NOTIFIKASI ============ */
   .motivToastWrap{position:fixed; top:12px; left:0; right:0; z-index:70; display:flex; justify-content:center; pointer-events:none; padding:0 14px;}
   .motivToast{
@@ -1329,6 +1350,14 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="animSuksesOverlay" id="animSuksesOverlay">
+  <div class="animSuksesBox">
+    <button class="animSuksesCloseBtn" id="animSuksesCloseBtn" aria-label="Tutup">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <video id="animSuksesVideo" src="https://files.catbox.moe/hvabht.mp4" muted playsinline autoplay></video>
+  </div>
+</div>
 
 <div class="motivToastWrap" id="motivToastWrap">
   <div class="motivToast" id="motivToast">
@@ -1768,8 +1797,8 @@ const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov'
 function ambilPrefNotifikasi(){
   try{
     const raw = JSON.parse(localStorage.getItem('etd_prefNotif') || '{}');
-    return { suaraCheckout: raw.suaraCheckout !== false, motivasiAktif: raw.motivasiAktif !== false };
-  }catch(e){ return { suaraCheckout: true, motivasiAktif: true }; }
+    return { suaraCheckout: raw.suaraCheckout !== false, motivasiAktif: raw.motivasiAktif !== false, animasiSuksesAktif: raw.animasiSuksesAktif !== false };
+  }catch(e){ return { suaraCheckout: true, motivasiAktif: true, animasiSuksesAktif: true }; }
 }
 function simpanPrefNotifikasi(pref){
   try{ localStorage.setItem('etd_prefNotif', JSON.stringify(pref)); }catch(e){}
@@ -1826,7 +1855,31 @@ function showToast(msg, ok=true){
   toastHideTimer = setTimeout(()=>{
     if(tiketSaatIni === toastPanggilanId){ t.classList.remove('show'); toastHideTimer = null; }
   }, 2800);
+  if(ok) tampilkanAnimasiSukses();
 }
+
+/* ============ ANIMASI SUKSES (POPUP VIDEO 1.5 DETIK) ============ */
+let animSuksesHideTimer = null;
+function tampilkanAnimasiSukses(){
+  if(!ambilPrefNotifikasi().animasiSuksesAktif) return; // toggle di Pengaturan mati -- skip
+  const ov = el('animSuksesOverlay');
+  const vid = el('animSuksesVideo');
+  if(!ov || !vid) return;
+  if(animSuksesHideTimer){ clearTimeout(animSuksesHideTimer); animSuksesHideTimer = null; }
+  try{ vid.currentTime = 0; vid.play().catch(()=>{}); }catch(e){}
+  ov.style.display = 'flex';
+  requestAnimationFrame(()=> ov.classList.add('show'));
+  animSuksesHideTimer = setTimeout(()=>{ sembunyikanAnimasiSukses(); }, 1500);
+}
+function sembunyikanAnimasiSukses(){
+  const ov = el('animSuksesOverlay');
+  const vid = el('animSuksesVideo');
+  if(!ov) return;
+  if(animSuksesHideTimer){ clearTimeout(animSuksesHideTimer); animSuksesHideTimer = null; }
+  ov.classList.remove('show');
+  setTimeout(()=>{ ov.style.display = 'none'; try{ if(vid) vid.pause(); }catch(e){} }, 180);
+}
+el('animSuksesCloseBtn').addEventListener('click', ()=>{ sembunyikanAnimasiSukses(); });
 // Jaring pengaman terakhir: kalau karena sebab apapun toast masih kelihatan padahal
 // harusnya sudah lewat waktunya, pencet toast-nya langsung menutup manual.
 el('toast').addEventListener('click', ()=>{ el('toast').classList.remove('show'); if(toastHideTimer){ clearTimeout(toastHideTimer); toastHideTimer = null; } });
@@ -4539,6 +4592,16 @@ function renderHalamanPengaturan(){
         <span class="prefToggleSlider"></span>
       </label>
     </div>
+    <div class="formField" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div>
+        <div style="font-size:13.5px; font-weight:650; color:var(--ink);">Animasi Notifikasi Sukses</div>
+        <div class="hint" style="margin-top:2px;">Popup animasi singkat (1.5 detik) tiap kali aksi berhasil, misalnya simpan, hapus, atau restock.</div>
+      </div>
+      <label class="prefToggle">
+        <input type="checkbox" id="pgToggleAnimasiSukses" ${prefNotif.animasiSuksesAktif ? 'checked' : ''}>
+        <span class="prefToggleSlider"></span>
+      </label>
+    </div>
 
     <div class="catLabelAdmin">Santai Sebentar</div>
     <div class="hint" style="margin-bottom:12px;">Lagi nunggu pembeli? Main game kecil dulu, yuk.</div>
@@ -4700,6 +4763,12 @@ function renderHalamanPengaturan(){
     simpanPrefMataNyaman(aktif);
     terapkanModeMataNyaman(aktif);
     showToast(aktif ? "Mode Perlindungan Mata diaktifkan" : "Mode Perlindungan Mata dimatikan");
+  });
+  el('pgToggleAnimasiSukses').addEventListener('change', ()=>{
+    const pref = ambilPrefNotifikasi();
+    pref.animasiSuksesAktif = el('pgToggleAnimasiSukses').checked;
+    simpanPrefNotifikasi(pref);
+    showToast(pref.animasiSuksesAktif ? "Animasi notifikasi sukses diaktifkan" : "Animasi notifikasi sukses dimatikan");
   });
 
   // --- Bagian Santai Sebentar (game) ---

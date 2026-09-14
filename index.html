@@ -1739,6 +1739,15 @@
   </div>
 </div>
 
+<div class="popupStokOverlay habis" id="popupTehKurangOverlay">
+  <div class="popupStokBox">
+    <div class="popupStokIcon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
+    <div class="popupStokTitle">Stok Teh Tidak Cukup</div>
+    <div class="popupStokList" id="popupTehKurangList"></div>
+    <button id="popupTehKurangOkBtn" class="checkoutBtn" style="margin-top:14px; width:100%;">Oke, Sesuaikan Jumlah</button>
+  </div>
+</div>
+
 <div class="cartOverlay calcOverlay" id="calcOverlay">
   <div class="calcSheet">
     <div class="calcHead"><h2>Kalkulator</h2><button id="calcClose">✕</button></div>
@@ -2963,12 +2972,70 @@ el('payTabs').querySelectorAll('button').forEach(b=>{
 });
 
 /* =====================================================================
+   BATASI QTY TEH SESUAI SISA STOK -- kalau total ml teh yang dibutuhkan
+   keranjang (gabungan SEMUA item kategori "Es Teh Manis") melebihi sisa
+   stok teh outlet ini, potong qty item-item teh itu (mulai dari yang
+   PALING TERAKHIR ditambahkan ke keranjang) sampai totalnya pas atau di
+   bawah sisa stok. Dipanggil sebelum checkout benar-benar diproses.
+   Return true kalau ada koreksi (dan popup ditampilkan), false kalau aman.
+   ===================================================================== */
+function cekDanKoreksiQtyTehDiKeranjang(){
+  if(STOKTEH_ML_KASIR_AKTIF === null) return false; // belum termuat, jangan asal koreksi
+  const keys = Object.keys(cart);
+  // Kumpulkan key item kategori Es Teh Manis, urutan sesuai insertion Object.keys
+  // (JS menjaga urutan key string sesuai kapan pertama kali di-set) -- ambil
+  // dari BELAKANG dulu supaya yang paling terakhir ditambahkan dipotong duluan.
+  const keyTeh = keys.filter(k => cart[k].kategori === KATEGORI_PAKAI_TEH);
+  if(keyTeh.length === 0) return false;
+
+  let totalMl = 0;
+  keyTeh.forEach(k=>{ totalMl += mlTehUntukItem(cart[k].kategori, cart[k].nama) * cart[k].qty; });
+  if(totalMl <= STOKTEH_ML_KASIR_AKTIF) return false; // cukup, tidak perlu koreksi
+
+  const sisaBolehDipakai = Math.max(0, STOKTEH_ML_KASIR_AKTIF);
+  let sisaMl = sisaBolehDipakai;
+  const perubahan = []; // {nama, varian, qtyLama, qtyBaru}
+  // Proses dari belakang (item terakhir ditambahkan) ke depan.
+  for(let i = keyTeh.length - 1; i >= 0; i--){
+    const k = keyTeh[i];
+    const c = cart[k];
+    const mlPerCup = mlTehUntukItem(c.kategori, c.nama) || 1; // hindari div 0
+    const maxQtyBisaDibuat = Math.floor(sisaMl / mlPerCup);
+    if(maxQtyBisaDibuat < c.qty){
+      perubahan.push({ nama: c.nama, varian: c.varian, qtyLama: c.qty, qtyBaru: maxQtyBisaDibuat });
+      if(maxQtyBisaDibuat <= 0) delete cart[k];
+      else cart[k].qty = maxQtyBisaDibuat;
+    }
+    sisaMl -= (cart[k] ? cart[k].qty : 0) * mlPerCup;
+  }
+
+  if(perubahan.length > 0){
+    const list = el('popupTehKurangList');
+    if(list){
+      list.innerHTML = `<div>Sisa stok teh outlet ini cuma cukup untuk ${sisaBolehDipakai.toLocaleString('id-ID')} ml, jadi beberapa jumlah pesanan otomatis dikurangi:</div>` +
+        perubahan.map(p=>{
+          const label = p.varian && p.varian !== 'Reguler' ? `${p.nama} (${p.varian})` : p.nama;
+          return p.qtyBaru > 0
+            ? `<div>${label}: ${p.qtyLama} \u2192 ${p.qtyBaru} pcs</div>`
+            : `<div>${label}: ${p.qtyLama} pcs \u2192 dihapus (stok tidak cukup)</div>`;
+        }).join('');
+    }
+    el('popupTehKurangOverlay').classList.add('show');
+    renderCartBody(); renderMenu(); updateFab();
+    return true;
+  }
+  return false;
+}
+el('popupTehKurangOkBtn').onclick = ()=> el('popupTehKurangOverlay').classList.remove('show');
+
+/* =====================================================================
    CHECKOUT — transaksi + kurangi stok, pakai Firestore transaction
    ===================================================================== */
 el('checkoutBtn').onclick = async ()=>{
   if(!SESI){ showToast("Sesi tidak valid, silakan login ulang", false); return; }
   const keys = Object.keys(cart);
   if(keys.length===0) return;
+  if(cekDanKoreksiQtyTehDiKeranjang()) return; // qty sudah dikoreksi & popup ditampilkan, batalkan checkout kali ini
   const btn = el('checkoutBtn'); btn.disabled = true; btn.textContent = "Mengirim...";
   try{
     const waktu = new Date();
@@ -3935,19 +4002,19 @@ async function voidTransaksi(trxId, dariDetail){
     // Kembalikan stok tiap item (kalau outlet-nya kelola stok utk varian itu) SEBELUM
     // dokumen transaksinya dihapus, supaya kalau gagal di tengah jalan datanya masih ada
     // untuk dicoba ulang -- lebih aman daripada hapus dulu baru kembalikan stok.
+    // Semua item diproses PARALEL (bukan satu-satu) supaya cepat & tidak retry
+    // berkali-kali kalau Firestore lagi bermasalah (kuota habis/koneksi jelek).
     if(t && t.outlet && t.items && t.items.length){
-      for(const it of t.items){
+      await Promise.allSettled(t.items.map(async (it)=>{
         const stokDocId = (t.outlet+'_'+it.kategori+'_'+it.nama+'_'+it.varian).replace(/[^a-zA-Z0-9]/g,'_');
         const stokRef = doc(db, "stok", stokDocId);
         try{
-          await runTransaction(db, async (tx)=>{
-            const snap = await tx.get(stokRef);
-            if(!snap.exists()) return; // outlet ini belum kelola stok utk varian ini, lewati
-            const skrg = Number(snap.data().jumlah)||0;
-            tx.update(stokRef, { jumlah: skrg + (it.qty||0) });
-          });
+          const snap = await getDoc(stokRef);
+          if(!snap.exists()) return; // outlet ini belum kelola stok utk varian ini, lewati
+          const skrg = Number(snap.data().jumlah)||0;
+          await setDoc(stokRef, { jumlah: skrg + (it.qty||0) }, { merge: true });
         }catch(e){ /* gagal kembalikan stok utk 1 item, tetap lanjut hapus transaksi */ }
-      }
+      }));
     }
     await deleteDoc(trxRef);
 
@@ -3963,35 +4030,31 @@ async function voidTransaksi(trxId, dariDetail){
           // yang tadi sempat dikembalikan (supaya konsisten dgn keadaan sebelum void).
           await setDoc(trxRef, trxDataAsli);
           if(t && t.outlet && t.items && t.items.length){
-            for(const it of t.items){
+            await Promise.allSettled(t.items.map(async (it)=>{
               const stokDocId = (t.outlet+'_'+it.kategori+'_'+it.nama+'_'+it.varian).replace(/[^a-zA-Z0-9]/g,'_');
               const stokRef = doc(db, "stok", stokDocId);
               try{
-                await runTransaction(db, async (tx)=>{
-                  const snap = await tx.get(stokRef);
-                  if(!snap.exists()) return;
-                  const skrg = Number(snap.data().jumlah)||0;
-                  tx.update(stokRef, { jumlah: Math.max(0, skrg - (it.qty||0)) });
-                });
+                const snap = await getDoc(stokRef);
+                if(!snap.exists()) return;
+                const skrg = Number(snap.data().jumlah)||0;
+                await setDoc(stokRef, { jumlah: Math.max(0, skrg - (it.qty||0)) }, { merge: true });
               }catch(e){}
-            }
+            }));
           }
           await muatLaporanTanggal(lapTanggalAktif);
         },
         async ()=>{
           if(t && t.outlet && t.items && t.items.length){
-            for(const it of t.items){
+            await Promise.allSettled(t.items.map(async (it)=>{
               const stokDocId = (t.outlet+'_'+it.kategori+'_'+it.nama+'_'+it.varian).replace(/[^a-zA-Z0-9]/g,'_');
               const stokRef = doc(db, "stok", stokDocId);
               try{
-                await runTransaction(db, async (tx)=>{
-                  const snap = await tx.get(stokRef);
-                  if(!snap.exists()) return;
-                  const skrg = Number(snap.data().jumlah)||0;
-                  tx.update(stokRef, { jumlah: skrg + (it.qty||0) });
-                });
+                const snap = await getDoc(stokRef);
+                if(!snap.exists()) return;
+                const skrg = Number(snap.data().jumlah)||0;
+                await setDoc(stokRef, { jumlah: skrg + (it.qty||0) }, { merge: true });
               }catch(e){}
-            }
+            }));
           }
           await deleteDoc(trxRef);
           await muatLaporanTanggal(lapTanggalAktif);
@@ -3999,7 +4062,7 @@ async function voidTransaksi(trxId, dariDetail){
       );
     }
   }catch(e){
-    showToast("Gagal membatalkan. Cek koneksi.", false);
+    showToast("Gagal membatalkan. Cek koneksi/kuota Firestore.", false);
     console.error('Gagal void transaksi:', e);
   }
 }

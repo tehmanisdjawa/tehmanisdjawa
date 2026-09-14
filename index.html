@@ -3028,32 +3028,40 @@ el('checkoutBtn').onclick = async ()=>{
     // Kurangi STOK TEH (ml, satu angka per outlet) -- hanya utk item kategori
     // "Es Teh Manis" (lihat mlTehUntukItem). Nutrisari/Good Day/dst dilewati
     // karena tidak memakai teh sama sekali.
+    let gagalKurangiStokTeh = false;
     if(SESI.outlet){
       let totalMlTehDipakai = 0;
       for(const it of items){
         const mlPerCup = mlTehUntukItem(it.kategori, it.nama);
-        console.log('[DEBUG stok teh] item:', it.nama, '| kategori:', JSON.stringify(it.kategori), '| qty:', it.qty, '| mlPerCup:', mlPerCup);
         if(mlPerCup > 0) totalMlTehDipakai += mlPerCup * it.qty;
       }
-      console.log('[DEBUG stok teh] outlet:', SESI.outlet, '| docId:', stokTehDocId(SESI.outlet), '| totalMlTehDipakai:', totalMlTehDipakai);
       if(totalMlTehDipakai > 0){
         const tehRef = doc(db, "stok_teh", stokTehDocId(SESI.outlet));
         try{
           await runTransaction(db, async (tx)=>{
             const snap = await tx.get(tehRef);
-            console.log('[DEBUG stok teh] dokumen exists?', snap.exists(), '| data:', snap.exists() ? snap.data() : null);
             if(!snap.exists()) return; // outlet ini belum kelola stok teh, lewati
             const skrg = Number(snap.data().ml)||0;
             const baru = Math.max(0, skrg - totalMlTehDipakai);
-            console.log('[DEBUG stok teh] ml sebelum:', skrg, '-> sesudah:', baru);
             tx.update(tehRef, { ml: baru });
           });
-        }catch(e){ console.error('[DEBUG stok teh] ERROR runTransaction:', e); /* gagal kurangi stok teh, jangan batalkan seluruh transaksi */ }
+        }catch(e){
+          // Gagal kurangi stok teh (misal kuota Firestore penuh/koneksi putus) --
+          // JANGAN batalkan transaksi (pesanan tetap tercatat), tapi kasih tahu
+          // pengguna secara terang-terangan supaya stok teh dikoreksi manual nanti,
+          // bukan gagal diam-diam tanpa jejak.
+          gagalKurangiStokTeh = true;
+          console.error('Gagal mengurangi stok teh (transaksi tetap tersimpan):', e);
+        }
       }
     }
 
     mainkanSuaraCheckout();
-    showToast("Pesanan terkirim \u2014 " + rupiah(total));
+    if(gagalKurangiStokTeh){
+      showToast("Pesanan terkirim \u2014 " + rupiah(total) + ". Stok teh belum terpotong (koneksi/kuota bermasalah), cek & koreksi manual di Kelola Stok Teh.", false);
+    } else {
+      showToast("Pesanan terkirim \u2014 " + rupiah(total));
+    }
     cart = {}; el('catatanOrder').value = ''; payMethod = 'Cash';
     el('payTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x.dataset.pay==='Cash'));
     tutupOverlaySmooth(el('cartOverlay')); renderMenu(); updateFab();

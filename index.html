@@ -5405,8 +5405,6 @@ function renderKelolaStokTeh(){
   } else {
     keteranganAkses = `Kamu bisa melihat stok teh outlet <b>${STOKTEH_OUTLET_AKTIF}</b>. Untuk menambah stok, isi dulu jumlah ml teh yang mau ditambah lewat tombol di bawah, lalu kirim ke Owner untuk disetujui. Kamu tidak bisa mengubah/reset angka stok secara manual.`;
   }
-  keteranganAkses += `<div style="margin-top:8px; padding:8px 10px; background:var(--pine-50); border-radius:10px; color:var(--pine-700); font-size:11.5px;">\u2615 ${RESEP_TEH_KETERANGAN}</div>`;
-
   let html = `<div class="empty" style="padding:6px 4px 16px; text-align:left; font-size:12px;">${keteranganAkses}</div>`;
 
   if(isOwner && PERMINTAAN_TEH_OWNER_LIST.length){
@@ -5498,7 +5496,6 @@ function bukaFormKirimIzinStokTeh(){
 
   el('restockTehBody').innerHTML = `
     <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Isi takaran teh untuk outlet <b>${SESI.outlet}</b>. Stok sekarang: <b>${STOKTEH_ML_AKTIF.toLocaleString('id-ID')} ml</b>.</div>
-    <div class="empty" style="padding:8px 10px; margin-bottom:12px; text-align:left; font-size:11.5px; background:var(--pine-50); border-radius:10px; color:var(--pine-700);">\u2615 ${RESEP_TEH_KETERANGAN}</div>
     <div class="formField">
       <label>Takaran Air/Teh (ml)</label>
       <input id="izinTehTakaran" type="number" min="1" placeholder="Contoh: 1000">

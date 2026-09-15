@@ -2745,7 +2745,7 @@ el('motivClose').onclick = ()=>{ if(motivHideTimer){ clearTimeout(motivHideTimer
      tanpa perlu fetch manual sama sekali.
    ===================================================================== */
 let MENU_MENTAH = [];       // data mentah dari collection "menu" (belum digabung stok)
-let STOK_MAP_AKTIF = {};    // "kategori|nama|ukuran" -> jumlah stok, khusus outlet SESI aktif
+let STOK_MAP_AKTIF = {};    // "kategori|nama" -> jumlah stok saset (per menu, semua ukuran), khusus outlet SESI aktif
 let unsubStokMenu = null, unsubStokCupMenu = null, unsubStokTehMenu = null;
 // Stok teh (ml) khusus untuk outlet SESI yang sedang login di layar kasir -- BEDA
 // dari STOKTEH_ML_AKTIF yang dipakai di panel "Kelola Stok Teh" (itu bisa outlet
@@ -2771,7 +2771,7 @@ function loadMenuRealtime(){
     const qyStok = query(collection(db, "stok"), where("outlet", "==", SESI.outlet));
     unsubStokMenu = onSnapshot(qyStok, (snap)=>{
       const map = {};
-      snap.docs.forEach(d=>{ const s = d.data(); map[s.kategori+'|'+s.nama+'|'+s.ukuran] = s.jumlah; });
+      snap.docs.forEach(d=>{ const s = d.data(); map[s.kategori+'|'+s.nama] = s.jumlah; });
       STOK_MAP_AKTIF = map;
       gabungkanMenuDanStok();
     }, (err)=> console.error('Gagal memantau stok menu:', err));
@@ -2812,14 +2812,21 @@ function gabungkanMenuDanStok(){
     const nama = r.nama || '';
     if(!nama) return;
     if(!catMap[kategori]){ catMap[kategori] = {}; catOrder.push(kategori); }
-    if(!catMap[kategori][nama]) catMap[kategori][nama] = { id: r.id, nama, pakaiSaset: r.pakaiSaset !== false, varian: [] };
+    const pakaiSaset = r.pakaiSaset !== false;
+    // Stok saset SEKARANG PER MENU (gabungan semua ukuran), bukan per varian --
+    // lihat juga BATAS_STOK_MENIPIS & renderKelolaStok. Kalau menu ini ditandai
+    // "Bukan Saset" (pakaiSaset=false), stoknya tidak dilacak sama sekali (selalu null).
+    let stokSasetMenu = null;
+    if(pakaiSaset && SESI && SESI.outlet){
+      const keyMenu = kategori+'|'+nama;
+      if(keyMenu in stokMap) stokSasetMenu = stokMap[keyMenu];
+    }
+    if(!catMap[kategori][nama]) catMap[kategori][nama] = { id: r.id, nama, pakaiSaset, stokSasetMenu, varian: [] };
     (r.varian || []).forEach(v=>{
       let habis = !!v.habis;
-      let stokSisa = null;
-      if(SESI && SESI.outlet){
-        const key = kategori+'|'+nama+'|'+v.ukuran;
-        if(key in stokMap){ stokSisa = stokMap[key]; if(stokSisa <= 0) habis = true; }
-      }
+      // Kalau menu ini pakai saset dan stok sasetnya sudah 0, SEMUA ukuran/varian
+      // menu ini ikut habis (satu stok saset dipakai bersama semua ukuran).
+      if(stokSasetMenu !== null && stokSasetMenu <= 0) habis = true;
       // Cek stok cup per ukuran (independen dari menu): kalau ukuran cup ini terdaftar
       // dan stoknya 0, varian ukuran ini ditandai habis TERLEPAS dari stok menu di atas.
       const ukuranNormal = normalisasiUkuran(v.ukuran, nama);
@@ -2828,7 +2835,7 @@ function gabungkanMenuDanStok(){
       // "Es Teh Manis" dan stok teh cair sudah 0, SEMUA varian di kategori ini otomatis
       // ditandai habis juga -- terlepas dari status habis manual atau stok menu lainnya.
       if(kategori === KATEGORI_PAKAI_TEH && STOKTEH_ML_KASIR_AKTIF !== null && STOKTEH_ML_KASIR_AKTIF <= 0) habis = true;
-      catMap[kategori][nama].varian.push({ nama: v.ukuran, harga: v.harga||0, tambahan: v.tambahan||'', habis, stok: stokSisa });
+      catMap[kategori][nama].varian.push({ nama: v.ukuran, harga: v.harga||0, tambahan: v.tambahan||'', habis });
     });
   });
   MENU = catOrder.map(kat => ({ kategori: kat, items: Object.values(catMap[kat]) }));
@@ -2924,16 +2931,35 @@ function openVariantSheet(ci, ii){
   el('sheetOverlay').classList.add('show');
 }
 function attachSheetEvents(cat, item, ci, ii){
+  // Total qty SEMUA varian menu ini yang sudah ada di keranjang -- dipakai untuk
+  // membatasi penambahan terhadap sisa stok saset (satu stok dipakai bersama
+  // semua ukuran/varian menu yang sama, lihat gabungkanMenuDanStok).
+  function totalQtyMenuIni(){
+    let total = 0;
+    item.varian.forEach((v, vi)=>{ const k = ci+"|"+ii+"|"+vi; if(cart[k]) total += cart[k].qty; });
+    return total;
+  }
+  function stokSasetCukup(tambahan){
+    if(item.stokSasetMenu === null) return true; // tidak dilacak / bukan saset, selalu boleh
+    return (totalQtyMenuIni() + tambahan) <= item.stokSasetMenu;
+  }
+  function tampilkanPopupStokSasetHabis(){
+    tampilkanAnimasiSukses(false, `Stok "${item.nama}" tinggal ${item.stokSasetMenu} saset, tidak bisa nambah lagi.`);
+  }
   el('sheetBody').querySelectorAll('.varOption[data-add]').forEach(row=>{
     row.onclick = ()=>{
       const k = row.dataset.k; const vi = +k.split('|')[2]; const v = item.varian[vi];
+      if(!stokSasetCukup(1)){ tampilkanPopupStokSasetHabis(); return; }
       cart[k] = { nama:item.nama, varian:v.nama, tambahan:v.tambahan||'', harga:v.harga||0, kategori:cat.kategori, qty:1 };
       openVariantSheet(ci, ii); renderMenu(); updateFab();
     };
   });
   el('sheetBody').querySelectorAll('.qtyStepBar').forEach(bar=>{
     const k = bar.dataset.k;
-    bar.querySelector('.plus').onclick = ()=>{ cart[k].qty++; openVariantSheet(ci, ii); renderMenu(); updateFab(); };
+    bar.querySelector('.plus').onclick = ()=>{
+      if(!stokSasetCukup(1)){ tampilkanPopupStokSasetHabis(); return; }
+      cart[k].qty++; openVariantSheet(ci, ii); renderMenu(); updateFab();
+    };
     bar.querySelector('.minus').onclick = ()=>{ cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; openVariantSheet(ci, ii); renderMenu(); updateFab(); };
   });
 }
@@ -2959,7 +2985,19 @@ function renderCartBody(){
     }).join('');
     el('cartBody').querySelectorAll('.cartRow').forEach(row=>{
       const k = row.dataset.k;
-      row.querySelector('.cplus').onclick = ()=>{ cart[k].qty++; renderCartBody(); renderMenu(); updateFab(); };
+      row.querySelector('.cplus').onclick = ()=>{
+        const [ci, ii] = k.split('|').map(Number);
+        const item = MENU[ci] && MENU[ci].items[ii];
+        if(item && item.stokSasetMenu !== null){
+          let totalQtyMenuIni = 0;
+          item.varian.forEach((v, vi)=>{ const kk = ci+"|"+ii+"|"+vi; if(cart[kk]) totalQtyMenuIni += cart[kk].qty; });
+          if(totalQtyMenuIni + 1 > item.stokSasetMenu){
+            tampilkanAnimasiSukses(false, `Stok "${item.nama}" tinggal ${item.stokSasetMenu} saset, tidak bisa nambah lagi.`);
+            return;
+          }
+        }
+        cart[k].qty++; renderCartBody(); renderMenu(); updateFab();
+      };
       row.querySelector('.cminus').onclick = ()=>{ cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; renderCartBody(); renderMenu(); updateFab(); };
       row.querySelector('.cdel').onclick = ()=>{ delete cart[k]; renderCartBody(); renderMenu(); updateFab(); };
     });

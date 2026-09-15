@@ -3008,7 +3008,13 @@ function loadMenuRealtime(){
     MENU_MENTAH = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     gabungkanMenuDanStok();
   }, (err)=>{
-    el('menuArea').innerHTML = '<div class="empty">Gagal memuat menu. Cek koneksi/Firebase config.</div>';
+    console.error('Gagal load menu:', err);
+    const authUser = fbAuth && fbAuth.currentUser;
+    const infoAuth = authUser ? ('auth OK, uid: ' + authUser.uid) : 'BELUM AUTH (anonymous sign-in gagal/belum selesai)';
+    el('menuArea').innerHTML = '<div class="empty">Gagal memuat menu.<br>'
+      + '<span style="font-size:11px; opacity:.7;">Kode: ' + (err.code || 'unknown') + '<br>'
+      + 'Pesan: ' + (err.message || '-') + '<br>'
+      + 'Status: ' + infoAuth + '</span></div>';
   });
 
   if(SESI && SESI.outlet){

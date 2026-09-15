@@ -3162,10 +3162,30 @@ function attachSheetEvents(cat, item, ci, ii){
   function tampilkanPopupStokSasetHabis(){
     tampilkanAnimasiSukses(false, `Stok "${item.nama}" tinggal ${item.stokSasetMenu} saset, tidak bisa nambah lagi.`);
   }
+  // Cek sisa stok TEH (ml) sebelum menambah qty item kategori "Es Teh Manis".
+  // tambahanQty = berapa qty tambahan yang mau ditambahkan (biasanya 1).
+  // Return true kalau boleh ditambah, false kalau tidak cukup (popup ditampilkan).
+  function stokTehCukupUntukTambah(kategoriItem, namaItem, tambahanQty){
+    if(kategoriItem !== KATEGORI_PAKAI_TEH) return true; // bukan menu Es Teh Manis, tidak perlu cek
+    if(STOKTEH_ML_KASIR_AKTIF === null) return true; // stok teh belum termuat, jangan asal blokir
+    const mlPerCup = mlTehUntukItem(kategoriItem, namaItem) || 1;
+    let totalMlDipakaiSaatIni = 0;
+    Object.values(cart).forEach(c=>{ if(c.kategori === KATEGORI_PAKAI_TEH) totalMlDipakaiSaatIni += mlTehUntukItem(c.kategori, c.nama) * c.qty; });
+    const mlDibutuhkan = totalMlDipakaiSaatIni + (mlPerCup * tambahanQty);
+    if(mlDibutuhkan > STOKTEH_ML_KASIR_AKTIF){
+      const sisaBisaBuat = Math.max(0, Math.floor((STOKTEH_ML_KASIR_AKTIF - totalMlDipakaiSaatIni) / mlPerCup));
+      tampilkanAnimasiSukses(false, sisaBisaBuat > 0
+        ? `Stok teh cuma cukup untuk ${sisaBisaBuat} cup lagi.`
+        : `Stok teh outlet ini tidak cukup untuk menambah "${namaItem}".`);
+      return false;
+    }
+    return true;
+  }
   el('sheetBody').querySelectorAll('.varOption[data-add]').forEach(row=>{
     row.onclick = ()=>{
       const k = row.dataset.k; const vi = +k.split('|')[2]; const v = item.varian[vi];
       if(!stokSasetCukup(1)){ tampilkanPopupStokSasetHabis(); return; }
+      if(!stokTehCukupUntukTambah(cat.kategori, item.nama, 1)) return;
       cart[k] = { nama:item.nama, varian:v.nama, tambahan:v.tambahan||'', harga:v.harga||0, kategori:cat.kategori, qty:1 };
       openVariantSheet(ci, ii); renderMenu(); updateFab();
     };
@@ -3174,6 +3194,7 @@ function attachSheetEvents(cat, item, ci, ii){
     const k = bar.dataset.k;
     bar.querySelector('.plus').onclick = ()=>{
       if(!stokSasetCukup(1)){ tampilkanPopupStokSasetHabis(); return; }
+      if(!stokTehCukupUntukTambah(cart[k].kategori, cart[k].nama, 1)) return;
       cart[k].qty++; openVariantSheet(ci, ii); renderMenu(); updateFab();
     };
     bar.querySelector('.minus').onclick = ()=>{ cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; openVariantSheet(ci, ii); renderMenu(); updateFab(); };
@@ -3209,6 +3230,19 @@ function renderCartBody(){
           item.varian.forEach((v, vi)=>{ const kk = ci+"|"+ii+"|"+vi; if(cart[kk]) totalQtyMenuIni += cart[kk].qty; });
           if(totalQtyMenuIni + 1 > item.stokSasetMenu){
             tampilkanAnimasiSukses(false, `Stok "${item.nama}" tinggal ${item.stokSasetMenu} saset, tidak bisa nambah lagi.`);
+            return;
+          }
+        }
+        // Cek sisa stok teh (ml) sebelum menambah qty item kategori "Es Teh Manis" dari layar keranjang.
+        if(cart[k].kategori === KATEGORI_PAKAI_TEH && STOKTEH_ML_KASIR_AKTIF !== null){
+          const mlPerCup = mlTehUntukItem(cart[k].kategori, cart[k].nama) || 1;
+          let totalMlDipakaiSaatIni = 0;
+          Object.values(cart).forEach(c=>{ if(c.kategori === KATEGORI_PAKAI_TEH) totalMlDipakaiSaatIni += mlTehUntukItem(c.kategori, c.nama) * c.qty; });
+          if(totalMlDipakaiSaatIni + mlPerCup > STOKTEH_ML_KASIR_AKTIF){
+            const sisaBisaBuat = Math.max(0, Math.floor((STOKTEH_ML_KASIR_AKTIF - totalMlDipakaiSaatIni) / mlPerCup));
+            tampilkanAnimasiSukses(false, sisaBisaBuat > 0
+              ? `Stok teh cuma cukup untuk ${sisaBisaBuat} cup lagi.`
+              : `Stok teh outlet ini tidak cukup untuk menambah "${cart[k].nama}".`);
             return;
           }
         }

@@ -2519,7 +2519,7 @@ function mulaiSemuaSetelahLogin(){
 let unsubStokMenipis = null, unsubStokCupMenipis = null, unsubStokTehMenipis = null;
 let stokMenipisTerakhir = {}, stokCupMenipisTerakhir = {}, stokTehMenipisTerakhir = {}; // simpan snapshot data terbaru dari ketiga listener
 let toastStokMenipisTimer = null;
-const BATAS_ML_TEH_MENIPIS = BATAS_STOK_MENIPIS * ML_TEH_DEFAULT; // setara "<=20 cup" dalam ml
+const BATAS_ML_TEH_MENIPIS = 1000; // ambang "stok teh menipis" -- popup muncul begitu sisa teh <= 1000ml
 
 function evaluasiDanTampilkanStokMenipis(){
   const menipisList = [], habisList = [];
@@ -5977,7 +5977,7 @@ function renderKelolaStokTeh(){
   }
 
   const habis = STOKTEH_ML_AKTIF <= 0;
-  const menipis = !habis && STOKTEH_ML_AKTIF <= (BATAS_STOK_MENIPIS * 50); // ambang menipis teh: 1000ml (setara 20 cup 50ml, diskalakan dari BATAS_STOK_MENIPIS)
+  const menipis = !habis && STOKTEH_ML_AKTIF <= BATAS_ML_TEH_MENIPIS; // ambang menipis teh: 1000ml
   const badgeTxt = habis ? 'Habis' : (menipis ? 'Menipis' : 'Aman');
   const badgeCls = habis ? 'habis' : (menipis ? 'menipis' : '');
   html += `<div class="tehStokCard">

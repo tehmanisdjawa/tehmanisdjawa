@@ -7946,19 +7946,28 @@ async function hitungVersiBerikutnya(){
   return Math.round((versiSekarang + 0.1) * 10) / 10;
 }
 
-onSnapshot(UPDATE_SIGNAL_REF, async (snap)=>{
-  if(!updateSignalAwalDiabaikan){
-    updateSignalAwalDiabaikan = true;
-    if(snap.exists()){
-      updateSignalWaktuTerakhir = waktuSinyalKeMs(snap.data());
-      if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
+// PENTING: tunggu anonymous sign-in selesai dulu sebelum pasang listener ini.
+// Kalau langsung dipasang saat boot (sebelum fbAuthReady selesai), Firestore
+// bisa menolak koneksi realtime-nya karena request.auth masih null di rules,
+// dan onSnapshot ini TIDAK auto-retry -- device itu jadi tuli selamanya
+// terhadap sinyal update walau user sudah login setelahnya. Ini penyebab
+// kenapa banner "Paksa Update" kadang tidak muncul di sebagian device.
+(async ()=>{
+  try{ await fbAuthReady; }catch(e){ console.error('Auth belum siap, listener sinyal update tetap dicoba pasang:', e); }
+  onSnapshot(UPDATE_SIGNAL_REF, async (snap)=>{
+    if(!updateSignalAwalDiabaikan){
+      updateSignalAwalDiabaikan = true;
+      if(snap.exists()){
+        updateSignalWaktuTerakhir = waktuSinyalKeMs(snap.data());
+        if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
+      }
+      return;
     }
-    return;
-  }
-  if(!snap.exists()) return;
-  if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
-  tampilkanBannerUpdate();
-}, (err)=>{ console.error('Gagal memantau sinyal update sistem (realtime):', err); });
+    if(!snap.exists()) return;
+    if(typeof snap.data().versi === 'number') updateVersiTerkini = snap.data().versi;
+    tampilkanBannerUpdate();
+  }, (err)=>{ console.error('Gagal memantau sinyal update sistem (realtime):', err); });
+})();
 
 function waktuSinyalKeMs(data){
   if(!data || !data.waktu) return null;
@@ -7985,7 +7994,10 @@ async function cekSinyalUpdateManual(){
     }
   }catch(e){ console.error('Gagal cek sinyal update sistem (polling):', e); }
 }
-setInterval(cekSinyalUpdateManual, 45000); // cek ulang tiap 45 detik -- cukup cepat utk kebutuhan update, tapi lebih hemat read dibanding 20 detik
+(async ()=>{
+  try{ await fbAuthReady; }catch(e){}
+  setInterval(cekSinyalUpdateManual, 45000); // cek ulang tiap 45 detik -- cukup cepat utk kebutuhan update, tapi lebih hemat read dibanding 20 detik
+})();
 // Cek juga setiap kali tab/WebView kembali terlihat (misal HP dibuka lagi dari
 // kunci layar/background) supaya tidak perlu nunggu sampai 20 detik berikutnya.
 // Dipasang di beberapa event sekaligus karena WebView APK (Appilix) tidak selalu

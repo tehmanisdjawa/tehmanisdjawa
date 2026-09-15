@@ -3890,6 +3890,38 @@ function renderItemTerlarisHtml(items){
 }
 function renderPerKaryawanHtml(k){ if(!k||!k.length) return ''; return `<div style="margin-top:12px;"><div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px;">Per Karyawan</div>${k.map(x=>`<div class="lapRow"><div class="lrn">${x.karyawan}</div><div class="lrv">${rupiah(x.total)}</div></div>`).join('')}</div>`; }
 
+// Batas jumlah baris yang langsung ditampilkan di daftar panjang (Riwayat
+// Transaksi & Riwayat Barang Dibeli) sebelum dipotong dan diganti tombol
+// "Selengkapnya" -- supaya laporan tidak kepanjangan kalau transaksinya
+// banyak dalam sehari. Klik tombolnya nambah LAP_BATAS_TAMPIL lagi per klik.
+const LAP_BATAS_TAMPIL = 15;
+
+// Render daftar item ke dalam elemen `idWadah` secara bertahap: awalnya cuma
+// LAP_BATAS_TAMPIL baris pertama + tombol "Selengkapnya (sisanya)" di bawah;
+// tiap klik tombol nambah LAP_BATAS_TAMPIL baris lagi sampai habis.
+// `renderBaris(item)` -> string HTML utk satu baris. `htmlKosong` dipakai
+// kalau list-nya kosong. `setelahRender()` dipanggil ulang tiap kali daftar
+// digambar ulang (baik render awal maupun tiap klik Selengkapnya) supaya
+// event listener (klik baris, tombol void, dsb) selalu terpasang ulang.
+function renderDaftarBertahap(idWadah, daftar, renderBaris, htmlKosong, setelahRender){
+  const wadah = el(idWadah);
+  if(!daftar || daftar.length === 0){ wadah.innerHTML = htmlKosong || ''; return; }
+  let jumlahTampil = Math.min(LAP_BATAS_TAMPIL, daftar.length);
+
+  function gambarUlang(){
+    const sisanya = daftar.length - jumlahTampil;
+    let html = daftar.slice(0, jumlahTampil).map(renderBaris).join('');
+    if(sisanya > 0){
+      html += `<button class="addBtn" id="${idWadah}SelengkapnyaBtn" style="margin-top:4px; margin-bottom:0;">Selengkapnya \u2014 ${sisanya} lagi</button>`;
+    }
+    wadah.innerHTML = html;
+    const btn = document.getElementById(idWadah + 'SelengkapnyaBtn');
+    if(btn) btn.onclick = ()=>{ jumlahTampil = Math.min(jumlahTampil + LAP_BATAS_TAMPIL, daftar.length); gambarUlang(); };
+    if(setelahRender) setelahRender();
+  }
+  gambarUlang();
+}
+
 function renderLaporanSatuOutlet(data){
   const r = data.ringkasan;
   let html = `<div class="lapCardRow">
@@ -3949,6 +3981,8 @@ function renderLaporanSatuOutlet(data){
   // Riwayat Barang Dibeli: baris per ITEM (bukan per transaksi), urut waktu terbaru dulu,
   // menampilkan jam beli, nama barang + ukuran, qty, dan siapa yang jual -- supaya kelihatan
   // persis barang apa saja yang laku sepanjang hari, bukan cuma rekap total per menu.
+  // Ditampilkan bertahap (lihat LAP_BATAS_TAMPIL) supaya laporan tidak kepanjangan kalau
+  // transaksinya banyak -- ada tombol "Selengkapnya" buat nampilin sisanya.
   if(data.transaksi && data.transaksi.length){
     const barisBarang = [];
     data.transaksi.forEach(t=>{
@@ -3956,11 +3990,11 @@ function renderLaporanSatuOutlet(data){
         barisBarang.push({ waktu: t.waktu, karyawan: t.karyawan, nama: it.nama, ukuran: normalisasiUkuran(it.varian, it.nama), tambahan: it.tambahan||'', qty: it.qty||0, subtotal: it.subtotal||0 });
       });
     });
-    el('riwayatBarangList').innerHTML = barisBarang.length ? barisBarang.map(b=>`
+    renderDaftarBertahap('riwayatBarangList', barisBarang, (b)=>`
       <div class="trxItemRow">
         <div><div class="tin">${b.nama} \u2014 ${b.ukuran}${b.tambahan?' \u00b7 +'+b.tambahan:''}</div><div class="tiv">${b.waktu} \u00b7 ${b.karyawan} \u00b7 ${b.qty}x</div></div>
         <div class="tiq">${rupiah(b.subtotal)}</div>
-      </div>`).join('') : '<div class="empty" style="padding:16px 0;">Belum ada barang dibeli.</div>';
+      </div>`, '<div class="empty" style="padding:16px 0;">Belum ada barang dibeli.</div>');
   }
 
   // Karyawan boleh lihat laporan tapi TIDAK BISA menghapus transaksi -- tombol void
@@ -3969,24 +4003,25 @@ function renderLaporanSatuOutlet(data){
   if(data.transaksi.length === 0){
     el('trxList').innerHTML = '<div class="empty" style="padding:24px 0;">Belum ada transaksi hari ini.</div>';
   } else {
-    el('trxList').innerHTML = data.transaksi.map(t=>`
+    // Simpan data transaksi hari ini biar bisa dibuka detailnya tanpa fetch ulang.
+    trxDetailMap = {};
+    data.transaksi.forEach(t=> trxDetailMap[t.trxId] = t);
+
+    renderDaftarBertahap('trxList', data.transaksi, (t)=>`
       <div class="trxRow" data-id="${t.trxId}">
         <div><div class="trn">${t.karyawan} \u00b7 ${t.metode}</div><div class="trm">${t.waktu} \u00b7 ${t.jumlahItem} item${REJECT_TRX_MENUNGGU_SET.has(t.trxId) ? ' \u00b7 <b style="color:var(--gold-dark);">Menunggu Reject</b>' : ''}</div></div>
         <div style="display:flex; align-items:center;">
           <div class="trv">${rupiah(t.total)}</div>
           ${bolehHapus ? `<button class="voidB" title="Batalkan transaksi ini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button>` : ''}
         </div>
-      </div>`).join('');
-    // Simpan data transaksi hari ini biar bisa dibuka detailnya tanpa fetch ulang.
-    trxDetailMap = {};
-    data.transaksi.forEach(t=> trxDetailMap[t.trxId] = t);
-
-    el('trxList').querySelectorAll('.trxRow').forEach(row=>{
-      row.onclick = ()=> bukaDetailTransaksi(row.dataset.id);
-      if(bolehHapus){
-        row.querySelector('.voidB').onclick = (e)=>{ e.stopPropagation(); voidTransaksi(row.dataset.id); };
-      }
-    });
+      </div>`, '<div class="empty" style="padding:24px 0;">Belum ada transaksi hari ini.</div>', ()=>{
+        el('trxList').querySelectorAll('.trxRow').forEach(row=>{
+          row.onclick = ()=> bukaDetailTransaksi(row.dataset.id);
+          if(bolehHapus){
+            row.querySelector('.voidB').onclick = (e)=>{ e.stopPropagation(); voidTransaksi(row.dataset.id); };
+          }
+        });
+      });
     // Karyawan (bukan Owner, yang tidak memantau NOTIF_REJECTTRX_LIST realtime)
     // cek sekali ke Firestore transaksi mana saja yang lagi "menunggu reject",
     // supaya tag di atas tetap akurat walau tidak ada listener aktif.

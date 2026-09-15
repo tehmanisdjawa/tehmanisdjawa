@@ -183,6 +183,16 @@
     border:1.5px solid var(--pine-950); display:none;
   }
   .iconBtn .notifDot.show{display:block;}
+  /* Tombol lonceng lama (cup/reject/teh) dipindah tampilannya ke dalam menu
+     garis tiga sebagai menuDropItem terpisah (lihat #notifBtn dst di dalam
+     .menuDropdown) -- versi iconBtn aslinya cukup disembunyikan visual saja,
+     JS (onclick/style.display/badge count) tetap jalan seperti biasa karena
+     elemen aslinya tidak dihapus dari DOM, cuma dipindah posisi & disamarkan. */
+  #notifBtn.iconBtn, #notifRejectOwnerBtn.iconBtn, #notifKaryawanBtn.iconBtn,
+  #notifTehBtn.iconBtn, #notifKaryawanTehBtn.iconBtn{
+    position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+    clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
 
   /* ============ PANEL NOTIFIKASI PERMINTAAN STOK CUP ============ */
   .notifPanelOverlay{position:fixed; inset:0; z-index:66; display:none;}
@@ -232,6 +242,20 @@
   .menuDropItem svg{width:17px; height:17px; flex:0 0 auto; color:var(--pine-700);}
   .menuDropItem-danger{color:var(--merah);}
   .menuDropItem-danger svg{color:var(--merah);}
+  .menuDropItem{position:relative;}
+  .menuDropItem .mdiDot{
+    margin-left:auto; min-width:18px; height:18px; padding:0 5px; border-radius:999px;
+    background:var(--merah); color:#fff; font-size:10.5px; font-weight:800; line-height:18px; text-align:center;
+    display:none; flex:0 0 auto;
+  }
+  .menuDropItem .mdiDot.show{display:inline-block;}
+  #menuBtn{position:relative;}
+  #menuBtn .menuBtnDot{
+    position:absolute; top:-4px; right:-4px; min-width:15px; height:15px; padding:0 3px; border-radius:999px;
+    background:var(--merah); color:#fff; font-size:9px; font-weight:800; line-height:15px; text-align:center;
+    border:1.5px solid var(--pine-950); display:none;
+  }
+  #menuBtn .menuBtnDot.show{display:block;}
 
   /* ============ DROPDOWN AKSI PER AKUN (Kelola Akun) ============ */
   .akAksiOverlay{position:fixed; inset:0; z-index:67; display:none;}
@@ -1348,6 +1372,7 @@
         </button>
         <button class="iconBtn" id="menuBtn" aria-label="Menu" title="Menu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+          <span class="menuBtnDot" id="menuBtnDot">0</span>
         </button>
       </div>
     </div>
@@ -1360,6 +1385,31 @@
 
   <div class="menuDropdownOverlay" id="menuDropdownOverlay">
     <div class="menuDropdown" id="menuDropdown">
+      <button class="menuDropItem" id="notifMenuBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l-1.5 15a2 2 0 01-2 1.8H9.5a2 2 0 01-2-1.8L6 3z"/><path d="M6 8h12"/><path d="M14 1v4" stroke-width="1.8"/></svg>
+        <span>Permintaan Izin Stok Cup</span>
+        <span class="mdiDot" id="notifMenuDot">0</span>
+      </button>
+      <button class="menuDropItem" id="notifRejectOwnerMenuBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>
+        <span>Permintaan Reject Transaksi</span>
+        <span class="mdiDot" id="notifRejectOwnerMenuDot">0</span>
+      </button>
+      <button class="menuDropItem" id="notifKaryawanMenuBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        <span>Status Izin Stok Cup</span>
+        <span class="mdiDot" id="notifKaryawanMenuDot">0</span>
+      </button>
+      <button class="menuDropItem" id="notifTehMenuBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8s2-5 7-5 4 3 8 3c1.5 0 2.5-.5 3-1" stroke-width="1.7"/><path d="M4 12c3 3 6-3 9 0s6 3 9 0" stroke-width="1.7"/><path d="M4 17c3 3 6-3 9 0s6 3 9 0" stroke-width="1.7"/></svg>
+        <span>Permintaan Izin Stok Teh</span>
+        <span class="mdiDot" id="notifTehMenuDot">0</span>
+      </button>
+      <button class="menuDropItem" id="notifKaryawanTehMenuBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12l2 2 4-4" stroke-width="1.8"/></svg>
+        <span>Status Izin Stok Teh</span>
+        <span class="mdiDot" id="notifKaryawanTehMenuDot">0</span>
+      </button>
       <button class="menuDropItem" id="calcBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
         <span>Kalkulator</span>
@@ -1386,7 +1436,7 @@
       </button>
       <button class="menuDropItem" id="stokCupBtn" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l-1.5 15a2 2 0 01-2 1.8H9.5a2 2 0 01-2-1.8L6 3z"/><path d="M6 8h12"/></svg>
-        <span>Kelola Stok Cup</span>
+        <span>Tambah Stok Cup</span>
       </button>
       <button class="menuDropItem" id="stokTehBtn" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3h16l-1.4 15.6A2.4 2.4 0 0116.2 21H7.8a2.4 2.4 0 01-2.4-2.4L4 3z"/><path d="M4 3h16"/><path d="M8 10c1 1.4 3 1.4 4 0s3-1.4 4 0" stroke-width="1.6"/></svg>
@@ -1642,7 +1692,7 @@
 
 <div class="cartOverlay" id="stokCupOverlay">
   <div class="adminSheet">
-    <div class="adminHead"><h2>Kelola Stok Cup</h2><button id="stokCupClose">✕</button></div>
+    <div class="adminHead"><h2>Tambah Stok Cup</h2><button id="stokCupClose">✕</button></div>
     <div class="adminBody" id="stokCupBody"></div>
   </div>
 </div>
@@ -2580,7 +2630,54 @@ function mulaiPengecekanStokMenipis(){
 /* =====================================================================
    MENU DROPDOWN
    ===================================================================== */
-el('menuBtn').onclick = (e)=>{ e.stopPropagation(); el('menuDropdownOverlay').classList.add('show'); };
+el('menuBtn').onclick = (e)=>{ e.stopPropagation(); sinkronNotifKeMenuGarisTiga(); el('menuDropdownOverlay').classList.add('show'); };
+
+/* =====================================================================
+   SINKRONISASI LONCENG NOTIFIKASI -> MENU GARIS TIGA
+   Lonceng notifikasi (stok cup/teh, reject transaksi) aslinya tombol
+   terpisah di pojok kanan atas. Sekarang ditampilkan sebagai baris menu
+   di dalam menu garis tiga supaya ikon di header tidak numpuk & mirip-mirip.
+   Tombol aslinya TETAP ada di DOM (cuma disembunyikan visual) supaya semua
+   listener/logic approve-tolak yang sudah ada tidak perlu diubah -- fungsi
+   di bawah ini cuma "menyalin" status tampil/angka badge-nya ke menu, dan
+   meneruskan klik ke tombol aslinya.
+   ===================================================================== */
+const PASANGAN_NOTIF_MENU = [
+  ['notifBtn','notifDot','notifMenuBtn','notifMenuDot'],
+  ['notifRejectOwnerBtn','notifRejectOwnerDot','notifRejectOwnerMenuBtn','notifRejectOwnerMenuDot'],
+  ['notifKaryawanBtn','notifKaryawanDot','notifKaryawanMenuBtn','notifKaryawanMenuDot'],
+  ['notifTehBtn','notifTehDot','notifTehMenuBtn','notifTehMenuDot'],
+  ['notifKaryawanTehBtn','notifKaryawanTehDot','notifKaryawanTehMenuBtn','notifKaryawanTehMenuDot'],
+];
+function sinkronNotifKeMenuGarisTiga(){
+  let adaNotifAktif = false;
+  PASANGAN_NOTIF_MENU.forEach(([idBtnAsli, idDotAsli, idBtnMenu, idDotMenu])=>{
+    const btnAsli = el(idBtnAsli), dotAsli = el(idDotAsli);
+    const btnMenu = el(idBtnMenu), dotMenu = el(idDotMenu);
+    if(!btnAsli || !btnMenu) return;
+    const tampil = btnAsli.style.display !== 'none';
+    btnMenu.style.display = tampil ? 'flex' : 'none';
+    if(dotAsli && dotMenu){
+      const jumlah = dotAsli.textContent;
+      const nyala = dotAsli.classList.contains('show');
+      dotMenu.textContent = jumlah;
+      dotMenu.classList.toggle('show', nyala);
+      if(tampil && nyala) adaNotifAktif = true;
+    }
+    // Klik item menu = klik tombol lonceng aslinya (tutup dropdown dulu).
+    btnMenu.onclick = (e)=>{
+      e.stopPropagation();
+      el('menuDropdownOverlay').classList.remove('show');
+      btnAsli.click();
+    };
+  });
+  const menuBtnDot = el('menuBtnDot');
+  if(menuBtnDot) menuBtnDot.classList.toggle('show', adaNotifAktif);
+}
+// Cek berkala supaya badge di ikon garis tiga (ringkasan semua notif) tetap
+// akurat walau menu sedang tertutup -- realtime listener aslinya menyalakan
+// dotAsli, jadi cukup poll ringan tiap 3 detik untuk menyamakan visualnya.
+setInterval(sinkronNotifKeMenuGarisTiga, 3000);
 el('menuDropdownOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'menuDropdownOverlay') tutupOverlaySmooth(el('menuDropdownOverlay')); });
 ['calcBtn','laporanBtn','grafikBtn','adminBtn','modeEditMenuBtn','stokBtn','stokCupBtn','rejectTrxBtn','akunBtn','outletBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
   el(id).addEventListener('click', ()=> tutupOverlaySmooth(el('menuDropdownOverlay')));
@@ -5568,7 +5665,7 @@ function renderKelolaStokCup(){
   } else if(punyaMenunggu){
     keteranganAkses = `Permintaan restock stok cup untuk outlet <b>${STOKCUP_OUTLET_AKTIF}</b> sudah dikirim dan sedang <b>menunggu persetujuan Owner</b>. Begitu disetujui, stok akan bertambah otomatis sesuai jumlah yang kamu isi \u2014 tidak perlu restock manual lagi.`;
   } else {
-    keteranganAkses = `Kamu bisa melihat stok cup outlet <b>${STOKCUP_OUTLET_AKTIF}</b>. Untuk menambah stok, isi dulu jumlah cup yang mau ditambah per ukuran lewat tombol di bawah, lalu kirim ke Owner untuk disetujui. Kamu tidak bisa mengubah/reset angka stok secara manual.`;
+    keteranganAkses = `Kamu bisa melihat stok cup outlet <b>${STOKCUP_OUTLET_AKTIF}</b>. Jumlah yang kamu isi di tombol Tambah Stok di bawah adalah <b>jumlah cup TAMBAHAN</b> yang mau ditambahkan (bukan total/keseluruhan stok cup) \\u2014 misal stok sekarang 30 lalu kamu minta tambah 20, setelah disetujui Owner stok akan jadi 50. Isi jumlahnya lalu kirim ke Owner untuk disetujui. Kamu tidak bisa mengubah/reset angka stok secara manual.`;
   }
 
   let html = `<div class="empty" style="padding:6px 4px 16px; text-align:left; font-size:12px;">${keteranganAkses}</div>`;
@@ -5678,7 +5775,7 @@ function bukaFormKirimIzinStokCup(){
   if(!SESI || SESI.jabatan === 'Owner' || !SESI.outlet) return;
 
   el('restockBody').innerHTML = `
-    <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Isi jumlah cup yang mau ditambah untuk outlet <b>${SESI.outlet}</b>. Boleh isi beberapa ukuran sekaligus \u2014 kosongkan/0 kalau ukuran itu tidak perlu ditambah.</div>
+    <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Isi jumlah cup <b>TAMBAHAN</b> yang mau ditambahkan untuk outlet <b>${SESI.outlet}</b> (bukan total/keseluruhan stok cup). Boleh isi beberapa ukuran sekaligus \u2014 kosongkan/0 kalau ukuran itu tidak perlu ditambah.</div>
     <div id="izinCupUkuranList"></div>
     <button class="saveFormBtn" id="izinCupSaveBtn">Kirim Izin</button>
   `;

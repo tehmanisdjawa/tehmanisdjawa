@@ -1930,6 +1930,20 @@ function mlTehUntukItem(kategori, namaMenu){
   return ML_TEH_DEFAULT;
 }
 
+// Apakah 1 menu (nama+kategori) memang dilacak stok sasetnya di Kelola Stok
+// Barang? Field pakaiSaset di data menu itu OPSIONAL -- kalau belum pernah
+// diatur lewat Kelola Menu (undefined, bukan eksplisit true/false), menu
+// kategori "Es Teh Manis" (teh cair, diseduh langsung, bukan saset) dianggap
+// TIDAK pakai saset secara default, sama seperti default form Kelola Menu
+// (lihat pakaiSasetVal di bukaFormMenu). Kategori lain tetap default TRUE
+// (pakai saset) kalau belum diatur, supaya menu lama yang memang saset tidak
+// mendadak hilang dari daftar stok.
+function itemPakaiSaset(kategori, item){
+  if(item.pakaiSaset === true) return true;
+  if(item.pakaiSaset === false) return false;
+  return String(kategori||'').trim() !== KATEGORI_PAKAI_TEH; // belum diatur -> default per kategori
+}
+
 // KALKULATOR TAKARAN TEH -- bukan lagi angka batch tetap, karena Owner
 // meracik dengan takaran air yang BERBEDA-BEDA tiap kali (kadang 500ml,
 // kadang 800ml, dst). Rumus tetapnya:
@@ -2838,7 +2852,7 @@ function gabungkanMenuDanStok(){
     const nama = r.nama || '';
     if(!nama) return;
     if(!catMap[kategori]){ catMap[kategori] = {}; catOrder.push(kategori); }
-    const pakaiSaset = r.pakaiSaset !== false;
+    const pakaiSaset = itemPakaiSaset(kategori, r);
     // Stok saset SEKARANG PER MENU (gabungan semua ukuran), bukan per varian --
     // lihat juga BATAS_STOK_MENIPIS & renderKelolaStok. Kalau menu ini ditandai
     // "Bukan Saset" (pakaiSaset=false), stoknya tidak dilacak sama sekali (selalu null).
@@ -7186,7 +7200,7 @@ function renderKelolaStok(){
   MENU.forEach(cat=>{
     // Skip menu yang ditandai "Bukan Saset" (lihat field pakaiSaset di Kelola Menu) --
     // stoknya sengaja tidak dilacak sistem, apapun kategorinya.
-    const itemsSaset = cat.items.filter(item => item.pakaiSaset !== false);
+    const itemsSaset = cat.items.filter(item => itemPakaiSaset(cat.kategori, item));
     if(itemsSaset.length === 0) return;
     html += `<div class="catLabelAdmin">${cat.kategori}</div>`;
     itemsSaset.forEach(item=>{
@@ -7272,7 +7286,7 @@ function bukaFormKirimIzinStok(){
 
   const daftarMenuSaset = [];
   MENU.forEach(cat=>{
-    cat.items.filter(item => item.pakaiSaset !== false).forEach(item=>{
+    cat.items.filter(item => itemPakaiSaset(cat.kategori, item)).forEach(item=>{
       daftarMenuSaset.push({ kategori: cat.kategori, nama: item.nama });
     });
   });

@@ -7469,7 +7469,18 @@ async function bukaRiwayatRestock(){
 /* ---------- PERSETUJUAN IZIN RESTOCK STOK BARANG (khusus Owner) ---------- */
 async function putuskanPermintaanStok(id, statusBaru){
   try{
-    const r = PERMINTAAN_STOK_OWNER_LIST.find(x => x.id === id);
+    // PENTING: jangan andalkan PERMINTAAN_STOK_OWNER_LIST (cache lokal) di sini --
+    // list itu cuma berisi permintaan utk outlet yg lagi aktif SAAT list terakhir
+    // dimuat. Kalau Owner pindah outlet atau list belum sempat di-refresh saat
+    // tombol Setujui diklik, .find() bisa gagal ketemu (r = undefined) sehingga
+    // bagian tambah stok di bawah ke-skip diam-diam -- padahal status permintaan
+    // tetap keubah jadi "disetujui" & toast tetap bilang sukses. Makanya ambil
+    // langsung dari Firestore pakai id yang diklik supaya selalu akurat.
+    let r = PERMINTAAN_STOK_OWNER_LIST.find(x => x.id === id);
+    if(!r){
+      const snapR = await getDoc(doc(db, "permintaan_stok_barang", id));
+      if(snapR.exists()) r = { id: snapR.id, ...snapR.data() };
+    }
     const rincian = (r && Array.isArray(r.rincian)) ? r.rincian : [];
 
     if(statusBaru === 'disetujui' && rincian.length > 0 && r){
@@ -7510,7 +7521,15 @@ async function putuskanPermintaanStok(id, statusBaru){
         statusBaru === 'disetujui' ? 'sukses' : 'tolak'
       );
     }
-    showToast(statusBaru === 'disetujui' ? "Permintaan disetujui \u2014 stok sudah ditambah otomatis" : "Permintaan ditolak");
+    // Kalau statusnya "disetujui" tapi ternyata TIDAK ada rincian yang berhasil
+    // dieksekusi (data permintaan tidak ketemu / rincian kosong), jangan
+    // tampilkan toast sukses palsu -- kasih tahu apa adanya supaya Owner sadar
+    // dan bisa cek manual, bukannya mengira stok sudah nambah padahal belum.
+    if(statusBaru === 'disetujui' && rincian.length === 0){
+      showToast("Permintaan ditandai disetujui, TAPI rincian stok tidak ditemukan \u2014 stok TIDAK bertambah otomatis. Cek manual.", false);
+    } else {
+      showToast(statusBaru === 'disetujui' ? "Permintaan disetujui \u2014 stok sudah ditambah otomatis" : "Permintaan ditolak");
+    }
     if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
   }catch(e){ showToast("Gagal memproses permintaan. Cek koneksi.", false); console.error('Gagal memutuskan permintaan stok barang:', e); }
 }

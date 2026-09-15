@@ -857,6 +857,22 @@
 
   .catLabelAdmin{font-family:"Fraunces",serif; font-size:14px; font-weight:600; color:var(--pine-900); margin:16px 2px 8px;}
 
+  /* ============ SEARCH BOX (Kelola Stok Barang / Kelola Menu) ============ */
+  .adminSearchWrap{position:relative; margin:2px 0 14px;}
+  .adminSearchWrap svg{position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--muted-soft); pointer-events:none;}
+  .adminSearchInput{
+    width:100%; padding:11px 14px 11px 36px; border-radius:12px; border:1.4px solid var(--line);
+    font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);
+  }
+  .adminSearchInput:focus{outline:none; border-color:var(--pine-600);}
+  .adminSearchClear{
+    position:absolute; right:6px; top:50%; transform:translateY(-50%); width:26px; height:26px; border:none;
+    background:transparent; color:var(--muted-soft); cursor:pointer; display:none; align-items:center; justify-content:center; padding:0;
+  }
+  .adminSearchClear svg{position:static; width:15px; height:15px; transform:none;}
+  .adminSearchWrap.hasVal .adminSearchClear{display:flex;}
+  .adminSearchEmpty{padding:22px 4px; text-align:center; font-size:12.5px; color:var(--muted-soft);}
+
   /* ============ LAPORAN ============ */
   .lapCardRow{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
   .lapCard{background:var(--card); border:1px solid var(--line-soft); border-radius:14px; padding:14px; box-shadow:var(--shadow-card);}
@@ -1210,18 +1226,35 @@
   }
 
   /* =====================================================================
-     LAPISAN GLOBAL "SEMUA KENA" -- supaya benar-benar semua elemen
-     interaktif punya animasi halus, tanpa perlu daftar class satu-satu.
-     Sengaja HANYA transform & opacity (properti "murah", jalan di GPU,
-     tidak memicu layout/reflow) supaya tetap 60fps walau kena ke banyak
-     elemen sekaligus. TIDAK transition:all supaya tidak lag & tidak
-     "kebawa" animasi ke properti berat (width/height/top/left/dll).
+     LAPISAN GLOBAL "SEMUA KENA" -- daftar class eksplisit (BUKAN selector
+     atribut wildcard [class*="..."]). Wildcard substring-match itu mahal
+     dievaluasi browser krn harus dicek ke SEMUA elemen tiap kali terjadi
+     reflow/style recalculation -- kalau kena ratusan elemen (list menu,
+     list stok, dst yang di-render ulang lewat innerHTML tiap kali data
+     berubah), inilah yang bikin animasi kerasa patah/nge-lag, terutama di
+     WebView Android (APK) yang GPU-nya lebih terbatas drpd Chrome biasa.
+     Diganti daftar class konkret -- sama cakupannya, jauh lebih murah.
+     Juga HANYA transform & opacity (properti "murah", jalan di GPU,
+     tidak memicu layout/reflow/repaint) -- box-shadow/background-color/
+     border-color dilepas dari daftar transition-property massal ini krn
+     properti itu MEMICU REPAINT (bukan cuma compositing), berat kalau
+     dipasang ke ratusan elemen sekaligus. Kalau suatu tombol memang perlu
+     transisi warna/shadow yang halus, itu sudah didefinisikan spesifik di
+     kelasnya masing2 di atas (mis. .item, .adminItem, dst).
      ===================================================================== */
   button, a, .item, .adminItem, .akunItem, .cupUkuranItem, .trxItemRow,
   .gamePickBtn, .memCard, .satuanToggle button, .outletPickRow button,
-  .menuDropItem, [class*="Btn"], [class*="btn"], [class*="Row"], [class*="Card"],
-  [class*="Item"], [class*="Chip"], [class*="Pill"], [class*="Tab"]{
-    transition-property:transform, opacity, background-color, border-color, box-shadow, color;
+  .menuDropItem,
+  .addBtn, .addVarBtn, .aiBtns, .akAksiItem, .animSuksesCloseBtn,
+  .cartRow, .catLabelRow, .catTabs button, .checkoutBtn,
+  .editQuickBtns button, .gamePickBtn, .grafikBarRow, .headBtns button,
+  .iconBtn, .lapCard, .lapCardRow, .lapOutletCard, .lapRow,
+  .loginBtn, .notifReqItem, .nriBtns button, .outletHapusBtn,
+  .payTabs button, .pgPaletBtn, .plusBtn, .satuanToggleRow button,
+  .saveFormBtn, .shareBtnRow button, .shiftCard, .tehStokCard,
+  .trxDetailVoidBtn, .trxRow, .undoRedoBtn, .undoRedoRow button,
+  .updBtnRow button, .updGoBtn, .userChip, .varRow, .varRowFull, .varRowLine{
+    transition-property:transform, opacity;
     transition-duration:var(--ios-fast);
     transition-timing-function:var(--ios-spring);
     -webkit-tap-highlight-color:transparent;
@@ -1231,13 +1264,18 @@
     transform:scale(.96);
   }
 
-  /* Modal/sheet/overlay apa pun (nama class mengandung kata2 ini) ikut
-     fade+scale halus otomatis, walau lupa didaftar manual di atas. */
-  [class*="Sheet"], [class*="Overlay"], [class*="Modal"], [class*="Toast"],
-  [class*="Dropdown"], [class*="Popup"]{
+  /* Modal/sheet/overlay -- daftar class eksplisit yang benar2 dipakai,
+     bukan wildcard [class*="Sheet/Overlay/Modal/Toast/Dropdown/Popup"]
+     yang mahal dievaluasi ke semua elemen. will-change SENGAJA tidak
+     dipasang massal di sini -- taruh will-change ke terlalu banyak
+     elemen sekaligus membuat browser bikin banyak layer GPU terpisah,
+     justru menghabiskan memori & bikin lag alih2 membantu. GPU hint
+     yang terarah sudah ada di blok "GPU hint terarah" di bawah. */
+  .sheet, .cartSheet, .adminSheet, .calcSheet,
+  .updToast, .popupSuksesOverlay, .popupStokOverlay,
+  .menuDropdownOverlay, .notifPanel{
     transition:opacity var(--ios-med) var(--ios-ease),
                transform var(--ios-med) var(--ios-spring);
-    will-change:transform, opacity;
   }
 
   /* Checkbox / radio / toggle custom -- knob & warnanya ikut halus */
@@ -1246,8 +1284,9 @@
   }
 
   /* Scroll di dalam sheet/list terasa lentur ala iOS, bukan kaku */
-  .sheetBody, .cartSheet, .adminSheet, .calcSheet, body{
+  .sheetBody, .cartSheet, .adminSheet, .calcSheet, .adminBody, body{
     -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
   }
 
   /* GPU hint terarah HANYA ke elemen yg sering banget animasi/scroll,
@@ -1994,6 +2033,143 @@ function catatKeSheetRiwayatIzinCup(payload){
 }
 
 const el = id => document.getElementById(id);
+
+/* =====================================================================
+   PENCARIAN BARANG/MENU GENERIK — dipakai bareng di Kelola Stok Barang
+   & Kelola Menu. Menyisipkan search box di paling atas container, lalu
+   filter elemen ".adminItem" di dalamnya berdasarkan teks di dalam
+   elemen ".ain" (nama menu/barang) tiap item -- pencocokan tidak case-
+   sensitive & tidak peduli spasi berlebih. Kategori (".catLabelAdmin")
+   ikut disembunyikan otomatis kalau semua item di bawahnya tersembunyi,
+   supaya tidak ada judul kategori kosong nongol pas lagi searching.
+   ===================================================================== */
+function pasangPencarianAdmin(containerEl, placeholder){
+  if(!containerEl) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'adminSearchWrap';
+  wrap.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" class="adminSearchInput" placeholder="${placeholder}" autocomplete="off">
+    <button class="adminSearchClear" title="Hapus pencarian"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  `;
+  containerEl.prepend(wrap);
+
+  const input = wrap.querySelector('.adminSearchInput');
+  const clearBtn = wrap.querySelector('.adminSearchClear');
+
+  function terapkanFilter(){
+    const kata = input.value.trim().toLowerCase();
+    wrap.classList.toggle('hasVal', kata.length > 0);
+
+    // Hapus pesan "tidak ditemukan" lama sebelum filter ulang.
+    const pesanLama = containerEl.querySelector('.adminSearchEmpty');
+    if(pesanLama) pesanLama.remove();
+
+    if(!kata){
+      containerEl.querySelectorAll('.adminItem, .catLabelAdmin').forEach(elm => elm.style.display = '');
+      return;
+    }
+
+    // Struktur render dibungkus 1 div (bodyDiv) utk stok, atau langsung di
+    // container utk menu -- pakai querySelectorAll supaya cocok di level manapun.
+    const items = containerEl.querySelectorAll('.adminItem');
+    const labels = containerEl.querySelectorAll('.catLabelAdmin');
+
+    items.forEach(itemEl=>{
+      const namaEl = itemEl.querySelector('.ain');
+      const namaTxt = namaEl ? namaEl.textContent.toLowerCase() : '';
+      const cocok = namaTxt.includes(kata);
+      itemEl.style.display = cocok ? '' : 'none';
+    });
+
+    // Sembunyikan label kategori kalau semua item di bawahnya (sampai label
+    // berikutnya, atau sampai akhir) tersembunyi.
+    labels.forEach(labelEl=>{
+      let node = labelEl.nextElementSibling;
+      let adaYangTampil = false;
+      while(node && !node.classList.contains('catLabelAdmin')){
+        if(node.classList.contains('adminItem') && node.style.display !== 'none'){ adaYangTampil = true; break; }
+        node = node.nextElementSibling;
+      }
+      labelEl.style.display = adaYangTampil ? '' : 'none';
+    });
+
+    const totalTampil = Array.from(items).filter(i => i.style.display !== 'none').length;
+    if(totalTampil === 0){
+      const pesan = document.createElement('div');
+      pesan.className = 'adminSearchEmpty';
+      pesan.textContent = `Tidak ada hasil untuk "${input.value.trim()}"`;
+      containerEl.appendChild(pesan);
+    }
+  }
+
+  input.addEventListener('input', terapkanFilter);
+  clearBtn.onclick = ()=>{ input.value=''; terapkanFilter(); input.focus(); };
+}
+
+/* Sama seperti pasangPencarianAdmin, tapi utk Kelola Stok Barang -- HTML
+   search box-nya sudah dirender manual di tengah string html (persis
+   sebelum daftar kategori barang dimulai), jadi di sini tinggal wiring
+   ulang elemen yang sudah ada (bukan bikin box baru), supaya keterangan
+   akses & daftar permintaan izin di atasnya TIDAK ikut kefilter. */
+function pasangFilterPencarianStok(containerEl){
+  const wrap = containerEl.querySelector('#stokSearchWrap');
+  const input = containerEl.querySelector('#stokSearchInput');
+  const clearBtn = containerEl.querySelector('#stokSearchClear');
+  if(!wrap || !input || !clearBtn) return;
+
+  function terapkanFilter(){
+    const kata = input.value.trim().toLowerCase();
+    wrap.classList.toggle('hasVal', kata.length > 0);
+
+    const pesanLama = containerEl.querySelector('.adminSearchEmpty');
+    if(pesanLama) pesanLama.remove();
+
+    // Hanya elemen SETELAH search box yang difilter (daftar barang) --
+    // keterangan akses & permintaan izin di atas search box dibiarkan.
+    let node = wrap.nextElementSibling;
+    const itemsSetelahSearch = [];
+    const labelsSetelahSearch = [];
+    while(node){
+      if(node.classList.contains('adminItem')) itemsSetelahSearch.push(node);
+      if(node.classList.contains('catLabelAdmin')) labelsSetelahSearch.push(node);
+      node = node.nextElementSibling;
+    }
+
+    if(!kata){
+      itemsSetelahSearch.forEach(elm => elm.style.display = '');
+      labelsSetelahSearch.forEach(elm => elm.style.display = '');
+      return;
+    }
+
+    itemsSetelahSearch.forEach(itemEl=>{
+      const namaEl = itemEl.querySelector('.ain');
+      const namaTxt = namaEl ? namaEl.textContent.toLowerCase() : '';
+      itemEl.style.display = namaTxt.includes(kata) ? '' : 'none';
+    });
+
+    labelsSetelahSearch.forEach(labelEl=>{
+      let n = labelEl.nextElementSibling;
+      let adaYangTampil = false;
+      while(n && !n.classList.contains('catLabelAdmin')){
+        if(n.classList.contains('adminItem') && n.style.display !== 'none'){ adaYangTampil = true; break; }
+        n = n.nextElementSibling;
+      }
+      labelEl.style.display = adaYangTampil ? '' : 'none';
+    });
+
+    const totalTampil = itemsSetelahSearch.filter(i => i.style.display !== 'none').length;
+    if(totalTampil === 0){
+      const pesan = document.createElement('div');
+      pesan.className = 'adminSearchEmpty';
+      pesan.textContent = `Tidak ada hasil untuk "${input.value.trim()}"`;
+      wrap.insertAdjacentElement('afterend', pesan);
+    }
+  }
+
+  input.addEventListener('input', terapkanFilter);
+  clearBtn.onclick = ()=>{ input.value=''; terapkanFilter(); input.focus(); };
+}
 const rupiah = n => "Rp" + Number(n).toLocaleString('id-ID');
 const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
@@ -3105,7 +3281,11 @@ function cekDanKoreksiQtyTehDiKeranjang(){
   }
   return false;
 }
-el('popupTehKurangOkBtn').onclick = ()=> el('popupTehKurangOverlay').classList.remove('show');
+el('popupTehKurangOkBtn').onclick = ()=>{
+  const overlay = el('popupTehKurangOverlay');
+  overlay.classList.add('leaving');
+  setTimeout(()=>{ overlay.classList.remove('show'); overlay.classList.remove('leaving'); }, 320);
+};
 
 /* =====================================================================
    CHECKOUT — transaksi + kurangi stok, pakai Firestore transaction
@@ -3266,6 +3446,7 @@ function renderAdminList(){
     });
   });
   el('adminBody').innerHTML = html;
+  pasangPencarianAdmin(el('adminBody'), 'Cari menu...');
   el('addNewBtn').onclick = ()=> openAdminForm(null);
   el('adminBody').querySelectorAll('.adminItem').forEach(rowEl=>{
     const ci = +rowEl.dataset.ci, ii = +rowEl.dataset.ii;
@@ -7203,6 +7384,12 @@ function renderKelolaStok(){
     html += `<button class="addBtn" id="mintaIzinStokBtn" ${punyaMenunggu ? 'disabled' : ''} style="border-style:solid; background:${punyaMenunggu ? 'var(--line-soft)' : 'var(--gold-light)'}; color:${punyaMenunggu ? 'var(--muted-soft)' : 'var(--gold-dark)'}; cursor:${punyaMenunggu ? 'not-allowed' : 'pointer'};"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>${punyaMenunggu ? 'Menunggu Persetujuan Owner\u2026' : 'Isi Jumlah & Kirim Izin'}</button>`;
   }
 
+  html += `<div class="adminSearchWrap" id="stokSearchWrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="text" class="adminSearchInput" id="stokSearchInput" placeholder="Cari barang..." autocomplete="off">
+    <button class="adminSearchClear" id="stokSearchClear" title="Hapus pencarian"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>`;
+
   MENU.forEach(cat=>{
     // Skip menu yang ditandai "Bukan Saset" (lihat field pakaiSaset di Kelola Menu) --
     // stoknya sengaja tidak dilacak sistem, apapun kategorinya.
@@ -7233,6 +7420,11 @@ function renderKelolaStok(){
   const bodyDiv = document.createElement('div');
   bodyDiv.innerHTML = html;
   el('stokBody').appendChild(bodyDiv);
+  // Pencarian filter cuma daftar barang (".adminItem" & ".catLabelAdmin"
+  // yang ada SETELAH search box ini) -- tidak menyembunyikan keterangan
+  // akses, daftar permintaan izin, atau tombol "Riwayat Restock"/"Kirim
+  // Izin" di atasnya.
+  pasangFilterPencarianStok(bodyDiv);
 
   if(isOwner) el('riwayatRestockBtn').onclick = ()=> bukaRiwayatRestock();
   const mintaIzinBtn = document.getElementById('mintaIzinStokBtn');

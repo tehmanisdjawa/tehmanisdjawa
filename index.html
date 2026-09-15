@@ -2812,7 +2812,7 @@ function gabungkanMenuDanStok(){
     const nama = r.nama || '';
     if(!nama) return;
     if(!catMap[kategori]){ catMap[kategori] = {}; catOrder.push(kategori); }
-    if(!catMap[kategori][nama]) catMap[kategori][nama] = { id: r.id, nama, varian: [] };
+    if(!catMap[kategori][nama]) catMap[kategori][nama] = { id: r.id, nama, pakaiSaset: r.pakaiSaset !== false, varian: [] };
     (r.varian || []).forEach(v=>{
       let habis = !!v.habis;
       let stokSisa = null;
@@ -3066,10 +3066,12 @@ el('checkoutBtn').onclick = async ()=>{
     let gagalStokBarang = false, gagalStokCup = false, gagalStokTeh = false;
     if(SESI.outlet){
       const tugasStokBarang = items.map(async (it)=>{
-        const stokDocId = (SESI.outlet+'_'+it.kategori+'_'+it.nama+'_'+it.varian).replace(/[^a-zA-Z0-9]/g,'_');
-        const stokRef = doc(db, "stok", stokDocId);
+        // Stok saset PER NAMA MENU (gabungan semua ukuran), bukan per varian --
+        // 1 saset yang sama dipakai untuk ukuran cup berapapun.
+        const stokDocIdLokal = stokDocId(SESI.outlet, it.kategori, it.nama);
+        const stokRef = doc(db, "stok", stokDocIdLokal);
         const snap = await getDoc(stokRef);
-        if(!snap.exists()) return; // outlet ini belum kelola stok utk varian ini, lewati
+        if(!snap.exists()) return; // outlet ini belum kelola stok utk menu ini, lewati
         const skrg = Number(snap.data().jumlah)||0;
         const baru = Math.max(0, skrg - it.qty);
         await setDoc(stokRef, { jumlah: baru }, { merge: true });
@@ -3155,9 +3157,10 @@ function renderAdminList(){
     cat.items.forEach((item, ii)=>{
       const semuaHabis = item.varian.every(v=>v.habis);
       const varStr = item.varian.map(v=>`${normalisasiUkuran(v.nama, item.nama)}${v.tambahan?' +'+v.tambahan:''}: ${rupiah(v.harga)}${v.habis?' (Habis)':''}`).join(' \u00b7 ');
+      const labelSaset = item.pakaiSaset === false ? '<span style="color:var(--muted-soft); font-weight:600;"> \u00b7 Bukan Saset</span>' : '';
       html += `<div class="adminItem" data-ci="${ci}" data-ii="${ii}">
         <div class="aiTop">
-          <div class="ain">${item.nama}</div>
+          <div class="ain">${item.nama}${labelSaset}</div>
           <div class="aiBtns">
             <button class="habisB ${semuaHabis?'active':''}" data-act="habis" title="Tandai habis/tersedia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.7 3.86a2 2 0 00-3.4 0z"/></svg></button>
             <button class="editB" data-act="edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></button>
@@ -3203,12 +3206,22 @@ function openAdminForm(target, dariLuar){
   const item = target ? cat.items[target.ii] : null;
   const kategoriVal = item ? cat.kategori : '';
   const namaVal = item ? item.nama : '';
+  // Default: Es Teh Manis diseduh langsung (bukan saset), kategori lain default saset.
+  const pakaiSasetVal = item ? (item.pakaiSaset !== false && kategoriVal !== 'Es Teh Manis') : true;
   // varianList sekarang: { nama, harga, tambahan }. nama bisa dari UKURAN_OZ ATAU hasil ketik bebas.
   const varianList = item ? item.varian.map(v=>({nama:normalisasiUkuran(v.nama, item.nama), harga:v.harga, tambahan:v.tambahan||''})) : [{nama:'', harga:0, tambahan:''}];
 
   let html = `<button class="backLink" id="backToList"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>${dariLuar ? 'Tutup' : 'Kembali'}</button>
     <div class="formField"><label>Kategori</label><input id="fKategori" type="text" value="${kategoriVal}" placeholder="Ketik kategori sendiri, contoh: Es Teh Manis"><div class="hint">Ketik bebas \u2014 boleh kategori baru atau yang sudah ada.</div></div>
     <div class="formField"><label>Nama Menu</label><input id="fNama" type="text" value="${namaVal}" placeholder="Ketik nama menu sendiri, contoh: Es Teh Lemon"><div class="hint">Ketik bebas sesuai nama menu yang kamu mau.</div></div>
+    <div class="formField">
+      <label>Jenis Stok</label>
+      <select id="fPakaiSaset">
+        <option value="ya" ${pakaiSasetVal ? 'selected' : ''}>Saset (dikelola di Kelola Stok Barang)</option>
+        <option value="tidak" ${!pakaiSasetVal ? 'selected' : ''}>Bukan Saset (tidak dilacak stoknya)</option>
+      </select>
+      <div class="hint">Berlaku untuk semua ukuran menu ini. Pilih "Bukan Saset" kalau menu ini tidak perlu stok saset dilacak sistem (misal diseduh langsung atau stoknya dikelola manual di luar sistem).</div>
+    </div>
     <div class="formField"><label>Ukuran, Harga & Tambahan</label><div id="varList"></div><button class="addVarBtn" id="addVarBtn">+ Tambah ukuran</button></div>
     <button class="saveFormBtn" id="saveFormBtn">${target ? 'Simpan Perubahan' : 'Tambah Menu'}</button>`;
 
@@ -3275,9 +3288,10 @@ function openAdminForm(target, dariLuar){
 
     const btn = el('saveFormBtn'); btn.disabled = true; btn.textContent = "Menyimpan...";
     try{
-      const payload = { kategori, nama, varian: validVarian.map(v=>({ ukuran: v.nama, harga: v.harga||0, tambahan: (v.tambahan||'').trim(), habis: false })) };
+      const pakaiSaset = el('fPakaiSaset').value === 'ya';
+      const payload = { kategori, nama, pakaiSaset, varian: validVarian.map(v=>({ ukuran: v.nama, harga: v.harga||0, tambahan: (v.tambahan||'').trim(), habis: false })) };
       if(target){
-        const payloadLama = { kategori: cat.kategori, nama: item.nama, varian: item.varian };
+        const payloadLama = { kategori: cat.kategori, nama: item.nama, pakaiSaset: item.pakaiSaset !== false, varian: item.varian };
         const ref = doc(db, "menu", item.id);
         await updateDoc(ref, payload);
         showToast("Menu diperbarui");
@@ -4007,11 +4021,11 @@ async function voidTransaksi(trxId, dariDetail){
     // berkali-kali kalau Firestore lagi bermasalah (kuota habis/koneksi jelek).
     if(t && t.outlet && t.items && t.items.length){
       await Promise.allSettled(t.items.map(async (it)=>{
-        const stokDocId = (t.outlet+'_'+it.kategori+'_'+it.nama+'_'+it.varian).replace(/[^a-zA-Z0-9]/g,'_');
-        const stokRef = doc(db, "stok", stokDocId);
+        const stokDocIdLokal = stokDocId(t.outlet, it.kategori, it.nama);
+        const stokRef = doc(db, "stok", stokDocIdLokal);
         try{
           const snap = await getDoc(stokRef);
-          if(!snap.exists()) return; // outlet ini belum kelola stok utk varian ini, lewati
+          if(!snap.exists()) return; // outlet ini belum kelola stok utk menu ini, lewati
           const skrg = Number(snap.data().jumlah)||0;
           await setDoc(stokRef, { jumlah: skrg + (it.qty||0) }, { merge: true });
         }catch(e){ /* gagal kembalikan stok utk 1 item, tetap lanjut hapus transaksi */ }
@@ -4032,8 +4046,8 @@ async function voidTransaksi(trxId, dariDetail){
           await setDoc(trxRef, trxDataAsli);
           if(t && t.outlet && t.items && t.items.length){
             await Promise.allSettled(t.items.map(async (it)=>{
-              const stokDocId = (t.outlet+'_'+it.kategori+'_'+it.nama+'_'+it.varian).replace(/[^a-zA-Z0-9]/g,'_');
-              const stokRef = doc(db, "stok", stokDocId);
+              const stokDocIdLokal = stokDocId(t.outlet, it.kategori, it.nama);
+              const stokRef = doc(db, "stok", stokDocIdLokal);
               try{
                 const snap = await getDoc(stokRef);
                 if(!snap.exists()) return;
@@ -4047,8 +4061,8 @@ async function voidTransaksi(trxId, dariDetail){
         async ()=>{
           if(t && t.outlet && t.items && t.items.length){
             await Promise.allSettled(t.items.map(async (it)=>{
-              const stokDocId = (t.outlet+'_'+it.kategori+'_'+it.nama+'_'+it.varian).replace(/[^a-zA-Z0-9]/g,'_');
-              const stokRef = doc(db, "stok", stokDocId);
+              const stokDocIdLokal = stokDocId(t.outlet, it.kategori, it.nama);
+              const stokRef = doc(db, "stok", stokDocIdLokal);
               try{
                 const snap = await getDoc(stokRef);
                 if(!snap.exists()) return;
@@ -6593,8 +6607,8 @@ async function putuskanPermintaanRejectTrx(id, statusBaru){
           const t = trxSnap.data();
           if(t.outlet && t.items && t.items.length){
             for(const it of t.items){
-              const stokDocId = (t.outlet+'_'+it.kategori+'_'+it.nama+'_'+it.varian).replace(/[^a-zA-Z0-9]/g,'_');
-              const stokRef = doc(db, "stok", stokDocId);
+              const stokDocIdLokal = stokDocId(t.outlet, it.kategori, it.nama);
+              const stokRef = doc(db, "stok", stokDocIdLokal);
               try{
                 await runTransaction(db, async (tx)=>{
                   const snap = await tx.get(stokRef);
@@ -6735,8 +6749,10 @@ function renderPanelNotifKaryawanStokCup(){
   }).join('');
 }
 
-function stokDocId(outlet, kategori, nama, ukuran){
-  return (outlet+'_'+kategori+'_'+nama+'_'+ukuran).replace(/[^a-zA-Z0-9]/g,'_');
+// Stok barang saset sekarang PER NAMA MENU saja (gabungan semua ukuran), bukan
+// per ukuran -- karena 1 saset yang sama dipakai apapun ukuran cup nya nanti.
+function stokDocId(outlet, kategori, nama){
+  return (outlet+'_'+kategori+'_'+nama).replace(/[^a-zA-Z0-9]/g,'_');
 }
 
 function renderStokOutletPicker(){
@@ -6762,37 +6778,38 @@ async function muatKelolaStok(){
     renderKelolaStok();
   }catch(e){ el('stokBody').innerHTML = `<div class="empty">Gagal memuat stok.<br><span style="font-size:11px; color:var(--muted-soft);">${e && e.message ? e.message : e}</span></div>`; console.error('Gagal memuat stok:', e); }
 }
-function cariStok(kategori, nama, ukuran){
-  return STOK_LIST.find(s => s.kategori===kategori && s.nama===nama && s.ukuran===ukuran) || null;
+function cariStok(kategori, nama){
+  return STOK_LIST.find(s => s.kategori===kategori && s.nama===nama) || null;
 }
 
 function renderKelolaStok(){
   let html = `<div class="empty" style="padding:6px 4px 16px; text-align:left; font-size:12px;">
-      Stok di bawah khusus untuk outlet <b>${STOK_OUTLET_AKTIF}</b>. Ketik ulang angka untuk menimpa langsung, atau gunakan tombol Restock (bisa satuan saset atau renceng) untuk menambah stok dengan tercatat di histori.
+      Stok di bawah khusus untuk outlet <b>${STOK_OUTLET_AKTIF}</b>. Satu angka saset per menu (semua ukuran cup pakai stok saset yang sama). Ketik ulang angka untuk menimpa langsung, atau gunakan tombol Restock (bisa satuan saset atau renceng) untuk menambah stok dengan tercatat di histori.
     </div>
     <button class="addBtn" id="riwayatRestockBtn" style="border-style:solid; background:var(--pine-50);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>Lihat Riwayat Restock</button>`;
   MENU.forEach(cat=>{
-    if(cat.kategori === 'Es Teh Manis') return; // Es teh manis diseduh langsung, bukan barang saset/renceng yang perlu dikelola stoknya
+    // Skip menu yang ditandai "Bukan Saset" (lihat field pakaiSaset di Kelola Menu) --
+    // stoknya sengaja tidak dilacak sistem, apapun kategorinya.
+    const itemsSaset = cat.items.filter(item => item.pakaiSaset !== false);
+    if(itemsSaset.length === 0) return;
     html += `<div class="catLabelAdmin">${cat.kategori}</div>`;
-    cat.items.forEach(item=>{
-      item.varian.forEach(v=>{
-        const info = cariStok(cat.kategori, item.nama, v.nama);
-        const stokSekarang = info ? info.jumlah : 0;
-        const habis = stokSekarang <= 0;
-        const menipis = !habis && stokSekarang <= BATAS_STOK_MENIPIS;
-        const badgeTxt = habis ? 'Habis' : (menipis ? 'Menipis \u2014 ' + stokSekarang + ' saset' : stokSekarang + ' saset');
-        const badgeCls = habis ? 'habis' : (menipis ? 'menipis' : '');
-        html += `<div class="adminItem" data-kategori="${cat.kategori}" data-nama="${item.nama}" data-ukuran="${v.nama}">
-          <div class="aiTop">
-            <div><div class="ain">${item.nama}</div><div class="aiv" style="margin-top:3px;">${normalisasiUkuran(v.nama, item.nama)}</div></div>
-            <div class="aiBtns" style="align-items:center;"><div class="aiStokBadge ${badgeCls}">${badgeTxt}</div><button class="restockOpenB" title="Restock (tambah stok)" style="background:var(--pine-50); color:var(--pine-700);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
-            <input type="number" class="stokInput" value="${stokSekarang}" min="0" style="flex:1; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
-            <button class="stokSaveB" style="flex:0 0 auto; padding:10px 14px; border-radius:10px; border:none; background:var(--pine-900); color:#f3ede0; font-size:12.5px; font-weight:650; cursor:pointer;">Simpan</button>
-          </div>
-        </div>`;
-      });
+    itemsSaset.forEach(item=>{
+      const info = cariStok(cat.kategori, item.nama);
+      const stokSekarang = info ? info.jumlah : 0;
+      const habis = stokSekarang <= 0;
+      const menipis = !habis && stokSekarang <= BATAS_STOK_MENIPIS;
+      const badgeTxt = habis ? 'Habis' : (menipis ? 'Menipis \u2014 ' + stokSekarang + ' saset' : stokSekarang + ' saset');
+      const badgeCls = habis ? 'habis' : (menipis ? 'menipis' : '');
+      html += `<div class="adminItem" data-kategori="${cat.kategori}" data-nama="${item.nama}">
+        <div class="aiTop">
+          <div><div class="ain">${item.nama}</div></div>
+          <div class="aiBtns" style="align-items:center;"><div class="aiStokBadge ${badgeCls}">${badgeTxt}</div><button class="restockOpenB" title="Restock (tambah stok)" style="background:var(--pine-50); color:var(--pine-700);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+          <input type="number" class="stokInput" value="${stokSekarang}" min="0" style="flex:1; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
+          <button class="stokSaveB" style="flex:0 0 auto; padding:10px 14px; border-radius:10px; border:none; background:var(--pine-900); color:#f3ede0; font-size:12.5px; font-weight:650; cursor:pointer;">Simpan</button>
+        </div>
+      </div>`;
     });
   });
   el('stokBody').innerHTML = '';
@@ -6803,29 +6820,29 @@ function renderKelolaStok(){
 
   el('riwayatRestockBtn').onclick = ()=> bukaRiwayatRestock();
   el('stokBody').querySelectorAll('.adminItem').forEach(rowEl=>{
-    const kategori = rowEl.dataset.kategori, nama = rowEl.dataset.nama, ukuran = rowEl.dataset.ukuran;
+    const kategori = rowEl.dataset.kategori, nama = rowEl.dataset.nama;
     rowEl.querySelector('.stokSaveB').onclick = async ()=>{
       const val = Number(rowEl.querySelector('.stokInput').value) || 0;
-      await simpanStokManual(kategori, nama, ukuran, val);
+      await simpanStokManual(kategori, nama, val);
     };
-    rowEl.querySelector('.restockOpenB').onclick = ()=> bukaFormRestock(kategori, nama, ukuran);
+    rowEl.querySelector('.restockOpenB').onclick = ()=> bukaFormRestock(kategori, nama);
   });
 }
 
-async function simpanStokManual(kategori, nama, ukuran, stokBaru){
+async function simpanStokManual(kategori, nama, stokBaru){
   try{
-    const id = stokDocId(STOK_OUTLET_AKTIF, kategori, nama, ukuran);
+    const id = stokDocId(STOK_OUTLET_AKTIF, kategori, nama);
     const ref = doc(db, "stok", id);
     const snapLama = await getDoc(ref);
     const stokLama = snapLama.exists() ? (Number(snapLama.data().jumlah)||0) : 0;
     const nilaiBaru = Math.max(0, stokBaru);
-    await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran, jumlah: nilaiBaru }, { merge: true });
+    await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, jumlah: nilaiBaru }, { merge: true });
     showToast("Stok diperbarui");
     await muatKelolaStok();
     catatAksiUndo(
       `ubah stok \u2014 ${nama} jadi ${nilaiBaru}`,
-      async ()=>{ await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran, jumlah: stokLama }, { merge: true }); await muatKelolaStok(); },
-      async ()=>{ await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran, jumlah: nilaiBaru }, { merge: true }); await muatKelolaStok(); }
+      async ()=>{ await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, jumlah: stokLama }, { merge: true }); await muatKelolaStok(); },
+      async ()=>{ await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, jumlah: nilaiBaru }, { merge: true }); await muatKelolaStok(); }
     );
   }catch(e){ showToast("Gagal menyimpan stok. Cek koneksi.", false); }
 }
@@ -6837,14 +6854,14 @@ async function simpanStokManual(kategori, nama, ukuran, stokBaru){
 let restockSatuanAktif = 'cup';
 let restockIsiRollAktif = DEFAULT_ISI_ROLL;
 
-function bukaFormRestock(kategori, nama, ukuran){
-  const info = cariStok(kategori, nama, ukuran);
+function bukaFormRestock(kategori, nama){
+  const info = cariStok(kategori, nama);
   const stokSekarang = info ? info.jumlah : 0;
   restockSatuanAktif = 'cup';
   restockIsiRollAktif = DEFAULT_ISI_ROLL;
 
   el('restockBody').innerHTML = `
-    <div class="formField"><label>Menu</label><div class="karyawanTampil">${nama} \u00b7 ${normalisasiUkuran(ukuran, nama)}</div></div>
+    <div class="formField"><label>Menu</label><div class="karyawanTampil">${nama}</div></div>
     <div class="formField"><label>Stok Sekarang</label><div class="karyawanTampil">${stokSekarang} saset</div></div>
     <div class="formField">
       <label>Satuan Penambahan</label>
@@ -6906,14 +6923,14 @@ function bukaFormRestock(kategori, nama, ukuran){
 
     const btn = el('restockSaveBtn'); btn.disabled = true; btn.textContent = "Menyimpan...";
     try{
-      const id = stokDocId(STOK_OUTLET_AKTIF, kategori, nama, ukuran);
+      const id = stokDocId(STOK_OUTLET_AKTIF, kategori, nama);
       const ref = doc(db, "stok", id);
       const snap = await getDoc(ref);
       const stokSebelum = snap.exists() ? (Number(snap.data().jumlah)||0) : 0;
       const stokSesudah = stokSebelum + totalSasetDitambah;
-      await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran, jumlah: stokSesudah }, { merge: true });
+      await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, jumlah: stokSesudah }, { merge: true });
       const riwayatRef = await addDoc(collection(db, "riwayat_restock"), {
-        waktu: Timestamp.fromDate(new Date()), outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran,
+        waktu: Timestamp.fromDate(new Date()), outlet: STOK_OUTLET_AKTIF, kategori, nama,
         satuan: restockSatuanAktif, jumlahInput, isiRoll: isiRollDipakai,
         jumlahDitambahCup: totalSasetDitambah, stokSesudah, oleh: SESI.namaTampilan
       });
@@ -6922,8 +6939,8 @@ function bukaFormRestock(kategori, nama, ukuran){
       await muatKelolaStok();
       catatAksiUndo(
         `restock \u2014 ${nama} (+${catatanSatuan})`,
-        async ()=>{ await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran, jumlah: stokSebelum }, { merge: true }); await deleteDoc(riwayatRef); await muatKelolaStok(); },
-        async ()=>{ await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, ukuran, jumlah: stokSesudah }, { merge: true }); await muatKelolaStok(); }
+        async ()=>{ await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, jumlah: stokSebelum }, { merge: true }); await deleteDoc(riwayatRef); await muatKelolaStok(); },
+        async ()=>{ await setDoc(ref, { outlet: STOK_OUTLET_AKTIF, kategori, nama, jumlah: stokSesudah }, { merge: true }); await muatKelolaStok(); }
       );
     }catch(e){ showToast("Gagal restock. Cek koneksi/kuota Firestore.", false); btn.disabled=false; btn.textContent="Simpan Restock"; }
   };

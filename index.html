@@ -1866,6 +1866,9 @@ import {
   deleteDoc, query, where, orderBy, onSnapshot, runTransaction, serverTimestamp,
   Timestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import {
+  getAuth, signInAnonymously, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
 // ======= GANTI BAGIAN INI DENGAN CONFIG FIREBASE KAMU SENDIRI =======
 const firebaseConfig = {
@@ -1880,6 +1883,29 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
+
+/* =====================================================================
+   ANONYMOUS AUTH -- "kartu akses" diam-diam ke Firestore
+   Bukan login kasir (itu tetap pakai sistem lama di koleksi "akun").
+   Ini cuma syarat teknis supaya Firestore Rules bisa cek request.auth != null
+   dan menolak siapapun yang mengakses Firestore TANPA lewat app ini.
+   Semua pemanggilan Firestore lain di bawah menunggu janji ini selesai dulu
+   lewat variabel fbAuthReady, supaya tidak ada request yang lolos sebelum
+   proses anonymous sign-in ini kelar (apalagi pas app baru dibuka / boot awal).
+   ===================================================================== */
+const fbAuth = getAuth(fbApp);
+let fbAuthReady = new Promise((resolve, reject) => {
+  onAuthStateChanged(fbAuth, (user) => {
+    if (user) resolve(user);
+  }, (err) => {
+    console.error('Auth error:', err);
+    reject(err);
+  });
+  signInAnonymously(fbAuth).catch((err) => {
+    console.error('Gagal sign-in anonymous ke Firebase:', err);
+    reject(err);
+  });
+});
 
 /* =====================================================================
    STATE GLOBAL
@@ -2345,6 +2371,7 @@ function hapusSesiLokal(){
 }
 
 async function prosesLogin(){
+  await fbAuthReady; // pastikan "kartu akses" Firestore sudah siap sebelum baca data akun
   const username = el('loginUsername').value.trim();
   const password = el('loginPassword').value;
   if(!username || !password){
@@ -2650,6 +2677,7 @@ document.addEventListener('keydown', (e)=>{
 
 // Coba auto-login dari sesi tersimpan di localStorage saat halaman pertama dibuka.
 async function cobaAutoLogin(){
+  await fbAuthReady; // pastikan "kartu akses" Firestore sudah siap sebelum baca data akun
   const sesiLokal = ambilSesiLokal();
   if(!sesiLokal || !sesiLokal.username){ bukaLoginScreen(); return; }
   try{

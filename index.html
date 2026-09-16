@@ -6865,7 +6865,12 @@ function renderPanelNotifStokBarang(){
   el('notifStokPanelBody').innerHTML = NOTIF_STOKBARANG_LIST.map(r=>{
     const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
     const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
-    const statusLabel = r.status === 'menunggu' ? 'Menunggu' : (r.status === 'disetujui' ? 'Disetujui \u00b7 stok sudah ditambah' : 'Ditolak');
+    // "diproses" = status sementara SAAT stok sedang ditambahkan (dipasang oleh
+    // putuskanPermintaanStok SEBELUM loop tambah stok jalan) -- ditangani
+    // terpisah di sini supaya tombol Setujui/Tolak/Hapus semuanya disembunyikan
+    // selama proses berjalan (bukan cuma tombol Setujui saja).
+    const statusLabel = r.status === 'menunggu' ? 'Menunggu' : (r.status === 'diproses' ? 'Sedang diproses\u2026' : (r.status === 'disetujui' ? 'Disetujui \u00b7 stok sudah ditambah' : 'Ditolak'));
+    const bisaDiubahAtauDihapus = r.status !== 'menunggu' && r.status !== 'diproses';
     const rincian = Array.isArray(r.rincian) ? r.rincian : [];
     const ringkasanRincian = rincian.length
       ? `<div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">${rincian.map(x=>`${x.nama} <b>+${x.jumlah}</b>`).join(' \u00b7 ')}</div>` : '';
@@ -6877,7 +6882,7 @@ function renderPanelNotifStokBarang(){
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
           <div class="nriWaktu">${waktuStr}</div>
-          ${r.status !== 'menunggu' ? `<button class="nriHapus" title="Hapus notifikasi ini">
+          ${bisaDiubahAtauDihapus ? `<button class="nriHapus" title="Hapus notifikasi ini">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
           </button>` : ''}
         </div>
@@ -6907,7 +6912,7 @@ function renderPanelNotifStokBarang(){
 async function hapusNotifStokBarang(id){
   try{
     const r = NOTIF_STOKBARANG_LIST.find(x => x.id === id) || PERMINTAAN_STOK_OWNER_LIST.find(x => x.id === id);
-    if(r && r.status === 'menunggu'){ showToast("Putuskan (Setujui/Tolak) dulu sebelum menghapus.", false); return; }
+    if(r && (r.status === 'menunggu' || r.status === 'diproses')){ showToast("Permintaan ini masih menunggu/sedang diproses \u2014 tidak bisa dihapus dulu.", false); return; }
     await deleteDoc(doc(db, "permintaan_stok_barang", id));
     showToast("Notifikasi dihapus");
     if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
@@ -7750,7 +7755,25 @@ async function bukaRiwayatRestock(){
 }
 
 /* ---------- PERSETUJUAN IZIN RESTOCK STOK BARANG (khusus Owner) ---------- */
+// Penjaga supaya SATU permintaan (id yang sama) tidak bisa diproses dua kali
+// secara bersamaan -- ini akar masalah kenapa stok bisa "meledak" jadi ribuan.
+// Approve butuh waktu (loop tambah stok utk banyak item, satu-satu, ada
+// getDoc/transaction/addDoc yg makan waktu network). SELAMA proses itu jalan,
+// listener onSnapshot realtime bisa saja re-trigger (misal ada dokumen lain
+// di collection yg berubah) dan me-render ulang panel notif -- kalau status
+// permintaan ini di Firestore MASIH "menunggu" saat itu (karena updateDoc
+// status baru dipanggil di akhir), tombol "Setujui" akan tampil LAGI dan
+// re-attach onclick, sehingga permintaan yg SAMA bisa ke-approve berkali-kali
+// beruntun (jumlah stok bertambah berkali lipat, bukan cuma sekali).
+const SEDANG_DIPROSES_PERMINTAAN_STOK = new Set();
+
 async function putuskanPermintaanStok(id, statusBaru){
+  if(SEDANG_DIPROSES_PERMINTAAN_STOK.has(id)){
+    // Sudah ada proses approve/tolak berjalan utk id ini -- abaikan klik/trigger
+    // dobelnya, jangan proses ulang.
+    return;
+  }
+  SEDANG_DIPROSES_PERMINTAAN_STOK.add(id);
   try{
     // PENTING: jangan andalkan PERMINTAAN_STOK_OWNER_LIST (cache lokal) di sini --
     // list itu cuma berisi permintaan utk outlet yg lagi aktif SAAT list terakhir
@@ -7764,7 +7787,30 @@ async function putuskanPermintaanStok(id, statusBaru){
       const snapR = await getDoc(doc(db, "permintaan_stok_barang", id));
       if(snapR.exists()) r = { id: snapR.id, ...snapR.data() };
     }
+
+    // Cek ULANG status TERBARU langsung dari Firestore (bukan cache lokal `r`
+    // yang bisa saja sudah basi) -- kalau ternyata permintaan ini SUDAH pernah
+    // diputuskan/sedang diproses sebelumnya (misal proses approve sebelumnya
+    // sempat terpanggil dobel sebelum guard di atas terpasang, atau Owner lain
+    // di device lain sudah memutuskan duluan), STOP di sini. Jangan tambah
+    // stok lagi.
+    const snapCekStatus = await getDoc(doc(db, "permintaan_stok_barang", id));
+    if(snapCekStatus.exists() && snapCekStatus.data().status !== 'menunggu'){
+      showToast("Permintaan ini sudah diproses sebelumnya \u2014 tidak diproses ulang.", false);
+      return;
+    }
+
     const rincian = (r && Array.isArray(r.rincian)) ? r.rincian : [];
+
+    // Kunci status jadi "diproses" DULU, SEBELUM mulai loop tambah stok --
+    // supaya kalau listener realtime re-render panel di tengah proses
+    // (karena loop di bawah ini makan waktu, apalagi kalau rinciannya banyak
+    // item), status yang dibaca ulang BUKAN "menunggu" lagi, jadi tombol
+    // Setujui tidak akan muncul kembali dan tidak akan ke-klik/ke-trigger dua
+    // kali untuk permintaan yang sama.
+    if(statusBaru === 'disetujui' && rincian.length > 0 && r){
+      await updateDoc(doc(db, "permintaan_stok_barang", id), { status: 'diproses' });
+    }
 
     if(statusBaru === 'disetujui' && rincian.length > 0 && r){
       // Approve = langsung eksekusi tambah stok utk SEMUA menu di rincian,
@@ -7815,6 +7861,14 @@ async function putuskanPermintaanStok(id, statusBaru){
     }
     if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
   }catch(e){ showToast("Gagal memproses permintaan. Cek koneksi.", false); console.error('Gagal memutuskan permintaan stok barang:', e); }
+  finally{
+    // Lepas kunci proses apapun hasilnya (sukses, gagal, atau early-return
+    // karena sudah diproses sebelumnya) -- supaya id ini bisa diproses lagi
+    // di masa depan kalau memang perlu (misal Owner buka permintaan BARU
+    // dengan id berbeda tidak akan pernah kena guard ini; guard cuma
+    // menghalangi id yang SAMA diproses dua kali secara tumpang tindih).
+    SEDANG_DIPROSES_PERMINTAAN_STOK.delete(id);
+  }
 }
 
 /* =====================================================================

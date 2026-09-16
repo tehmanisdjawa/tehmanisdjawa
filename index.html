@@ -6425,6 +6425,7 @@ async function putuskanPermintaanStokTeh(id, statusBaru){
     const r = NOTIF_STOKTEH_LIST.find(x => x.id === id) || PERMINTAAN_TEH_OWNER_LIST.find(x => x.id === id);
     if(!r) return;
 
+    let gagalTeh = false, pesanErrorTeh = '';
     if(statusBaru === 'disetujui'){
       try{
         const ref = doc(db, "stok_teh", stokTehDocId(r.outlet));
@@ -6442,19 +6443,28 @@ async function putuskanPermintaanStokTeh(id, statusBaru){
           takaranAirTeh: r.takaranAirTeh || null,
           keterangan: `Via izin restock \u2014 disetujui oleh ${SESI ? SESI.namaTampilan : 'Owner'}`
         });
-      }catch(errItem){ console.error('Gagal eksekusi restock teh:', errItem); }
+      }catch(errItem){
+        console.error('Gagal eksekusi restock teh:', errItem);
+        gagalTeh = true; pesanErrorTeh = (errItem && errItem.message) ? errItem.message : String(errItem);
+      }
     }
 
-    await updateDoc(doc(db, "permintaan_stok_teh", id), { status: statusBaru, dibacaOwner: true });
+    await updateDoc(doc(db, "permintaan_stok_teh", id), { status: statusBaru, dibacaOwner: true, gagalEksekusi: gagalTeh ? pesanErrorTeh : null });
     kirimSinyalPopupSukses(
       r.outlet,
       statusBaru === 'disetujui' ? 'Izin Restock Teh Disetujui' : 'Izin Restock Teh Ditolak',
       statusBaru === 'disetujui'
-        ? `Permintaan restock teh dari ${r.pemohonNama || r.pemohonUsername} sudah disetujui (+${r.jumlahMl} ml) \u2014 stok sudah ditambah otomatis.`
+        ? (gagalTeh
+            ? `Permintaan restock teh dari ${r.pemohonNama || r.pemohonUsername} disetujui, TAPI GAGAL menambah stok (+${r.jumlahMl} ml) \u2014 tolong tambahkan manual lewat Kelola Stok Teh.`
+            : `Permintaan restock teh dari ${r.pemohonNama || r.pemohonUsername} sudah disetujui (+${r.jumlahMl} ml) \u2014 stok sudah ditambah otomatis.`)
         : `Permintaan restock teh dari ${r.pemohonNama || r.pemohonUsername} ditolak Owner.`,
-      statusBaru === 'disetujui' ? 'sukses' : 'tolak'
+      statusBaru === 'disetujui' ? (gagalTeh ? 'tolak' : 'sukses') : 'tolak'
     );
-    showToast(statusBaru === 'disetujui' ? "Permintaan disetujui \u2014 stok sudah ditambah otomatis" : "Permintaan ditolak");
+    if(statusBaru === 'disetujui' && gagalTeh){
+      showToast(`Disetujui, TAPI GAGAL menambah stok teh (+${r.jumlahMl} ml) \u2014 tambahkan manual lewat Kelola Stok Teh!`, false);
+    } else {
+      showToast(statusBaru === 'disetujui' ? "Permintaan disetujui \u2014 stok sudah ditambah otomatis" : "Permintaan ditolak");
+    }
     // PENTING: approve/tolak izin stok teh bisa dipicu dari DUA tempat --
     // panel lonceng notifikasi (notifTehPanelOverlay) ATAU dari dalam menu
     // Kelola Stok Teh itu sendiri (stokTehOverlay). Sebelumnya refresh cuma
@@ -6752,6 +6762,7 @@ async function putuskanPermintaanStokCup(id, statusBaru){
     const r = NOTIF_STOKCUP_LIST.find(x => x.id === id) || PERMINTAAN_CUP_OWNER_LIST.find(x => x.id === id);
     const rincian = (r && Array.isArray(r.rincian)) ? r.rincian : [];
 
+    const itemGagalCup = [];
     if(statusBaru === 'disetujui' && rincian.length > 0 && r){
       // Approve = langsung eksekusi tambah stok utk SEMUA ukuran di rincian,
       // masing-masing dalam transaksi tersendiri supaya aman dari race
@@ -6774,31 +6785,43 @@ async function putuskanPermintaanStokCup(id, statusBaru){
             oleh: r.pemohonNama || r.pemohonUsername,
             keterangan: `Via izin restock \u2014 disetujui oleh ${SESI ? SESI.namaTampilan : 'Owner'}`
           });
-        }catch(errItem){ console.error(`Gagal eksekusi restock utk ukuran ${item.ukuran}:`, errItem); }
+        }catch(errItem){
+          console.error(`Gagal eksekusi restock utk ukuran ${item.ukuran}:`, errItem);
+          itemGagalCup.push({ ukuran: item.ukuran, label: item.label, jumlah: item.jumlah, error: (errItem && errItem.message) ? errItem.message : String(errItem) });
+        }
       }
     }
 
-    await updateDoc(doc(db, "permintaan_stok_cup", id), { status: statusBaru, dibacaOwner: true });
+    await updateDoc(doc(db, "permintaan_stok_cup", id), { status: statusBaru, dibacaOwner: true, itemGagal: itemGagalCup.length ? itemGagalCup : null });
     if(r){
-      const ringkasan = rincian.length ? rincian.map(x=>`${x.label||x.ukuran} +${x.jumlah}`).join(', ') : '';
+      const ringkasanOk = rincian.filter(x=>!itemGagalCup.some(g=>g.ukuran===x.ukuran)).map(x=>`${x.label||x.ukuran} +${x.jumlah}`).join(', ');
+      const ringkasanGagalCup = itemGagalCup.map(x=>`${x.label||x.ukuran} +${x.jumlah}`).join(', ');
       catatKeSheetRiwayatIzinCup({
         outlet: r.outlet, pemohonUsername: r.pemohonUsername, pemohonNama: r.pemohonNama,
         status: statusBaru === 'disetujui' ? 'Disetujui' : 'Ditolak',
         keterangan: (statusBaru === 'disetujui'
-          ? `Owner menyetujui permintaan restock stok cup \u2014 stok otomatis ditambah (${ringkasan})`
-          : `Owner menolak permintaan restock stok cup (${ringkasan})`),
+          ? (itemGagalCup.length
+              ? `Owner menyetujui permintaan restock stok cup, TAPI GAGAL menambah: ${ringkasanGagalCup}${ringkasanOk ? ' (berhasil: ' + ringkasanOk + ')' : ''}`
+              : `Owner menyetujui permintaan restock stok cup \u2014 stok otomatis ditambah (${ringkasanOk})`)
+          : `Owner menolak permintaan restock stok cup (${rincian.map(x=>`${x.label||x.ukuran} +${x.jumlah}`).join(', ')})`),
         diprosesOleh: SESI ? SESI.namaTampilan : ''
       });
       kirimSinyalPopupSukses(
         r.outlet,
         statusBaru === 'disetujui' ? 'Izin Restock Disetujui' : 'Izin Restock Ditolak',
         statusBaru === 'disetujui'
-          ? `Permintaan restock stok cup dari ${r.pemohonNama || r.pemohonUsername} sudah disetujui${ringkasan ? ' (' + ringkasan + ')' : ''} \u2014 stok sudah ditambah otomatis.`
+          ? (itemGagalCup.length
+              ? `Permintaan restock stok cup dari ${r.pemohonNama || r.pemohonUsername} disetujui, TAPI GAGAL menambah stok untuk: ${ringkasanGagalCup}${ringkasanOk ? ' (berhasil: ' + ringkasanOk + ')' : ''} \u2014 tolong tambahkan manual lewat Kelola Stok Cup.`
+              : `Permintaan restock stok cup dari ${r.pemohonNama || r.pemohonUsername} sudah disetujui${ringkasanOk ? ' (' + ringkasanOk + ')' : ''} \u2014 stok sudah ditambah otomatis.`)
           : `Permintaan restock stok cup dari ${r.pemohonNama || r.pemohonUsername} ditolak Owner.`,
-        statusBaru === 'disetujui' ? 'sukses' : 'tolak'
+        statusBaru === 'disetujui' ? (itemGagalCup.length ? 'tolak' : 'sukses') : 'tolak'
       );
     }
-    showToast(statusBaru === 'disetujui' ? "Permintaan disetujui \u2014 stok sudah ditambah otomatis" : "Permintaan ditolak");
+    if(statusBaru === 'disetujui' && itemGagalCup.length > 0){
+      showToast(`Disetujui, TAPI GAGAL menambah stok utk: ${itemGagalCup.map(x=>x.label||x.ukuran).join(', ')} \u2014 tambahkan manual lewat Kelola Stok Cup!`, false);
+    } else {
+      showToast(statusBaru === 'disetujui' ? "Permintaan disetujui \u2014 stok sudah ditambah otomatis" : "Permintaan ditolak");
+    }
     // Refresh panel Kelola Stok Cup (kalau lagi terbuka) supaya daftar
     // "menunggu" & angka stok di sana ikut update begitu diputuskan dari lonceng.
     if(el('stokCupOverlay').classList.contains('show')) await muatKelolaStokCup();
@@ -7883,6 +7906,14 @@ async function putuskanPermintaanStok(id, statusBaru){
       });
     }
 
+    // Kumpulkan item yang GAGAL dieksekusi (mis. quota Firestore habis /
+    // resource-exhausted, koneksi putus, dsb). Dulu error per-item cuma
+    // di-console.error dan proses lanjut diam-diam, sehingga status permintaan
+    // tetap ketandai "disetujui" + toast tetap bilang sukses walau stok
+    // sebenarnya TIDAK bertambah sama sekali untuk item itu. Sekarang error
+    // per-item direkam supaya Owner bisa lihat persis barang mana yang gagal
+    // dan tambahkan manual lewat Kelola Stok Barang.
+    const itemGagal = [];
     if(statusBaru === 'disetujui' && rincian.length > 0 && r){
       // Approve = langsung eksekusi tambah stok utk SEMUA menu di rincian,
       // masing-masing dalam transaksi tersendiri supaya aman dari race
@@ -7905,20 +7936,37 @@ async function putuskanPermintaanStok(id, statusBaru){
             oleh: r.pemohonNama || r.pemohonUsername,
             keterangan: `Via izin restock \u2014 disetujui oleh ${SESI ? SESI.namaTampilan : 'Owner'}`
           });
-        }catch(errItem){ console.error(`Gagal eksekusi restock utk menu ${item.nama}:`, errItem); }
+        }catch(errItem){
+          console.error(`Gagal eksekusi restock utk menu ${item.nama}:`, errItem);
+          itemGagal.push({ kategori: item.kategori, nama: item.nama, jumlah: item.jumlah, error: (errItem && errItem.message) ? errItem.message : String(errItem) });
+        }
       }
     }
 
-    await updateDoc(doc(db, "permintaan_stok_barang", id), { status: statusBaru, dibacaOwner: true, sedangDiproses: false });
+    await updateDoc(doc(db, "permintaan_stok_barang", id), {
+      status: statusBaru, dibacaOwner: true, sedangDiproses: false,
+      // Simpan daftar item yang gagal (kalau ada) supaya kelihatan di riwayat
+      // dan Owner bisa cross-check kapan pun, bukan cuma dari toast sekilas.
+      itemGagal: itemGagal.length ? itemGagal : null
+    });
     if(r){
-      const ringkasan = rincian.length ? rincian.map(x=>`${x.nama} +${x.jumlah}`).join(', ') : '';
+      const ringkasanOk = rincian.filter(x=>!itemGagal.some(g=>g.nama===x.nama)).map(x=>`${x.nama} +${x.jumlah}`).join(', ');
+      const ringkasanGagal = itemGagal.map(x=>`${x.nama} +${x.jumlah}`).join(', ');
+      let pesanSukses;
+      if(statusBaru === 'disetujui'){
+        if(itemGagal.length === 0){
+          pesanSukses = `Permintaan restock stok barang dari ${r.pemohonNama || r.pemohonUsername} sudah disetujui${ringkasanOk ? ' (' + ringkasanOk + ')' : ''} \u2014 stok sudah ditambah otomatis.`;
+        } else {
+          pesanSukses = `Permintaan restock stok barang dari ${r.pemohonNama || r.pemohonUsername} disetujui, TAPI GAGAL menambah stok untuk: ${ringkasanGagal}${ringkasanOk ? ' (yang berhasil: ' + ringkasanOk + ')' : ''} \u2014 tolong tambahkan manual lewat Kelola Stok Barang.`;
+        }
+      }
       kirimSinyalPopupSukses(
         r.outlet,
         statusBaru === 'disetujui' ? 'Izin Restock Barang Disetujui' : 'Izin Restock Barang Ditolak',
         statusBaru === 'disetujui'
-          ? `Permintaan restock stok barang dari ${r.pemohonNama || r.pemohonUsername} sudah disetujui${ringkasan ? ' (' + ringkasan + ')' : ''} \u2014 stok sudah ditambah otomatis.`
+          ? pesanSukses
           : `Permintaan restock stok barang dari ${r.pemohonNama || r.pemohonUsername} ditolak Owner.`,
-        statusBaru === 'disetujui' ? 'sukses' : 'tolak'
+        statusBaru === 'disetujui' ? (itemGagal.length ? 'tolak' : 'sukses') : 'tolak'
       );
     }
     // Kalau statusnya "disetujui" tapi ternyata TIDAK ada rincian yang berhasil
@@ -7927,6 +7975,8 @@ async function putuskanPermintaanStok(id, statusBaru){
     // dan bisa cek manual, bukannya mengira stok sudah nambah padahal belum.
     if(statusBaru === 'disetujui' && rincian.length === 0){
       showToast("Permintaan ditandai disetujui, TAPI rincian stok tidak ditemukan \u2014 stok TIDAK bertambah otomatis. Cek manual.", false);
+    } else if(statusBaru === 'disetujui' && itemGagal.length > 0){
+      showToast(`Disetujui, TAPI GAGAL menambah stok utk: ${itemGagal.map(x=>x.nama).join(', ')} \u2014 tambahkan manual lewat Kelola Stok Barang!`, false);
     } else {
       showToast(statusBaru === 'disetujui' ? "Permintaan disetujui \u2014 stok sudah ditambah otomatis" : "Permintaan ditolak");
     }

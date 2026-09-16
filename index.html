@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -1470,6 +1470,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
         <span>Reset Semua Stok ke 0</span>
       </button>
+      <button class="menuDropItem" id="setSemuaStokBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span>Set Semua Stok Barang...</span>
+      </button>
       <button class="menuDropItem" id="pengaturanBtn" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         <span>Pengaturan</span>
@@ -2594,6 +2598,7 @@ function terapkanTampilanJabatan(){
   el('stokBtn').style.display = SESI ? 'flex' : 'none';
   el('perbaikanStokBtn').style.display = isOwner ? 'flex' : 'none';
   el('resetSemuaStokBtn').style.display = isOwner ? 'flex' : 'none';
+  el('setSemuaStokBtn').style.display = isOwner ? 'flex' : 'none';
   el('undoRedoRow').style.display = isOwner ? 'flex' : 'none';
   el('undoRedoDivider').style.display = isOwner ? 'block' : 'none';
 
@@ -2877,7 +2882,7 @@ function mulaiPengecekanStokMenipis(){
    ===================================================================== */
 el('menuBtn').onclick = (e)=>{ e.stopPropagation(); el('menuDropdownOverlay').classList.add('show'); };
 el('menuDropdownOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'menuDropdownOverlay') tutupOverlaySmooth(el('menuDropdownOverlay')); });
-['calcBtn','laporanBtn','grafikBtn','adminBtn','modeEditMenuBtn','stokBtn','stokCupBtn','rejectTrxBtn','akunBtn','outletBtn','perbaikanStokBtn','resetSemuaStokBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
+['calcBtn','laporanBtn','grafikBtn','adminBtn','modeEditMenuBtn','stokBtn','stokCupBtn','rejectTrxBtn','akunBtn','outletBtn','perbaikanStokBtn','resetSemuaStokBtn','setSemuaStokBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
   el(id).addEventListener('click', ()=> tutupOverlaySmooth(el('menuDropdownOverlay')));
 });
 
@@ -8322,6 +8327,59 @@ el('resetSemuaStokBtn').onclick = async ()=>{
   }catch(e){
     console.error('Gagal reset semua stok:', e);
     showToast('Gagal reset stok. Cek koneksi lalu coba lagi.', false);
+  } finally {
+    btn.disabled = false; btn.querySelector('span').textContent = spanAsli;
+  }
+};
+
+/* =====================================================================
+   SET SEMUA STOK BARANG KE ANGKA TERTENTU (SEMUA OUTLET) — khusus Owner.
+   Beda dengan Reset Semua Stok ke 0: di sini Owner bisa isi angka bebas
+   (misal 50), lalu SEMUA dokumen collection "stok" (barang saset & bukan
+   saset, semua outlet, semua menu) ditimpa jadi angka itu. Hanya untuk
+   stok BARANG -- stok cup & teh TIDAK disentuh oleh fitur ini.
+   ===================================================================== */
+el('setSemuaStokBtn').onclick = async ()=>{
+  if(!SESI || SESI.jabatan !== 'Owner') return;
+  const inputAngka = prompt("Set stok SEMUA barang di SEMUA outlet jadi berapa?\n\nKetik angkanya (misal 50). Ini berlaku untuk semua menu barang (saset maupun bukan saset) di semua outlet.");
+  if(inputAngka === null) return; // dibatalkan
+  const angka = Number(inputAngka);
+  if(!Number.isFinite(angka) || angka < 0){ showToast('Angka tidak valid.', false); return; }
+
+  const yakin = confirm(`Set SEMUA stok barang di SEMUA outlet jadi ${angka}?\n\nTindakan ini TIDAK BISA di-undo otomatis. Lanjutkan?`);
+  if(!yakin) return;
+  const ketik = prompt('Ketik SET (huruf besar semua) untuk konfirmasi terakhir:');
+  if(ketik !== 'SET'){ showToast('Dibatalkan -- teks konfirmasi tidak cocok.', false); return; }
+
+  const btn = el('setSemuaStokBtn');
+  const spanAsli = btn.querySelector('span').textContent;
+  btn.disabled = true; btn.querySelector('span').textContent = 'Menyimpan...';
+  try{
+    const snapStok = await getDocs(collection(db, "stok"));
+    const docsStok = snapStok.docs;
+    for(let i=0;i<docsStok.length;i+=400){
+      const batch = writeBatch(db);
+      docsStok.slice(i,i+400).forEach(d=> batch.update(d.ref, { jumlah: angka }));
+      await batch.commit();
+    }
+
+    // Catat jejak audit -- siapa & kapan aksi ini dilakukan.
+    try{
+      await addDoc(collection(db, "riwayat_reset_stok"), {
+        waktu: Timestamp.fromDate(new Date()),
+        oleh: SESI ? SESI.namaTampilan : 'Owner',
+        jenis: 'set_kustom',
+        angkaDiset: angka,
+        jumlahBarangDireset: docsStok.length
+      });
+    }catch(errLog){ console.error('Gagal mencatat riwayat set stok:', errLog); }
+
+    showToast(`Semua stok barang berhasil diset jadi ${angka} (${docsStok.length} dokumen).`);
+
+    if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
+  }catch(e){
+    console.error('Gagal set semua stok:', e);
+    showToast('Gagal set stok. Cek koneksi lalu coba lagi.', false);
   } finally {
     btn.disabled = false; btn.querySelector('span').textContent = spanAsli;
   }

@@ -1705,6 +1705,19 @@
   </div>
 </div>
 
+<div class="cartOverlay" id="pilihOutletSasetOverlay">
+  <div class="adminSheet">
+    <div class="adminHead"><h2>Set Stok Saset -- Pilih Outlet</h2><button id="pilihOutletSasetClose">✕</button></div>
+    <div class="adminBody">
+      <label for="pilihOutletSasetSelect" style="display:block; font-size:13px; color:var(--muted); margin-bottom:6px;">Mau set stok saset untuk outlet mana?</label>
+      <select id="pilihOutletSasetSelect" style="width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--line); font-size:14px; margin-bottom:16px; background:var(--card); color:var(--ink);">
+        <option value="__SEMUA__">Semua Outlet</option>
+      </select>
+      <button id="pilihOutletSasetLanjut" style="width:100%; padding:12px; border-radius:10px; border:none; background:var(--gold, #c8973f); color:#1a1a1a; font-weight:600; font-size:14px; cursor:pointer;">Lanjut</button>
+    </div>
+  </div>
+</div>
+
 <div class="notifPanelOverlay" id="notifPanelOverlay">
   <div class="notifPanelBackdrop" id="notifPanelBackdrop"></div>
   <div class="notifPanel">
@@ -4815,9 +4828,13 @@ el('dlSuccessOverlay').addEventListener('click', ()=>{
    ===================================================================== */
 async function muatDaftarOutlet(){
   try{
+    await fbAuthReady; // pastikan anonymous sign-in Firebase sudah selesai dulu
     const snap = await getDocs(collection(db, "outlet"));
     OUTLET_LIST = snap.docs.map(d => d.data().nama).filter(Boolean).sort();
-  }catch(e){ OUTLET_LIST = []; }
+  }catch(e){
+    console.error('Gagal memuat daftar outlet dari Firestore (cek Firestore Rules / koneksi):', e);
+    OUTLET_LIST = [];
+  }
 }
 
 /* =====================================================================
@@ -7448,15 +7465,40 @@ el('setGlobalStokSasetTopBtn').onclick = async ()=>{
 
   const menuSaset = (MENU_MENTAH||[]).filter(m => itemPakaiSaset(m.kategori, m));
   if(menuSaset.length === 0){ showToast('Tidak ada menu yang ditandai "Saset" saat ini.', false); return; }
-  if(!OUTLET_LIST || OUTLET_LIST.length === 0){ showToast('Daftar outlet belum termuat, coba lagi sebentar.', false); return; }
 
-  const inputAngka = prompt(`Set stok SEMUA barang SASET (${menuSaset.length} menu) di SEMUA outlet (${OUTLET_LIST.length} outlet) jadi berapa?\n\nMenu yang ditandai "Bukan Saset" (misal Es Teh Manis) TIDAK ikut disentuh.\n\nKetik angkanya (misal 50).`);
+  if(!OUTLET_LIST || OUTLET_LIST.length === 0){
+    try{ await muatDaftarOutlet(); }catch(eMuat){ console.error('Gagal memuat daftar outlet (retry dari tombol saset):', eMuat); }
+  }
+  if(!OUTLET_LIST || OUTLET_LIST.length === 0){
+    showToast('Daftar outlet belum termuat -- cek koneksi internet & coba lagi, atau pastikan koleksi "outlet" di Firestore tidak kosong.', false);
+    return;
+  }
+
+  // Isi dropdown pilih outlet: "Semua Outlet" + satu per satu nama outlet
+  const sel = el('pilihOutletSasetSelect');
+  sel.innerHTML = '<option value="__SEMUA__">Semua Outlet</option>' +
+    OUTLET_LIST.map(o=>`<option value="${o}">${o}</option>`).join('');
+  el('pilihOutletSasetOverlay').classList.add('show');
+
+  el('pilihOutletSasetLanjut').onclick = async ()=>{
+    const pilihan = sel.value;
+    const outletTarget = pilihan === '__SEMUA__' ? OUTLET_LIST.slice() : [pilihan];
+    tutupOverlaySmooth(el('pilihOutletSasetOverlay'));
+    await jalankanSetGlobalStokSaset(menuSaset, outletTarget);
+  };
+};
+el('pilihOutletSasetClose').onclick = ()=> tutupOverlaySmooth(el('pilihOutletSasetOverlay'));
+
+async function jalankanSetGlobalStokSaset(menuSaset, outletTarget){
+  const labelOutlet = outletTarget.length === OUTLET_LIST.length ? 'SEMUA outlet' : `outlet "${outletTarget[0]}"`;
+
+  const inputAngka = prompt(`Set stok barang SASET (${menuSaset.length} menu) di ${labelOutlet} (${outletTarget.length} outlet) jadi berapa?\n\nMenu yang ditandai "Bukan Saset" (misal Es Teh Manis) TIDAK ikut disentuh.\n\nKetik angkanya (misal 50).`);
   if(inputAngka === null) return; // dibatalkan
   const angka = Number(inputAngka);
   if(!Number.isFinite(angka) || angka < 0){ showToast('Angka tidak valid.', false); return; }
 
-  const totalDokumen = menuSaset.length * OUTLET_LIST.length;
-  const yakin = confirm(`Kamu mengetik angka: ${angka}\n\nSet stok SEMUA barang saset (${menuSaset.length} menu \u00d7 ${OUTLET_LIST.length} outlet = ${totalDokumen} data) jadi ${angka}?\n\nMenu "Bukan Saset" tidak ikut disentuh. Tindakan ini TIDAK BISA di-undo otomatis. Lanjutkan?`);
+  const totalDokumen = menuSaset.length * outletTarget.length;
+  const yakin = confirm(`Kamu mengetik angka: ${angka}\n\nSet stok barang saset (${menuSaset.length} menu \u00d7 ${outletTarget.length} outlet = ${totalDokumen} data) di ${labelOutlet} jadi ${angka}?\n\nMenu "Bukan Saset" tidak ikut disentuh. Tindakan ini TIDAK BISA di-undo otomatis. Lanjutkan?`);
   if(!yakin) return;
   const ketik = prompt(`Ketik SASET-${angka} (persis seperti ini) untuk konfirmasi terakhir:`);
   if(ketik !== `SASET-${angka}`){ showToast('Dibatalkan -- teks konfirmasi tidak cocok.', false); return; }
@@ -7465,7 +7507,7 @@ el('setGlobalStokSasetTopBtn').onclick = async ()=>{
   btn.disabled = true; btn.style.opacity = '.5';
   try{
     const daftarRef = [];
-    for(const outlet of OUTLET_LIST){
+    for(const outlet of outletTarget){
       for(const m of menuSaset){
         daftarRef.push(doc(db, "stok", stokDocId(outlet, m.kategori, m.nama)));
       }
@@ -7474,7 +7516,7 @@ el('setGlobalStokSasetTopBtn').onclick = async ()=>{
       const batch = writeBatch(db);
       daftarRef.slice(i,i+400).forEach((ref,idx)=>{
         const globalIdx = i+idx;
-        const outlet = OUTLET_LIST[Math.floor(globalIdx / menuSaset.length)];
+        const outlet = outletTarget[Math.floor(globalIdx / menuSaset.length)];
         const m = menuSaset[globalIdx % menuSaset.length];
         batch.set(ref, { outlet, kategori: m.kategori, nama: m.nama, jumlah: angka }, { merge: true });
       });
@@ -7489,12 +7531,12 @@ el('setGlobalStokSasetTopBtn').onclick = async ()=>{
         jenis: 'set_global_saset',
         angkaDiset: angka,
         jumlahMenuSaset: menuSaset.length,
-        jumlahOutlet: OUTLET_LIST.length,
+        jumlahOutlet: outletTarget.length,
         jumlahDokumen: daftarRef.length
       });
     }catch(errLog){ console.error('Gagal mencatat riwayat set global stok saset:', errLog); }
 
-    showToast(`Stok barang saset berhasil diset jadi ${angka} (${menuSaset.length} menu \u00d7 ${OUTLET_LIST.length} outlet).`);
+    showToast(`Stok barang saset berhasil diset jadi ${angka} (${menuSaset.length} menu \u00d7 ${outletTarget.length} outlet).`);
 
     if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
   }catch(e){
@@ -7503,7 +7545,7 @@ el('setGlobalStokSasetTopBtn').onclick = async ()=>{
   } finally {
     btn.disabled = false; btn.style.opacity = '';
   }
-};
+}
 
 // Sesuaikan stok saset (koleksi "stok") untuk sekumpulan item transaksi, dengan
 // arah +1 (kembalikan/restore, dipakai saat void) atau -1 (kurangi lagi, dipakai

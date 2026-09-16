@@ -6877,12 +6877,16 @@ function renderPanelNotifStokBarang(){
   el('notifStokPanelBody').innerHTML = NOTIF_STOKBARANG_LIST.map(r=>{
     const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
     const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
-    // "diproses" = status sementara SAAT stok sedang ditambahkan (dipasang oleh
-    // putuskanPermintaanStok SEBELUM loop tambah stok jalan) -- ditangani
-    // terpisah di sini supaya tombol Setujui/Tolak/Hapus semuanya disembunyikan
-    // selama proses berjalan (bukan cuma tombol Setujui saja).
-    const statusLabel = r.status === 'menunggu' ? 'Menunggu' : (r.status === 'diproses' ? 'Sedang diproses\u2026' : (r.status === 'disetujui' ? 'Disetujui \u00b7 stok sudah ditambah' : 'Ditolak'));
-    const bisaDiubahAtauDihapus = r.status !== 'menunggu' && r.status !== 'diproses';
+    // "sedangDiproses" = field TERPISAH dari `status` utama, ditandai SAAT stok
+    // sedang ditambahkan (dipasang oleh putuskanPermintaanStok SEBELUM loop
+    // tambah stok jalan, dilepas lagi begitu selesai/gagal). Sengaja bukan
+    // nilai `status` supaya kalau prosesnya macet di tengah jalan (device
+    // mati, koneksi putus), `status` tetap "menunggu" dan permintaan TIDAK
+    // nyangkut selamanya tanpa jalan keluar -- lihat catatan panjang di
+    // putuskanPermintaanStok.
+    const sedangDiproses = !!r.sedangDiproses && r.status === 'menunggu';
+    const statusLabel = sedangDiproses ? 'Sedang diproses\u2026' : (r.status === 'menunggu' ? 'Menunggu' : (r.status === 'disetujui' ? 'Disetujui \u00b7 stok sudah ditambah' : 'Ditolak'));
+    const bisaDiubahAtauDihapus = r.status !== 'menunggu';
     const rincian = Array.isArray(r.rincian) ? r.rincian : [];
     const ringkasanRincian = rincian.length
       ? `<div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">${rincian.map(x=>`${x.nama} <b>+${x.jumlah}</b>`).join(' \u00b7 ')}</div>` : '';
@@ -6900,10 +6904,13 @@ function renderPanelNotifStokBarang(){
         </div>
       </div>
       ${ringkasanRincian}
-      <div class="nriStatus ${r.status}">${statusLabel}</div>
-      ${r.status === 'menunggu' ? `<div class="nriBtns">
+      <div class="nriStatus ${sedangDiproses ? 'menunggu' : r.status}">${statusLabel}</div>
+      ${r.status === 'menunggu' && !sedangDiproses ? `<div class="nriBtns">
         <button class="nriApprove">Setujui</button>
         <button class="nriTolak">Tolak</button>
+      </div>` : ''}
+      ${sedangDiproses ? `<div class="nriBtns">
+        <button class="nriResetProses" style="background:var(--merah-light); color:var(--merah);" title="Pakai ini kalau proses kemarin macet/nyangkut dan tombol Setujui/Tolak tidak muncul lagi">Reset (kalau nyangkut)</button>
       </div>` : ''}
     </div>`;
   }).join('');
@@ -6913,10 +6920,29 @@ function renderPanelNotifStokBarang(){
     const approveBtn = itemEl.querySelector('.nriApprove');
     const tolakBtn = itemEl.querySelector('.nriTolak');
     const hapusBtn = itemEl.querySelector('.nriHapus');
+    const resetBtn = itemEl.querySelector('.nriResetProses');
     if(approveBtn) approveBtn.onclick = ()=> putuskanPermintaanStok(id, 'disetujui');
     if(tolakBtn) tolakBtn.onclick = ()=> putuskanPermintaanStok(id, 'ditolak');
     if(hapusBtn) hapusBtn.onclick = ()=> hapusNotifStokBarang(id);
+    if(resetBtn) resetBtn.onclick = ()=> resetPermintaanStokMacet(id);
   });
+}
+
+// Tombol darurat kalau permintaan sempat ke-flag "sedangDiproses" tapi
+// prosesnya macet di tengah jalan (tab ketutup, device mati, dsb) SEBELUM
+// sempat mereset flag itu sendiri -- Owner bisa reset manual dari sini tanpa
+// perlu menunggu pengaman otomatis 5 menit di putuskanPermintaanStok.
+// PENTING: cuma reset FLAG-nya saja, TIDAK menyentuh stok yang sudah
+// mungkin sempat ditambah sebagian sebelum macet -- Owner tetap harus cek
+// manual di Kelola Stok Barang / Riwayat Restock kalau ragu prosesnya sempat
+// jalan sebagian sebelum macet, sebelum klik Setujui lagi (supaya tidak
+// dobel tambah stok utk item yg sudah sempat kepasang).
+async function resetPermintaanStokMacet(id){
+  if(!confirm('Reset status "sedang diproses" untuk permintaan ini?\n\nPakai ini HANYA kalau tombol Setujui/Tolak tidak kunjung muncul lagi. Kalau proses sebelumnya sempat menambah SEBAGIAN stok sebelum macet, cek dulu di Riwayat Restock supaya tidak dobel saat disetujui ulang.')) return;
+  try{
+    await updateDoc(doc(db, "permintaan_stok_barang", id), { sedangDiproses: false });
+    showToast("Status direset \u2014 silakan Setujui/Tolak lagi.");
+  }catch(e){ showToast("Gagal mereset. Cek koneksi.", false); console.error('Gagal reset sedangDiproses:', e); }
 }
 
 // Hapus kartu notifikasi dari daftar SECARA PERMANEN -- pola sama dgn
@@ -6924,7 +6950,7 @@ function renderPanelNotifStokBarang(){
 async function hapusNotifStokBarang(id){
   try{
     const r = NOTIF_STOKBARANG_LIST.find(x => x.id === id) || PERMINTAAN_STOK_OWNER_LIST.find(x => x.id === id);
-    if(r && (r.status === 'menunggu' || r.status === 'diproses')){ showToast("Permintaan ini masih menunggu/sedang diproses \u2014 tidak bisa dihapus dulu.", false); return; }
+    if(r && r.status === 'menunggu'){ showToast("Permintaan ini masih menunggu/sedang diproses \u2014 tidak bisa dihapus dulu.", false); return; }
     await deleteDoc(doc(db, "permintaan_stok_barang", id));
     showToast("Notifikasi dihapus");
     if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
@@ -7469,6 +7495,7 @@ function renderKelolaStok(){
       const waktuStr = String(w.getDate()).padStart(2,'0')+'/'+String(w.getMonth()+1).padStart(2,'0')+' '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
       const ringkasanRincian = Array.isArray(r.rincian) && r.rincian.length
         ? `<div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">${r.rincian.map(x=>`${x.nama} <b>+${x.jumlah}</b>`).join(' \u00b7 ')}</div>` : '';
+      const sedangDiproses = !!r.sedangDiproses;
       return `<div class="notifReqItem" data-id="${r.id}" style="margin-bottom:10px;">
         <div class="nriTop">
           <div>
@@ -7478,10 +7505,13 @@ function renderKelolaStok(){
           <div class="nriWaktu">${waktuStr}</div>
         </div>
         ${ringkasanRincian}
-        <div class="nriBtns">
+        ${sedangDiproses
+          ? `<div class="nriStatus menunggu">Sedang diproses\u2026</div>
+             <div class="nriBtns"><button class="permStokResetProses" style="background:var(--merah-light); color:var(--merah);" title="Pakai ini kalau proses kemarin macet/nyangkut">Reset (kalau nyangkut)</button></div>`
+          : `<div class="nriBtns">
           <button class="permStokApprove">Setujui</button>
           <button class="permStokTolak">Tolak</button>
-        </div>
+        </div>`}
       </div>`;
     }).join('');
   }
@@ -7543,8 +7573,10 @@ function renderKelolaStok(){
       const id = itemEl.dataset.id;
       const approveBtn = itemEl.querySelector('.permStokApprove');
       const tolakBtn = itemEl.querySelector('.permStokTolak');
+      const resetBtn = itemEl.querySelector('.permStokResetProses');
       if(approveBtn) approveBtn.onclick = ()=> putuskanPermintaanStok(id, 'disetujui');
       if(tolakBtn) tolakBtn.onclick = ()=> putuskanPermintaanStok(id, 'ditolak');
+      if(resetBtn) resetBtn.onclick = ()=> resetPermintaanStokMacet(id).then(()=>{ if(el('stokOverlay').classList.contains('show')) muatKelolaStok(); });
     });
   }
 
@@ -7802,26 +7834,53 @@ async function putuskanPermintaanStok(id, statusBaru){
 
     // Cek ULANG status TERBARU langsung dari Firestore (bukan cache lokal `r`
     // yang bisa saja sudah basi) -- kalau ternyata permintaan ini SUDAH pernah
-    // diputuskan/sedang diproses sebelumnya (misal proses approve sebelumnya
-    // sempat terpanggil dobel sebelum guard di atas terpasang, atau Owner lain
-    // di device lain sudah memutuskan duluan), STOP di sini. Jangan tambah
-    // stok lagi.
+    // diputuskan (status FINAL: disetujui/ditolak), STOP di sini. Jangan
+    // tambah stok lagi.
+    //
+    // PENTING soal field "sedangDiproses" (BUKAN status "diproses"): dulu di
+    // sini status utama sempat diubah jadi "diproses" sebagai kunci sementara
+    // -- tapi itu berbahaya, karena kalau koneksi putus/tab ketutup PAS di
+    // tengah loop tambah stok (sebelum sempat balik jadi "disetujui"), status
+    // akan NYANGKUT SELAMANYA di "diproses" dan TIDAK ADA jalan keluarnya dari
+    // UI manapun (baik tombol Setujui/Tolak sudah hilang, wong statusnya bukan
+    // "menunggu" lagi). Makanya sekarang dipakai field TERPISAH
+    // "sedangDiproses" + "sedangDiprosesSejak" yang tidak pernah mengunci
+    // status utama -- kalau prosesnya gagal di tengah jalan, field ini
+    // di-reset lagi di blok catch/finally di bawah sehingga permintaan bisa
+    // dicoba ulang. Ada juga pengaman waktu (5 menit) kalau-kalau reset itu
+    // sendiri gagal jalan (device mati total dsb).
     const snapCekStatus = await getDoc(doc(db, "permintaan_stok_barang", id));
-    if(snapCekStatus.exists() && snapCekStatus.data().status !== 'menunggu'){
-      showToast("Permintaan ini sudah diproses sebelumnya \u2014 tidak diproses ulang.", false);
-      return;
+    if(snapCekStatus.exists()){
+      const dataCek = snapCekStatus.data();
+      if(dataCek.status === 'disetujui' || dataCek.status === 'ditolak'){
+        showToast("Permintaan ini sudah diproses sebelumnya \u2014 tidak diproses ulang.", false);
+        return;
+      }
+      if(dataCek.sedangDiproses){
+        const sejakMs = dataCek.sedangDiprosesSejak && dataCek.sedangDiprosesSejak.toDate ? dataCek.sedangDiprosesSejak.toDate().getTime() : 0;
+        const sudahLamaSekali = sejakMs && (Date.now() - sejakMs) > 5*60*1000; // 5 menit
+        if(!sudahLamaSekali){
+          showToast("Permintaan ini sedang diproses (mungkin di perangkat lain) \u2014 tunggu sebentar lalu coba lagi.", false);
+          return;
+        }
+        // Lewat dari 5 menit tapi masih ke-flag "sedangDiproses" -- kemungkinan
+        // proses sebelumnya macet total (device mati/nyangkut) dan tidak
+        // sempat mereset flagnya sendiri. Jangan biarkan permintaan ini
+        // terkunci selamanya -- izinkan dicoba lagi dari sini.
+        console.warn('Flag sedangDiproses sudah lewat 5 menit, dianggap macet -- coba proses ulang.');
+      }
     }
 
     const rincian = (r && Array.isArray(r.rincian)) ? r.rincian : [];
 
-    // Kunci status jadi "diproses" DULU, SEBELUM mulai loop tambah stok --
-    // supaya kalau listener realtime re-render panel di tengah proses
-    // (karena loop di bawah ini makan waktu, apalagi kalau rinciannya banyak
-    // item), status yang dibaca ulang BUKAN "menunggu" lagi, jadi tombol
-    // Setujui tidak akan muncul kembali dan tidak akan ke-klik/ke-trigger dua
-    // kali untuk permintaan yang sama.
+    // Tandai "sedang diproses" lewat field TERPISAH (bukan mengubah `status`
+    // utama -- lihat penjelasan panjang di atas) SEBELUM mulai loop tambah
+    // stok, supaya perangkat/tab lain yang mungkin membuka permintaan yang
+    // sama tahu ada proses berjalan dan tidak ikut memproses barengan.
     if(statusBaru === 'disetujui' && rincian.length > 0 && r){
-      await updateDoc(doc(db, "permintaan_stok_barang", id), { status: 'diproses' });
+      await updateDoc(doc(db, "permintaan_stok_barang", id), {
+        sedangDiproses: true, sedangDiprosesSejak: Timestamp.fromDate(new Date())
+      });
     }
 
     if(statusBaru === 'disetujui' && rincian.length > 0 && r){
@@ -7850,7 +7909,7 @@ async function putuskanPermintaanStok(id, statusBaru){
       }
     }
 
-    await updateDoc(doc(db, "permintaan_stok_barang", id), { status: statusBaru, dibacaOwner: true });
+    await updateDoc(doc(db, "permintaan_stok_barang", id), { status: statusBaru, dibacaOwner: true, sedangDiproses: false });
     if(r){
       const ringkasan = rincian.length ? rincian.map(x=>`${x.nama} +${x.jumlah}`).join(', ') : '';
       kirimSinyalPopupSukses(
@@ -7872,7 +7931,13 @@ async function putuskanPermintaanStok(id, statusBaru){
       showToast(statusBaru === 'disetujui' ? "Permintaan disetujui \u2014 stok sudah ditambah otomatis" : "Permintaan ditolak");
     }
     if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
-  }catch(e){ showToast("Gagal memproses permintaan. Cek koneksi.", false); console.error('Gagal memutuskan permintaan stok barang:', e); }
+  }catch(e){
+    showToast("Gagal memproses permintaan. Cek koneksi.", false); console.error('Gagal memutuskan permintaan stok barang:', e);
+    // Gagal di tengah jalan -- lepas flag "sedangDiproses" supaya permintaan
+    // ini BISA dicoba lagi dari tombol Setujui/Tolak (bukan malah nyangkut
+    // selamanya menunggu 5 menit expiry di atas).
+    try{ await updateDoc(doc(db, "permintaan_stok_barang", id), { sedangDiproses: false }); }catch(errReset){ console.error('Gagal reset flag sedangDiproses:', errReset); }
+  }
   finally{
     // Lepas kunci proses apapun hasilnya (sukses, gagal, atau early-return
     // karena sudah diproses sebelumnya) -- supaya id ini bisa diproses lagi

@@ -1401,6 +1401,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12l2 2 4-4" stroke-width="1.8"/></svg>
           <span class="notifDot" id="notifKaryawanTehDot">0</span>
         </button>
+        <button class="iconBtn" id="isiUlangStokBtn" aria-label="Isi Ulang Stok" title="Isi Ulang Stok" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        </button>
         <button class="iconBtn" id="menuBtn" aria-label="Menu" title="Menu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
         </button>
@@ -1723,6 +1726,28 @@
   <div class="notifPanel">
     <div class="notifPanelHead"><span>Permintaan Izin Stok Barang</span><button id="notifStokPanelClose">✕</button></div>
     <div class="notifPanelBody" id="notifStokPanelBody"></div>
+  </div>
+</div>
+
+<div class="notifPanelOverlay" id="isiUlangStokOverlay">
+  <div class="notifPanelBackdrop" id="isiUlangStokBackdrop"></div>
+  <div class="notifPanel">
+    <div class="notifPanelHead"><span>Isi Ulang Stok</span><button id="isiUlangStokClose">✕</button></div>
+    <div style="padding:14px 16px 4px;">
+      <div style="font-size:11.5px; color:var(--muted); line-height:1.5; margin-bottom:10px;">
+        Semua permintaan izin stok barang (disetujui, ditolak, maupun menunggu) pada tanggal terpilih akan ditambahkan ke stok masing-masing outlet karyawan yang meminta.
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="date" id="isiUlangStokTanggal" style="flex:1; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
+      </div>
+    </div>
+    <div class="notifPanelBody" id="isiUlangStokBody"></div>
+    <div style="padding:10px 16px 16px;">
+      <button class="addBtn" id="isiUlangStokProsesBtn" style="width:100%; justify-content:center; border-style:solid; background:var(--gold-light); color:var(--gold-dark);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        Proses Isi Ulang Stok
+      </button>
+    </div>
   </div>
 </div>
 
@@ -2605,6 +2630,7 @@ function terapkanTampilanJabatan(){
   el('notifTehBtn').style.display = isOwner ? 'flex' : 'none';
   el('notifStokBtn').style.display = isOwner ? 'flex' : 'none';
   el('notifRejectOwnerBtn').style.display = isOwner ? 'flex' : 'none';
+  el('isiUlangStokBtn').style.display = isOwner ? 'flex' : 'none';
   if(isOwner){ mulaiPantauNotifPermintaanStokCup(); mulaiPantauNotifPermintaanRejectTrx(); mulaiPantauNotifPermintaanStokTeh(); mulaiPantauNotifPermintaanStokBarang(); } else { hentikanPantauNotifPermintaanStokCup(); hentikanPantauNotifPermintaanRejectTrx(); hentikanPantauNotifPermintaanStokTeh(); hentikanPantauNotifPermintaanStokBarang(); }
   // Tombol status izin milik karyawan sendiri -- Owner tidak butuh ini karena
   // sudah punya lonceng notifikasi + panel approve/tolak lewat notifBtn di atas.
@@ -8043,6 +8069,150 @@ async function putuskanPermintaanStok(id, statusBaru){
 }
 
 /* =====================================================================
+   ISI ULANG STOK (khusus Owner) — tombol terpisah di topbar (isiUlangStokBtn,
+   sebelah tombol menu garis 3). Berbeda dari lonceng notifStokBtn di atas:
+   lonceng itu untuk approve/tolak permintaan SATU PER SATU secara real-time,
+   sedangkan fitur ini untuk memproses SEMUA permintaan izin stok barang pada
+   TANGGAL TERTENTU sekaligus (termasuk yang masih "menunggu" -- dianggap
+   auto-approve saat diproses lewat sini), lalu menambahkannya ke stok
+   masing-masing OUTLET sesuai outlet karyawan pemohon.
+
+   Sengaja TIDAK ada penanda anti-dobel (mis. field "sudahDiisiUlang") --
+   kalau tombol ini dipencet berkali-kali untuk tanggal yang sama, stok akan
+   bertambah dobel/berkali lipat. Ini permintaan eksplisit Owner (Owner yang
+   jaga sendiri), bukan bug -- lihat percakapan yang melatarbelakangi fitur
+   ini di riwayat pengembangan.
+   ===================================================================== */
+let ISI_ULANG_STOK_LIST = [];
+
+el('isiUlangStokBtn').onclick = (e)=>{
+  e.stopPropagation();
+  if(!SESI || SESI.jabatan !== 'Owner') return;
+  const inputTgl = el('isiUlangStokTanggal');
+  if(!inputTgl.value){
+    const now = new Date();
+    inputTgl.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  }
+  el('isiUlangStokOverlay').classList.add('show');
+  muatDaftarIsiUlangStok();
+};
+el('isiUlangStokClose').onclick = ()=> tutupOverlaySmooth(el('isiUlangStokOverlay'));
+el('isiUlangStokBackdrop').onclick = ()=> tutupOverlaySmooth(el('isiUlangStokOverlay'));
+el('isiUlangStokTanggal').onchange = ()=> muatDaftarIsiUlangStok();
+
+// Ambil SEMUA permintaan_stok_barang pada tanggal yang dipilih (apapun
+// statusnya: menunggu/disetujui/ditolak) -- beda dari NOTIF_STOKBARANG_LIST
+// yang cuma realtime seluruh koleksi tanpa filter tanggal.
+async function muatDaftarIsiUlangStok(){
+  const tglStr = el('isiUlangStokTanggal').value;
+  if(!tglStr){ ISI_ULANG_STOK_LIST = []; renderDaftarIsiUlangStok(); return; }
+  el('isiUlangStokBody').innerHTML = '<div class="empty" style="padding:20px 8px;">Memuat\u2026</div>';
+  try{
+    const [thn, bln, tgl] = tglStr.split('-').map(Number);
+    const awal = new Date(thn, bln-1, tgl, 0, 0, 0, 0);
+    const akhir = new Date(thn, bln-1, tgl, 23, 59, 59, 999);
+    const snap = await getDocs(query(
+      collection(db, "permintaan_stok_barang"),
+      where("waktu", ">=", Timestamp.fromDate(awal)),
+      where("waktu", "<=", Timestamp.fromDate(akhir))
+    ));
+    ISI_ULANG_STOK_LIST = snap.docs.map(d=>({id:d.id, ...d.data()}))
+      .sort((a,b)=>{ const ta=a.waktu&&a.waktu.toDate?a.waktu.toDate().getTime():0; const tb=b.waktu&&b.waktu.toDate?b.waktu.toDate().getTime():0; return tb-ta; });
+  }catch(e){
+    console.error('Gagal memuat daftar isi ulang stok:', e);
+    ISI_ULANG_STOK_LIST = [];
+    el('isiUlangStokBody').innerHTML = '<div class="empty" style="padding:20px 8px;">Gagal memuat data. Cek koneksi.</div>';
+    return;
+  }
+  renderDaftarIsiUlangStok();
+}
+
+function renderDaftarIsiUlangStok(){
+  if(ISI_ULANG_STOK_LIST.length === 0){
+    el('isiUlangStokBody').innerHTML = '<div class="empty" style="padding:20px 8px;">Tidak ada permintaan izin stok barang di tanggal ini.</div>';
+    return;
+  }
+  el('isiUlangStokBody').innerHTML = ISI_ULANG_STOK_LIST.map(r=>{
+    const w = r.waktu && r.waktu.toDate ? r.waktu.toDate() : new Date();
+    const waktuStr = String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0');
+    const statusLabel = r.status === 'menunggu' ? 'Menunggu (akan otomatis disetujui)' : (r.status === 'disetujui' ? 'Disetujui' : 'Ditolak');
+    const rincian = Array.isArray(r.rincian) ? r.rincian : [];
+    const ringkasanRincian = rincian.length
+      ? `<div style="font-size:11.5px; color:var(--muted); margin:4px 0 2px;">${rincian.map(x=>`${x.nama} <b>+${x.jumlah}</b>`).join(' \u00b7 ')}</div>` : '';
+    return `<div class="notifReqItem">
+      <div class="nriTop">
+        <div>
+          <div class="nriNama">${r.pemohonNama || r.pemohonUsername}</div>
+          <div class="nriOutlet">Outlet ${r.outlet}</div>
+        </div>
+        <div class="nriWaktu">${waktuStr}</div>
+      </div>
+      ${ringkasanRincian}
+      <div class="nriStatus ${r.status}">${statusLabel}</div>
+    </div>`;
+  }).join('');
+}
+
+el('isiUlangStokProsesBtn').onclick = async ()=>{
+  if(!SESI || SESI.jabatan !== 'Owner') return;
+  if(ISI_ULANG_STOK_LIST.length === 0){ showToast("Tidak ada permintaan untuk diproses di tanggal ini.", false); return; }
+  if(!confirm(`Proses ${ISI_ULANG_STOK_LIST.length} permintaan izin stok barang di tanggal ${el('isiUlangStokTanggal').value}?\n\nSemua barang yang diminta akan ditambahkan ke stok outlet masing-masing pemohon, termasuk yang statusnya masih "menunggu". Kalau tombol ini sudah pernah dipencet untuk tanggal yang sama, stok akan bertambah DOBEL.`)) return;
+
+  const btn = el('isiUlangStokProsesBtn');
+  btn.disabled = true; btn.textContent = 'Memproses\u2026';
+
+  let totalDiproses = 0;
+  const itemGagalSemua = [];
+
+  for(const r of ISI_ULANG_STOK_LIST){
+    const rincian = Array.isArray(r.rincian) ? r.rincian : [];
+    if(rincian.length === 0) continue;
+    for(const item of rincian){
+      try{
+        const docId = stokDocId(r.outlet, item.kategori, item.nama);
+        const ref = doc(db, "stok", docId);
+        let stokSesudah = item.jumlah;
+        await runTransaction(db, async (tx)=>{
+          const snap = await tx.get(ref);
+          const skrg = snap.exists() ? (Number(snap.data().jumlah)||0) : 0;
+          stokSesudah = skrg + item.jumlah;
+          tx.set(ref, { outlet: r.outlet, kategori: item.kategori, nama: item.nama, jumlah: stokSesudah }, { merge: true });
+        });
+        await addDoc(collection(db, "riwayat_restock"), {
+          waktu: Timestamp.fromDate(new Date()), outlet: r.outlet, kategori: item.kategori, nama: item.nama,
+          satuan: 'cup', jumlahInput: item.jumlah, isiRoll: null,
+          jumlahDitambahCup: item.jumlah, stokSesudah,
+          oleh: r.pemohonNama || r.pemohonUsername,
+          keterangan: `Via Isi Ulang Stok (batch tanggal) \u2014 diproses oleh ${SESI.namaTampilan}`
+        });
+        totalDiproses++;
+      }catch(errItem){
+        console.error(`Gagal isi ulang stok utk menu ${item.nama} (outlet ${r.outlet}):`, errItem);
+        itemGagalSemua.push(`${item.nama} (Outlet ${r.outlet})`);
+      }
+    }
+    // Permintaan yang masih "menunggu" ditandai disetujui otomatis begitu
+    // diproses lewat sini, supaya lonceng notifStokBtn & status karyawan ikut
+    // sinkron dan tidak menampilkan tombol Setujui/Tolak lagi utk permintaan
+    // yang stoknya sudah ditambahkan lewat jalur ini.
+    if(r.status === 'menunggu'){
+      try{ await updateDoc(doc(db, "permintaan_stok_barang", r.id), { status: 'disetujui', dibacaOwner: true }); }catch(errUpd){ console.error('Gagal update status permintaan jadi disetujui:', errUpd); }
+    }
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Proses Isi Ulang Stok';
+
+  if(itemGagalSemua.length === 0){
+    showToast(`Isi ulang stok selesai \u2014 ${totalDiproses} item berhasil ditambahkan.`);
+  }else{
+    showToast(`Selesai dengan ${itemGagalSemua.length} item gagal: ${itemGagalSemua.join(', ')} \u2014 cek manual di Kelola Stok Barang.`, false);
+  }
+  await muatDaftarIsiUlangStok();
+  if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
+};
+
+/* =====================================================================
    PERBAIKAN STOK (khusus Owner) — alat bantu SEKALI PAKAI utk membetulkan
    angka stok saset yang sempat "meledak" akibat bug lama approve izin
    restock (sebelum guard SEDANG_DIPROSES_PERMINTAAN_STOK di atas terpasang,
@@ -8341,13 +8511,13 @@ const OVERLAY_IDS_BACK = [
   'pengaturanOverlay', 'notifPanelOverlay', 'notifKaryawanPanelOverlay',
   'notifStokPanelOverlay', 'notifKaryawanStokPanelOverlay',
   'rejectTrxOverlay', 'rejectTrxFormOverlay', 'notifRejectOwnerPanelOverlay',
-  'perbaikanStokOverlay'
+  'perbaikanStokOverlay', 'isiUlangStokOverlay'
 ];
 let sedangProsesBack = false;
 
 function overlayTerbukaSaatIni(){
   // urutan terakhir di array = prioritas ditutup duluan (overlay yang biasanya "di atas")
-  const urutanPrioritas = ['notifRejectOwnerPanelOverlay','notifKaryawanStokPanelOverlay','notifStokPanelOverlay','notifKaryawanPanelOverlay','notifPanelOverlay','perbaikanStokOverlay','pengaturanOverlay','rejectTrxFormOverlay','rejectTrxOverlay','restockOverlay','stokOverlay','stokCupOverlay','akunFormOverlay','akunOverlay','outletHapusOverlay','outletOverlay','trxDetailOverlay','lapOverlay','grafikOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
+  const urutanPrioritas = ['isiUlangStokOverlay','notifRejectOwnerPanelOverlay','notifKaryawanStokPanelOverlay','notifStokPanelOverlay','notifKaryawanPanelOverlay','notifPanelOverlay','perbaikanStokOverlay','pengaturanOverlay','rejectTrxFormOverlay','rejectTrxOverlay','restockOverlay','stokOverlay','stokCupOverlay','akunFormOverlay','akunOverlay','outletHapusOverlay','outletOverlay','trxDetailOverlay','lapOverlay','grafikOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
   for(const id of urutanPrioritas){
     const elm = document.getElementById(id);
     if(elm && elm.classList.contains('show')) return id;

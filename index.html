@@ -407,6 +407,8 @@
   .cartRow .cstep{display:flex; align-items:center; border:1px solid var(--line); border-radius:9px; overflow:hidden; flex:0 0 auto;}
   .cartRow .cstep button{width:28px; height:28px; border:none; background:var(--pine-50); font-size:15px; font-weight:700; color:var(--pine-800); cursor:pointer;}
   .cartRow .cstep .cval{width:26px; text-align:center; font-size:13px; font-weight:700;}
+  .cartRow .cstep input.cval{border:none; background:transparent; font:inherit; color:inherit; padding:0; -moz-appearance:textfield;}
+  .cartRow .cstep input.cval::-webkit-outer-spin-button, .cartRow .cstep input.cval::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
   .cartRow .cdel{background:none; border:none; color:var(--merah); font-size:16px; cursor:pointer; padding:5px;}
 
   .catatanWrap{padding:14px 20px 0;}
@@ -805,6 +807,12 @@
   .adminHead h2{font-family:"Fraunces",serif; font-size:17px; margin:0; font-weight:600; color:var(--pine-950);}
   .adminHead button{background:var(--line-soft); border:none; width:30px; height:30px; border-radius:9px; font-size:16px; color:var(--muted); cursor:pointer;}
   .adminBody{overflow-y:auto; padding:14px 20px 22px;}
+  /* Tombol "Kirim Izin" melayang (sticky) di dasar area scroll -- dipakai
+     khusus utk form izin restock yang daftar menunya bisa panjang (banyak
+     barang), supaya karyawan tidak perlu scroll sampai paling bawah tiap
+     mau kirim. Sticky dihitung relatif ke area scroll (.adminBody) itu
+     sendiri, jadi otomatis nempel begitu discroll walau daftarnya panjang. */
+  .saveFormBtn.melayang{position:sticky; bottom:0; z-index:5; margin-top:14px; box-shadow:0 -8px 16px -4px rgba(12,31,22,.3);}
   .addBtn{
     width:100%; background:var(--pine-50); color:var(--pine-800); border:1.5px dashed var(--pine-500); border-radius:13px;
     padding:14px; font-size:13.5px; font-weight:650; cursor:pointer; margin-bottom:16px; display:flex; align-items:center; justify-content:center; gap:7px;
@@ -1455,6 +1463,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
         <span>Perbaikan Stok</span>
       </button>
+      <button class="menuDropItem" id="resetSemuaStokBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        <span>Reset Semua Stok ke 0</span>
+      </button>
       <button class="menuDropItem" id="pengaturanBtn" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         <span>Pengaturan</span>
@@ -1875,7 +1887,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/fireba
 import {
   getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc,
   deleteDoc, query, where, orderBy, onSnapshot, runTransaction, serverTimestamp,
-  Timestamp
+  Timestamp, writeBatch
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import {
   getAuth, signInAnonymously, onAuthStateChanged
@@ -1934,7 +1946,7 @@ let motivIdx = 0, motivTimer = null, motivHideTimer = null, sudahUcapkanSelamatI
 let cekSesiTimer = null, logoutCountdownTimer = null;
 let OUTLET_LIST = [];        // daftar semua outlet (dari sheet akun / koleksi outlet)
 let unsubMenu = null;        // listener realtime menu
-const BATAS_STOK_MENIPIS = 20; // ambang "stok menipis" -- sama untuk semua ukuran/menu (lihat Kelola Stok & Kelola Stok Cup)
+const BATAS_STOK_MENIPIS = 2; // ambang "stok menipis" -- sama untuk semua ukuran/menu (lihat Kelola Stok & Kelola Stok Cup)
 
 // Ukuran oz baku — SATU daftar global dipakai semua menu (menu utama, Kelola Menu,
 // keranjang, dan laporan). Format ini yang dipakai di SELURUH aplikasi.
@@ -2556,6 +2568,7 @@ function terapkanTampilanJabatan(){
   el('modeEditMenuBtn').style.display = isOwner ? 'flex' : 'none';
   el('stokBtn').style.display = SESI ? 'flex' : 'none';
   el('perbaikanStokBtn').style.display = isOwner ? 'flex' : 'none';
+  el('resetSemuaStokBtn').style.display = isOwner ? 'flex' : 'none';
   el('undoRedoRow').style.display = isOwner ? 'flex' : 'none';
   el('undoRedoDivider').style.display = isOwner ? 'block' : 'none';
 
@@ -2838,7 +2851,7 @@ function mulaiPengecekanStokMenipis(){
    ===================================================================== */
 el('menuBtn').onclick = (e)=>{ e.stopPropagation(); el('menuDropdownOverlay').classList.add('show'); };
 el('menuDropdownOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'menuDropdownOverlay') tutupOverlaySmooth(el('menuDropdownOverlay')); });
-['calcBtn','laporanBtn','grafikBtn','adminBtn','modeEditMenuBtn','stokBtn','stokCupBtn','rejectTrxBtn','akunBtn','outletBtn','perbaikanStokBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
+['calcBtn','laporanBtn','grafikBtn','adminBtn','modeEditMenuBtn','stokBtn','stokCupBtn','rejectTrxBtn','akunBtn','outletBtn','perbaikanStokBtn','resetSemuaStokBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
   el(id).addEventListener('click', ()=> tutupOverlaySmooth(el('menuDropdownOverlay')));
 });
 
@@ -3252,6 +3265,36 @@ el('searchBox').addEventListener('input', renderMenu);
 
 function cartTotalRp(){ return Object.values(cart).reduce((s,c)=> s + c.qty*c.harga, 0); }
 function cartTotalQty(){ return Object.values(cart).reduce((s,c)=> s + c.qty, 0); }
+/* Cek & pangkas target qty sebuah item keranjang supaya tidak melebihi sisa
+   stok saset menu itu, atau sisa stok teh (ml) kalau menunya pakai teh.
+   Dipakai bareng oleh tombol "+" dan input ketik manual jumlah di keranjang,
+   supaya aturan batas stoknya konsisten di kedua cara input. */
+function batasiTargetQtyKeranjang(k, target){
+  target = Math.max(0, Math.floor(Number(target) || 0));
+  const c = cart[k];
+  if(!c) return { target, dipangkas:false, pesan:'' };
+  const [ci, ii] = k.split('|').map(Number);
+  const item = MENU[ci] && MENU[ci].items[ii];
+  if(item && item.stokSasetMenu !== null){
+    let totalQtyMenuIniTanpaIni = 0;
+    item.varian.forEach((v, vi)=>{ const kk = ci+"|"+ii+"|"+vi; if(kk!==k && cart[kk]) totalQtyMenuIniTanpaIni += cart[kk].qty; });
+    const maksBoleh = Math.max(0, item.stokSasetMenu - totalQtyMenuIniTanpaIni);
+    if(target > maksBoleh){
+      return { target: maksBoleh, dipangkas:true, pesan: `Stok "${item.nama}" tinggal ${item.stokSasetMenu} saset, jumlah dipangkas ke ${maksBoleh}.` };
+    }
+  }
+  if(c.kategori === KATEGORI_PAKAI_TEH && STOKTEH_ML_KASIR_AKTIF !== null){
+    const mlPerCup = mlTehUntukItem(c.kategori, c.nama) || 1;
+    let totalMlTanpaIni = 0;
+    Object.entries(cart).forEach(([kk, cc])=>{ if(kk!==k && cc.kategori === KATEGORI_PAKAI_TEH) totalMlTanpaIni += mlTehUntukItem(cc.kategori, cc.nama) * cc.qty; });
+    const sisaBisaBuat = Math.max(0, Math.floor((STOKTEH_ML_KASIR_AKTIF - totalMlTanpaIni) / mlPerCup));
+    if(target > sisaBisaBuat){
+      return { target: sisaBisaBuat, dipangkas:true, pesan: sisaBisaBuat > 0 ? `Stok teh cuma cukup untuk ${sisaBisaBuat} cup lagi, jumlah dipangkas.` : `Stok teh outlet ini tidak cukup, jumlah dipangkas ke 0.` };
+    }
+  }
+  return { target, dipangkas:false, pesan:'' };
+}
+
 function updateFab(){
   const qty = cartTotalQty(); const fab = el('fab');
   if(qty===0){ fab.disabled = true; } else { fab.disabled = false; el('fabBadge').textContent = qty; el('fabTotal').textContent = rupiah(cartTotalRp()); }
@@ -3264,38 +3307,39 @@ function renderCartBody(){
     el('cartBody').innerHTML = keys.map(k=>{
       const c = cart[k];
       const ukuranTampilCart = normalisasiUkuran(c.varian, c.nama);
-      return `<div class="cartRow" data-k="${k}"><div class="ci"><div class="cn">${c.nama}</div><div class="cv">${ukuranTampilCart}${c.tambahan?' +'+c.tambahan:''}</div><div class="cp">${rupiah(c.harga)}</div></div><div class="cstep"><button class="cminus">\u2212</button><div class="cval">${c.qty}</div><button class="cplus">+</button></div><button class="cdel"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button></div>`;
+      return `<div class="cartRow" data-k="${k}"><div class="ci"><div class="cn">${c.nama}</div><div class="cv">${ukuranTampilCart}${c.tambahan?' +'+c.tambahan:''}</div><div class="cp">${rupiah(c.harga)}</div></div><div class="cstep"><button class="cminus">\u2212</button><input class="cval" type="number" inputmode="numeric" min="1" value="${c.qty}"><button class="cplus">+</button></div><button class="cdel"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg></button></div>`;
     }).join('');
     el('cartBody').querySelectorAll('.cartRow').forEach(row=>{
       const k = row.dataset.k;
       row.querySelector('.cplus').onclick = ()=>{
-        const [ci, ii] = k.split('|').map(Number);
-        const item = MENU[ci] && MENU[ci].items[ii];
-        if(item && item.stokSasetMenu !== null){
-          let totalQtyMenuIni = 0;
-          item.varian.forEach((v, vi)=>{ const kk = ci+"|"+ii+"|"+vi; if(cart[kk]) totalQtyMenuIni += cart[kk].qty; });
-          if(totalQtyMenuIni + 1 > item.stokSasetMenu){
-            tampilkanAnimasiSukses(false, `Stok "${item.nama}" tinggal ${item.stokSasetMenu} saset, tidak bisa nambah lagi.`);
-            return;
-          }
-        }
-        // Cek sisa stok teh (ml) sebelum menambah qty item kategori "Es Teh Manis" dari layar keranjang.
-        if(cart[k].kategori === KATEGORI_PAKAI_TEH && STOKTEH_ML_KASIR_AKTIF !== null){
-          const mlPerCup = mlTehUntukItem(cart[k].kategori, cart[k].nama) || 1;
-          let totalMlDipakaiSaatIni = 0;
-          Object.values(cart).forEach(c=>{ if(c.kategori === KATEGORI_PAKAI_TEH) totalMlDipakaiSaatIni += mlTehUntukItem(c.kategori, c.nama) * c.qty; });
-          if(totalMlDipakaiSaatIni + mlPerCup > STOKTEH_ML_KASIR_AKTIF){
-            const sisaBisaBuat = Math.max(0, Math.floor((STOKTEH_ML_KASIR_AKTIF - totalMlDipakaiSaatIni) / mlPerCup));
-            tampilkanAnimasiSukses(false, sisaBisaBuat > 0
-              ? `Stok teh cuma cukup untuk ${sisaBisaBuat} cup lagi.`
-              : `Stok teh outlet ini tidak cukup untuk menambah "${cart[k].nama}".`);
-            return;
-          }
-        }
-        cart[k].qty++; renderCartBody(); renderMenu(); updateFab();
+        const cek = batasiTargetQtyKeranjang(k, cart[k].qty + 1);
+        if(cek.dipangkas){ tampilkanAnimasiSukses(false, cek.pesan); }
+        cart[k].qty = cek.target;
+        if(cart[k].qty<=0) delete cart[k];
+        renderCartBody(); renderMenu(); updateFab();
       };
       row.querySelector('.cminus').onclick = ()=>{ cart[k].qty--; if(cart[k].qty<=0) delete cart[k]; renderCartBody(); renderMenu(); updateFab(); };
       row.querySelector('.cdel').onclick = ()=>{ delete cart[k]; renderCartBody(); renderMenu(); updateFab(); };
+      // Input ketik manual jumlah -- divalidasi & dipangkas sesuai sisa stok
+      // (aturan sama persis dengan tombol "+"), lalu diterapkan saat user
+      // selesai ketik (blur / tekan Enter), bukan tiap ketikan supaya
+      // tidak mengganggu saat user masih setengah ngetik angka.
+      const inputQty = row.querySelector('input.cval');
+      const terapkanInputQty = ()=>{
+        if(!cart[k]) return; // item sudah kehapus (mis. lewat trash) sebelum blur sempat jalan
+        const nilaiDiketik = inputQty.value.trim();
+        if(nilaiDiketik === '' || isNaN(Number(nilaiDiketik))){ inputQty.value = cart[k].qty; return; }
+        let target = Math.floor(Number(nilaiDiketik));
+        if(target <= 0){ delete cart[k]; renderCartBody(); renderMenu(); updateFab(); return; }
+        const cek = batasiTargetQtyKeranjang(k, target);
+        if(cek.dipangkas) tampilkanAnimasiSukses(false, cek.pesan);
+        cart[k].qty = cek.target;
+        if(cart[k].qty<=0) delete cart[k];
+        renderCartBody(); renderMenu(); updateFab();
+      };
+      inputQty.onblur = terapkanInputQty;
+      inputQty.onkeydown = (e)=>{ if(e.key==='Enter') inputQty.blur(); };
+      inputQty.onclick = (e)=> e.target.select();
     });
   }
   el('cartTotal').textContent = rupiah(cartTotalRp());
@@ -6028,7 +6072,7 @@ function bukaFormKirimIzinStokCup(){
   el('restockBody').innerHTML = `
     <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Isi jumlah cup <b>TAMBAHAN</b> yang mau ditambahkan untuk outlet <b>${SESI.outlet}</b> (bukan total/keseluruhan stok cup). Boleh isi beberapa ukuran sekaligus \u2014 kosongkan/0 kalau ukuran itu tidak perlu ditambah.</div>
     <div id="izinCupUkuranList"></div>
-    <button class="saveFormBtn" id="izinCupSaveBtn">Kirim Izin</button>
+    <button class="saveFormBtn melayang" id="izinCupSaveBtn">Kirim Izin</button>
   `;
 
   const listEl = el('izinCupUkuranList');
@@ -7655,7 +7699,7 @@ function bukaFormKirimIzinStok(){
   el('restockBody').innerHTML = `
     <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">Isi jumlah saset yang mau ditambah untuk outlet <b>${SESI.outlet}</b>. Boleh isi beberapa menu sekaligus \u2014 kosongkan/0 kalau menu itu tidak perlu ditambah.</div>
     <div id="izinStokMenuList"></div>
-    <button class="saveFormBtn" id="izinStokSaveBtn">Kirim Izin</button>
+    <button class="saveFormBtn melayang" id="izinStokSaveBtn">Kirim Izin</button>
   `;
 
   const listEl = el('izinStokMenuList');
@@ -8028,6 +8072,90 @@ el('perbaikanStokBtn').onclick = ()=>{
   renderPerbaikanStokAwal();
 };
 el('perbaikanStokClose').onclick = ()=> tutupOverlaySmooth(el('perbaikanStokOverlay'));
+
+/* =====================================================================
+   RESET SEMUA STOK KE 0 (SEMUA OUTLET) — khusus Owner, dari menu titik tiga.
+   PENTING: ini CUMA mengubah ANGKA stok (jumlah/ml) jadi 0. Dokumen stoknya
+   TIDAK dihapus (masih ada di Firestore, cuma nilainya 0) -- ini SENGAJA,
+   supaya:
+   1. Sistem kasir tetap 100% bisa jalan seperti biasa -- stok cuma dipakai
+      untuk warning "menipis/habis" (lihat evaluasiDanTampilkanStokMenipis),
+      BUKAN untuk mengunci/blokir transaksi. Jadi kasir tetap bisa jualan
+      normal walau stok kelihatan 0, tidak ada error atau fitur yang mati.
+   2. Begitu barang itu di-restock lagi (manual di Kelola Stok, atau via
+      izin restock karyawan yang di-ACC Owner), angka akan mulai nambah
+      dari 0 seperti biasa -- tidak ada dokumen yang hilang/rusak yang bisa
+      bikin fitur lain (riwayat, laporan, dsb) error karena datanya kosong.
+   Dipakai writeBatch (bukan updateDoc satu-satu) supaya cepat & hemat
+   kuota, dipecah per 400 dokumen (limit Firestore per batch 500 write)
+   supaya aman untuk jumlah menu/outlet berapapun. */
+el('resetSemuaStokBtn').onclick = async ()=>{
+  if(!SESI || SESI.jabatan !== 'Owner') return;
+  const yakin1 = confirm("Reset SEMUA stok barang, cup, dan teh di SEMUA outlet jadi 0?\n\nTransaksi/kasir TETAP bisa jalan normal seperti biasa setelah ini -- ini cuma mengosongkan ANGKA stoknya (dianggap seperti awal buka toko lagi). Barang bisa langsung di-restock lagi seperti biasa kapan saja.\n\nTindakan ini TIDAK BISA di-undo otomatis. Lanjutkan?");
+  if(!yakin1) return;
+  const ketik = prompt('Ketik RESET (huruf besar semua) untuk konfirmasi terakhir:');
+  if(ketik !== 'RESET'){ showToast('Dibatalkan -- teks konfirmasi tidak cocok.', false); return; }
+
+  const btn = el('resetSemuaStokBtn');
+  const spanAsli = btn.querySelector('span').textContent;
+  btn.disabled = true; btn.querySelector('span').textContent = 'Mereset...';
+  try{
+    let totalDireset = 0;
+
+    // --- Stok barang (per outlet, per menu) ---
+    const snapStok = await getDocs(collection(db, "stok"));
+    const docsStok = snapStok.docs.filter(d => (Number(d.data().jumlah)||0) !== 0);
+    for(let i=0;i<docsStok.length;i+=400){
+      const batch = writeBatch(db);
+      docsStok.slice(i,i+400).forEach(d=> batch.update(d.ref, { jumlah: 0 }));
+      await batch.commit();
+      totalDireset += Math.min(400, docsStok.length - i);
+    }
+
+    // --- Stok cup (per outlet, per ukuran) ---
+    const snapCup = await getDocs(collection(db, "stok_cup_ukuran"));
+    const docsCup = snapCup.docs.filter(d => (Number(d.data().jumlah)||0) !== 0);
+    for(let i=0;i<docsCup.length;i+=400){
+      const batch = writeBatch(db);
+      docsCup.slice(i,i+400).forEach(d=> batch.update(d.ref, { jumlah: 0 }));
+      await batch.commit();
+    }
+
+    // --- Stok teh (per outlet, satuan ml) ---
+    const snapTeh = await getDocs(collection(db, "stok_teh"));
+    const docsTeh = snapTeh.docs.filter(d => (Number(d.data().ml)||0) !== 0);
+    for(let i=0;i<docsTeh.length;i+=400){
+      const batch = writeBatch(db);
+      docsTeh.slice(i,i+400).forEach(d=> batch.update(d.ref, { ml: 0 }));
+      await batch.commit();
+    }
+
+    // Catat jejak audit -- siapa & kapan reset ini dilakukan, biar ada
+    // riwayatnya kalau nanti perlu ditelusuri.
+    try{
+      await addDoc(collection(db, "riwayat_reset_stok"), {
+        waktu: Timestamp.fromDate(new Date()),
+        oleh: SESI ? SESI.namaTampilan : 'Owner',
+        jumlahBarangDireset: docsStok.length,
+        jumlahCupDireset: docsCup.length,
+        jumlahTehDireset: docsTeh.length
+      });
+    }catch(errLog){ console.error('Gagal mencatat riwayat reset stok:', errLog); }
+
+    showToast(`Semua stok berhasil direset ke 0 (${docsStok.length} barang, ${docsCup.length} cup, ${docsTeh.length} teh).`);
+
+    // Refresh layar Kelola Stok manapun yang lagi terbuka biar angka
+    // langsung update tanpa perlu tutup-buka overlay.
+    if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
+    if(el('stokCupOverlay').classList.contains('show')) await muatKelolaStokCup();
+    if(el('stokTehOverlay').classList.contains('show')) await muatKelolaStokTeh();
+  }catch(e){
+    console.error('Gagal reset semua stok:', e);
+    showToast('Gagal reset stok. Cek koneksi lalu coba lagi.', false);
+  } finally {
+    btn.disabled = false; btn.querySelector('span').textContent = spanAsli;
+  }
+};
 
 function renderPerbaikanStokAwal(){
   const outletTerpakai = STOK_OUTLET_AKTIF || (OUTLET_LIST[0] || '');

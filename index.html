@@ -1459,18 +1459,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M10 21v-6h4v6"/></svg>
         <span>Kelola Outlet</span>
       </button>
-      <button class="menuDropItem" id="perbaikanStokBtn" style="display:none;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-        <span>Perbaikan Stok</span>
-      </button>
-      <button class="menuDropItem" id="resetSemuaStokBtn" style="display:none;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-        <span>Reset Stok Barang ke 0</span>
-      </button>
-      <button class="menuDropItem" id="setSemuaStokBtn" style="display:none;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        <span>Set Semua Stok Barang...</span>
-      </button>
       <button class="menuDropItem" id="pengaturanBtn" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         <span>Pengaturan</span>
@@ -1875,13 +1863,6 @@
   <div class="adminSheet">
     <div class="adminHead"><h2 id="gameOverlayTitle">Game</h2><button id="gameClose">✕</button></div>
     <div class="adminBody" id="gameBody"></div>
-  </div>
-</div>
-
-<div class="cartOverlay" id="perbaikanStokOverlay">
-  <div class="adminSheet">
-    <div class="adminHead"><h2>Perbaikan Stok</h2><button id="perbaikanStokClose">✕</button></div>
-    <div class="adminBody" id="perbaikanStokBody"></div>
   </div>
 </div>
 
@@ -2573,9 +2554,6 @@ function terapkanTampilanJabatan(){
   el('adminBtn').style.display = isOwner ? 'flex' : 'none';
   el('modeEditMenuBtn').style.display = isOwner ? 'flex' : 'none';
   el('stokBtn').style.display = SESI ? 'flex' : 'none';
-  el('perbaikanStokBtn').style.display = isOwner ? 'flex' : 'none';
-  el('resetSemuaStokBtn').style.display = isOwner ? 'flex' : 'none';
-  el('setSemuaStokBtn').style.display = isOwner ? 'flex' : 'none';
   el('undoRedoRow').style.display = isOwner ? 'flex' : 'none';
   el('undoRedoDivider').style.display = isOwner ? 'block' : 'none';
 
@@ -2858,7 +2836,7 @@ function mulaiPengecekanStokMenipis(){
    ===================================================================== */
 el('menuBtn').onclick = (e)=>{ e.stopPropagation(); el('menuDropdownOverlay').classList.add('show'); };
 el('menuDropdownOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'menuDropdownOverlay') tutupOverlaySmooth(el('menuDropdownOverlay')); });
-['calcBtn','laporanBtn','grafikBtn','adminBtn','modeEditMenuBtn','stokBtn','stokCupBtn','rejectTrxBtn','akunBtn','outletBtn','perbaikanStokBtn','resetSemuaStokBtn','setSemuaStokBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
+['calcBtn','laporanBtn','grafikBtn','adminBtn','modeEditMenuBtn','stokBtn','stokCupBtn','rejectTrxBtn','akunBtn','outletBtn','pengaturanBtn','logoutBtn'].forEach(id=>{
   el(id).addEventListener('click', ()=> tutupOverlaySmooth(el('menuDropdownOverlay')));
 });
 
@@ -8049,319 +8027,6 @@ async function putuskanPermintaanStok(id, statusBaru){
   }
 }
 
-/* =====================================================================
-   PERBAIKAN STOK (khusus Owner) — alat bantu SEKALI PAKAI utk membetulkan
-   angka stok saset yang sempat "meledak" akibat bug lama approve izin
-   restock (sebelum guard SEDANG_DIPROSES_PERMINTAAN_STOK di atas terpasang,
-   proses approve yang lambat + listener realtime yang re-render panel di
-   tengah proses bisa membuat permintaan yang SAMA ke-approve berkali-kali
-   beruntun, sehingga stok bertambah berkali lipat bukan cuma sekali).
-
-   Cara kerja: baca "riwayat_restock" HARI INI utk outlet yang lagi aktif,
-   ambil yang asalnya dari approve izin restock (keterangan mengandung "Via
-   izin restock"), kelompokkan per barang, lalu deteksi barang yang catatan
-   restock-nya beruntun dalam waktu SANGAT berdekatan (< 5 menit) -- itu ciri
-   khas bug ini (proses approve normal utk SATU permintaan cuma butuh
-   beberapa detik, bukan berkali-kali dalam hitungan menit). Nilai yang
-   "seharusnya" diambil dari catatan restock PERTAMA hari itu utk barang
-   tsb, karena catatan pertama pasti belum sempat digandakan bug.
-
-   Owner tetap harus mengecek angka sebelum menimpanya -- alat ini cuma
-   bantu hitung dugaan, bukan otomatis 100% benar (misal kalau Owner memang
-   sengaja restock manual berkali-kali berdekatan utk barang yang sama).
-   ===================================================================== */
-const AMBANG_MENIT_DUPLIKAT_PERBAIKAN_STOK = 5;
-let PERBAIKAN_STOK_HASIL = [];
-
-el('perbaikanStokBtn').onclick = ()=>{
-  if(!SESI || SESI.jabatan !== 'Owner') return;
-  el('perbaikanStokOverlay').classList.add('show');
-  renderPerbaikanStokAwal();
-};
-el('perbaikanStokClose').onclick = ()=> tutupOverlaySmooth(el('perbaikanStokOverlay'));
-
-/* =====================================================================
-   RESET SEMUA STOK KE 0 (SEMUA OUTLET) — khusus Owner, dari menu titik tiga.
-   PENTING: ini CUMA mengubah ANGKA stok (jumlah/ml) jadi 0. Dokumen stoknya
-   TIDAK dihapus (masih ada di Firestore, cuma nilainya 0) -- ini SENGAJA,
-   supaya:
-   1. Sistem kasir tetap 100% bisa jalan seperti biasa -- stok cuma dipakai
-      untuk warning "menipis/habis" (lihat evaluasiDanTampilkanStokMenipis),
-      BUKAN untuk mengunci/blokir transaksi. Jadi kasir tetap bisa jualan
-      normal walau stok kelihatan 0, tidak ada error atau fitur yang mati.
-   2. Begitu barang itu di-restock lagi (manual di Kelola Stok, atau via
-      izin restock karyawan yang di-ACC Owner), angka akan mulai nambah
-      dari 0 seperti biasa -- tidak ada dokumen yang hilang/rusak yang bisa
-      bikin fitur lain (riwayat, laporan, dsb) error karena datanya kosong.
-   Dipakai writeBatch (bukan updateDoc satu-satu) supaya cepat & hemat
-   kuota, dipecah per 400 dokumen (limit Firestore per batch 500 write)
-   supaya aman untuk jumlah menu/outlet berapapun. */
-el('resetSemuaStokBtn').onclick = async ()=>{
-  if(!SESI || SESI.jabatan !== 'Owner') return;
-  const yakin1 = confirm("Reset SEMUA stok BARANG (saset) di SEMUA outlet jadi 0?\n\nStok cup dan stok teh TIDAK ikut disentuh oleh tombol ini.\n\nTransaksi/kasir TETAP bisa jalan normal seperti biasa setelah ini -- ini cuma mengosongkan ANGKA stoknya (dianggap seperti awal buka toko lagi). Barang bisa langsung di-restock lagi seperti biasa kapan saja.\n\nTindakan ini TIDAK BISA di-undo otomatis. Lanjutkan?");
-  if(!yakin1) return;
-  const ketik = prompt('Ketik RESET (huruf besar semua) untuk konfirmasi terakhir:');
-  if(ketik !== 'RESET'){ showToast('Dibatalkan -- teks konfirmasi tidak cocok.', false); return; }
-
-  const btn = el('resetSemuaStokBtn');
-  const spanAsli = btn.querySelector('span').textContent;
-  btn.disabled = true; btn.querySelector('span').textContent = 'Mereset...';
-  try{
-    // --- Stok barang (saset) per outlet, per menu -- HANYA koleksi ini
-    // yang disentuh. Stok cup ("stok_cup_ukuran") dan stok teh ("stok_teh")
-    // sengaja TIDAK ikut direset di sini supaya tombol ini murni untuk
-    // "Kelola Stok Barang" saja.
-    const snapStok = await getDocs(collection(db, "stok"));
-    const docsStok = snapStok.docs.filter(d => (Number(d.data().jumlah)||0) !== 0);
-    for(let i=0;i<docsStok.length;i+=400){
-      const batch = writeBatch(db);
-      docsStok.slice(i,i+400).forEach(d=> batch.update(d.ref, { jumlah: 0 }));
-      await batch.commit();
-    }
-
-    // Catat jejak audit -- siapa & kapan reset ini dilakukan, biar ada
-    // riwayatnya kalau nanti perlu ditelusuri.
-    try{
-      await addDoc(collection(db, "riwayat_reset_stok"), {
-        waktu: Timestamp.fromDate(new Date()),
-        oleh: SESI ? SESI.namaTampilan : 'Owner',
-        jenis: 'reset_stok_barang',
-        jumlahBarangDireset: docsStok.length
-      });
-    }catch(errLog){ console.error('Gagal mencatat riwayat reset stok:', errLog); }
-
-    showToast(`Stok barang berhasil direset ke 0 (${docsStok.length} barang).`);
-
-    // Refresh layar Kelola Stok Barang kalau lagi terbuka biar angka
-    // langsung update tanpa perlu tutup-buka overlay.
-    if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
-  }catch(e){
-    console.error('Gagal reset stok barang:', e);
-    showToast('Gagal reset stok. Cek koneksi lalu coba lagi.', false);
-  } finally {
-    btn.disabled = false; btn.querySelector('span').textContent = spanAsli;
-  }
-};
-
-/* =====================================================================
-   SET SEMUA STOK BARANG KE ANGKA TERTENTU (SEMUA OUTLET) — khusus Owner.
-   Beda dengan Reset Semua Stok ke 0: di sini Owner bisa isi angka bebas
-   (misal 50), lalu SEMUA dokumen collection "stok" (barang saset & bukan
-   saset, semua outlet, semua menu) ditimpa jadi angka itu. Hanya untuk
-   stok BARANG -- stok cup & teh TIDAK disentuh oleh fitur ini.
-   ===================================================================== */
-el('setSemuaStokBtn').onclick = async ()=>{
-  if(!SESI || SESI.jabatan !== 'Owner') return;
-  const inputAngka = prompt("Set stok SEMUA barang di SEMUA outlet jadi berapa?\n\nKetik angkanya (misal 50). Ini berlaku untuk semua menu barang (saset maupun bukan saset) di semua outlet.");
-  if(inputAngka === null) return; // dibatalkan
-  const angka = Number(inputAngka);
-  if(!Number.isFinite(angka) || angka < 0){ showToast('Angka tidak valid.', false); return; }
-
-  const yakin = confirm(`Kamu mengetik angka: ${angka}\n\nSet SEMUA stok barang di SEMUA outlet jadi ${angka}?\n\nTindakan ini TIDAK BISA di-undo otomatis. Lanjutkan?`);
-  if(!yakin) return;
-  const ketik = prompt(`Ketik SET-${angka} (persis seperti ini) untuk konfirmasi terakhir:`);
-  if(ketik !== `SET-${angka}`){ showToast('Dibatalkan -- teks konfirmasi tidak cocok.', false); return; }
-
-  const btn = el('setSemuaStokBtn');
-  const spanAsli = btn.querySelector('span').textContent;
-  btn.disabled = true; btn.querySelector('span').textContent = 'Menyimpan...';
-  try{
-    const snapStok = await getDocs(collection(db, "stok"));
-    const docsStok = snapStok.docs;
-    for(let i=0;i<docsStok.length;i+=400){
-      const batch = writeBatch(db);
-      docsStok.slice(i,i+400).forEach(d=> batch.update(d.ref, { jumlah: angka }));
-      await batch.commit();
-    }
-
-    // Catat jejak audit -- siapa & kapan aksi ini dilakukan.
-    try{
-      await addDoc(collection(db, "riwayat_reset_stok"), {
-        waktu: Timestamp.fromDate(new Date()),
-        oleh: SESI ? SESI.namaTampilan : 'Owner',
-        jenis: 'set_kustom',
-        angkaDiset: angka,
-        jumlahBarangDireset: docsStok.length
-      });
-    }catch(errLog){ console.error('Gagal mencatat riwayat set stok:', errLog); }
-
-    showToast(`Semua stok barang berhasil diset jadi ${angka} (${docsStok.length} dokumen).`);
-
-    if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
-  }catch(e){
-    console.error('Gagal set semua stok:', e);
-    showToast('Gagal set stok. Cek koneksi lalu coba lagi.', false);
-  } finally {
-    btn.disabled = false; btn.querySelector('span').textContent = spanAsli;
-  }
-};
-
-function renderPerbaikanStokAwal(){
-  const outletTerpakai = STOK_OUTLET_AKTIF || (OUTLET_LIST[0] || '');
-  el('perbaikanStokBody').innerHTML = `
-    <div class="empty" style="padding:0 0 12px; text-align:left; font-size:12px;">
-      Alat ini membaca <b>Riwayat Restock hari ini</b> outlet <b>${outletTerpakai}</b>, mengelompokkan per
-      barang, lalu mendeteksi barang yang ke-restock berkali-kali dalam waktu berdekatan (ciri bug approve
-      dobel) dan menghitung angka stok yang seharusnya dari catatan restock PERTAMA hari ini.
-      <br><br>⚠️ <b>Cek dulu angkanya</b> sebelum menerapkan -- cocokkan dengan permintaan asli karyawan kalau ragu.
-    </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-      <div class="satuanToggle" id="perbaikanStokOutletToggle" style="flex-wrap:wrap;"></div>
-    </div>
-    <button class="saveFormBtn" id="perbaikanStokMuatBtn" style="margin-bottom:14px;">Muat Riwayat Hari Ini</button>
-    <div id="perbaikanStokStatus" style="font-size:12px; color:var(--muted); margin-bottom:10px;"></div>
-    <div id="perbaikanStokHasil"></div>
-  `;
-
-  const toggleWrap = el('perbaikanStokOutletToggle');
-  toggleWrap.innerHTML = OUTLET_LIST.map(o=>`<button data-o="${o}" class="${o===outletTerpakai?'active':''}" style="flex:0 0 auto;">${o}</button>`).join('');
-  toggleWrap.querySelectorAll('button').forEach(b=>{
-    b.onclick = ()=>{
-      toggleWrap.querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
-      muatDanProsesPerbaikanStok(b.dataset.o);
-    };
-  });
-
-  el('perbaikanStokMuatBtn').onclick = ()=> muatDanProsesPerbaikanStok(outletTerpakai);
-}
-
-function awalHariIniPerbaikanStok(){
-  const d = new Date(); d.setHours(0,0,0,0); return d;
-}
-
-function fmtWaktuPerbaikanStok(w){
-  const d = w && w.toDate ? w.toDate() : null;
-  if(!d) return '-';
-  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
-}
-
-async function muatDanProsesPerbaikanStok(outlet){
-  const statusEl = el('perbaikanStokStatus');
-  const hasilEl = el('perbaikanStokHasil');
-  statusEl.innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:4px auto;"></div>';
-  hasilEl.innerHTML = '';
-  PERBAIKAN_STOK_HASIL = [];
-
-  try{
-    const mulai = Timestamp.fromDate(awalHariIniPerbaikanStok());
-    const qy = query(collection(db, "riwayat_restock"), where("outlet","==", outlet), where("waktu",">=", mulai));
-    const snap = await getDocs(qy);
-    const semua = snap.docs.map(d=>({id:d.id, ...d.data()}));
-
-    // Hanya yg berasal dari approve izin restock (sumber bug) -- restock
-    // manual biasa Owner (satuan cup/roll langsung) tidak disentuh alat ini.
-    const viaIzin = semua.filter(r => (r.keterangan||'').includes('Via izin restock'));
-
-    const kelompok = {};
-    viaIzin.forEach(r=>{
-      const key = r.kategori + ' \u2014 ' + r.nama;
-      if(!kelompok[key]) kelompok[key] = [];
-      kelompok[key].push(r);
-    });
-
-    for(const key of Object.keys(kelompok)){
-      const catatan = kelompok[key].slice().sort((a,b)=>{
-        const ta = a.waktu && a.waktu.toDate ? a.waktu.toDate().getTime() : 0;
-        const tb = b.waktu && b.waktu.toDate ? b.waktu.toDate().getTime() : 0;
-        return ta - tb;
-      });
-      let bermasalah = false;
-      for(let i=1;i<catatan.length;i++){
-        const t0 = catatan[i-1].waktu && catatan[i-1].waktu.toDate ? catatan[i-1].waktu.toDate().getTime() : 0;
-        const t1 = catatan[i].waktu && catatan[i].waktu.toDate ? catatan[i].waktu.toDate().getTime() : 0;
-        if((t1 - t0) <= AMBANG_MENIT_DUPLIKAT_PERBAIKAN_STOK*60*1000){ bermasalah = true; break; }
-      }
-      const pertama = catatan[0];
-      const terakhir = catatan[catatan.length-1];
-      PERBAIKAN_STOK_HASIL.push({
-        key, outlet, kategori: pertama.kategori, nama: pertama.nama,
-        catatan, bermasalah,
-        nilaiSeharusnya: pertama.stokSesudah,
-        nilaiSekarang: terakhir.stokSesudah
-      });
-    }
-
-    PERBAIKAN_STOK_HASIL.sort((a,b)=> (b.bermasalah - a.bermasalah) || a.nama.localeCompare(b.nama));
-    renderHasilPerbaikanStok();
-    const jmlBermasalah = PERBAIKAN_STOK_HASIL.filter(x=>x.bermasalah).length;
-    statusEl.textContent = `Ditemukan ${PERBAIKAN_STOK_HASIL.length} barang dgn riwayat restock via izin hari ini utk outlet ${outlet}. ${jmlBermasalah} terindikasi bermasalah (restock beruntun < ${AMBANG_MENIT_DUPLIKAT_PERBAIKAN_STOK} menit).`;
-  }catch(e){
-    statusEl.textContent = 'Gagal memuat: ' + e.message;
-    console.error('Gagal memuat data perbaikan stok:', e);
-  }
-}
-
-function renderHasilPerbaikanStok(){
-  const hasilEl = el('perbaikanStokHasil');
-  if(PERBAIKAN_STOK_HASIL.length === 0){
-    hasilEl.innerHTML = '<div class="empty">Tidak ada riwayat restock via izin hari ini untuk outlet ini.</div>';
-    return;
-  }
-  const adaBermasalah = PERBAIKAN_STOK_HASIL.some(x=>x.bermasalah);
-  hasilEl.innerHTML = (adaBermasalah ? `<button class="addBtn" id="perbaikanStokTerapkanSemuaBtn" style="border-style:solid; background:var(--gold-light); color:var(--gold-dark); margin-bottom:12px; width:100%; justify-content:center;">Terapkan Semua yang Bermasalah</button>` : '')
-  + PERBAIKAN_STOK_HASIL.map((h, idx)=>{
-    const daftarCatatan = h.catatan.map(c=>
-      `<div style="font-size:11.5px; color:var(--muted); margin:2px 0;">${fmtWaktuPerbaikanStok(c.waktu)} \u00b7 +${c.jumlahInput} \u2192 jadi ${c.stokSesudah} saset \u00b7 oleh ${c.oleh||'-'}</div>`
-    ).join('');
-    return `<div class="adminItem" data-idx="${idx}" style="${h.bermasalah ? 'border-color:var(--merah); background:var(--merah-light);' : ''}">
-      <div class="aiTop"><div><div class="ain">${h.nama}</div><div style="font-size:11px; color:var(--muted);">${h.kategori}</div></div></div>
-      <div style="margin-top:8px;">${daftarCatatan}</div>
-      <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); font-size:12.5px;">
-        Stok saat ini: <b>${h.nilaiSekarang}</b><br>
-        ${h.bermasalah
-          ? `Diduga seharusnya (dari catatan pertama hari ini): <b>${h.nilaiSeharusnya}</b>`
-          : `Tidak terindikasi bug \u2014 dibiarkan apa adanya.`}
-      </div>
-      ${h.bermasalah ? `<div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
-        <input type="number" class="perbaikanStokInputBenar" value="${h.nilaiSeharusnya}" style="flex:1; padding:10px 12px; border-radius:10px; border:1.4px solid var(--line); font-size:13.5px; font-family:inherit; background:var(--card); color:var(--ink);">
-        <button class="perbaikanStokTerapkanSatuBtn" style="flex:0 0 auto; padding:10px 14px; border-radius:10px; border:none; background:var(--pine-900); color:#f3ede0; font-size:12.5px; font-weight:650; cursor:pointer;">Terapkan</button>
-      </div>` : ''}
-    </div>`;
-  }).join('');
-
-  const btnSemua = el('perbaikanStokTerapkanSemuaBtn');
-  if(btnSemua){
-    btnSemua.onclick = async ()=>{
-      if(!confirm('Terapkan angka yang benar untuk SEMUA barang bermasalah di outlet ini? Pastikan sudah dicek dulu satu-satu.')) return;
-      btnSemua.disabled = true; btnSemua.textContent = 'Menerapkan...';
-      for(const h of PERBAIKAN_STOK_HASIL.filter(x=>x.bermasalah)){
-        try{ await terapkanPerbaikanStok(h.outlet, h.kategori, h.nama, h.nilaiSeharusnya); }
-        catch(e){ console.error('Gagal terapkan perbaikan stok', h.nama, e); }
-      }
-      showToast('Semua barang bermasalah sudah diterapkan. Memuat ulang...');
-      await muatDanProsesPerbaikanStok(PERBAIKAN_STOK_HASIL[0]?.outlet || STOK_OUTLET_AKTIF);
-      if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
-    };
-  }
-
-  hasilEl.querySelectorAll('.adminItem').forEach(cardEl=>{
-    const idx = Number(cardEl.dataset.idx);
-    const h = PERBAIKAN_STOK_HASIL[idx];
-    const btn = cardEl.querySelector('.perbaikanStokTerapkanSatuBtn');
-    if(!btn) return;
-    btn.onclick = async ()=>{
-      const inputEl = cardEl.querySelector('.perbaikanStokInputBenar');
-      const nilaiBaru = Math.max(0, Number(inputEl.value) || 0);
-      btn.disabled = true; btn.textContent = 'Menyimpan...';
-      try{
-        await terapkanPerbaikanStok(h.outlet, h.kategori, h.nama, nilaiBaru);
-        showToast(`Stok ${h.nama} diperbarui jadi ${nilaiBaru} saset`);
-        btn.textContent = '\u2705 Diterapkan';
-        inputEl.disabled = true;
-        if(el('stokOverlay').classList.contains('show')) await muatKelolaStok();
-      }catch(e){
-        showToast('Gagal menyimpan: ' + e.message, false);
-        btn.disabled = false; btn.textContent = 'Terapkan';
-      }
-    };
-  });
-}
-
-async function terapkanPerbaikanStok(outlet, kategori, nama, nilaiBaru){
-  const id = stokDocId(outlet, kategori, nama);
-  const ref = doc(db, "stok", id);
-  await setDoc(ref, { outlet, kategori, nama, jumlah: nilaiBaru }, { merge: true });
-}
 
 /* =====================================================================
    TOMBOL BACK HP — menutup overlay yang lagi terbuka dulu, baru kalau
@@ -8379,14 +8044,13 @@ const OVERLAY_IDS_BACK = [
   'sheetOverlay', 'trxDetailOverlay', 'menuDropdownOverlay', 'logoutWarnOverlay',
   'pengaturanOverlay', 'notifPanelOverlay', 'notifKaryawanPanelOverlay',
   'notifStokPanelOverlay', 'notifKaryawanStokPanelOverlay',
-  'rejectTrxOverlay', 'rejectTrxFormOverlay', 'notifRejectOwnerPanelOverlay',
-  'perbaikanStokOverlay'
+  'rejectTrxOverlay', 'rejectTrxFormOverlay', 'notifRejectOwnerPanelOverlay'
 ];
 let sedangProsesBack = false;
 
 function overlayTerbukaSaatIni(){
   // urutan terakhir di array = prioritas ditutup duluan (overlay yang biasanya "di atas")
-  const urutanPrioritas = ['notifRejectOwnerPanelOverlay','notifKaryawanStokPanelOverlay','notifStokPanelOverlay','notifKaryawanPanelOverlay','notifPanelOverlay','perbaikanStokOverlay','pengaturanOverlay','rejectTrxFormOverlay','rejectTrxOverlay','restockOverlay','stokOverlay','stokCupOverlay','akunFormOverlay','akunOverlay','outletHapusOverlay','outletOverlay','trxDetailOverlay','lapOverlay','grafikOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
+  const urutanPrioritas = ['notifRejectOwnerPanelOverlay','notifKaryawanStokPanelOverlay','notifStokPanelOverlay','notifKaryawanPanelOverlay','notifPanelOverlay','pengaturanOverlay','rejectTrxFormOverlay','rejectTrxOverlay','restockOverlay','stokOverlay','stokCupOverlay','akunFormOverlay','akunOverlay','outletHapusOverlay','outletOverlay','trxDetailOverlay','lapOverlay','grafikOverlay','adminOverlay2','calcOverlay','cartOverlay','sheetOverlay','menuDropdownOverlay'];
   for(const id of urutanPrioritas){
     const elm = document.getElementById(id);
     if(elm && elm.classList.contains('show')) return id;
